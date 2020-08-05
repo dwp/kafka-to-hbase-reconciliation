@@ -1,6 +1,5 @@
 package uk.gov.dwp.dataworks.kafkatohbase.reconciliation
 
-import org.apache.hadoop.hbase.client.Connection
 import org.springframework.boot.CommandLineRunner
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
@@ -11,8 +10,6 @@ class ReconciliationApplication(private val reconciliationService: Reconciliatio
     override fun run(vararg args: String?) {
         reconciliationService.reconciliation()
     }
-
-
 }
 
 fun main(args: Array<String>) {

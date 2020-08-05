@@ -9,6 +9,7 @@ class ReconciliationServiceImpl(
     private val hbaseConnection: Connection,
     private val metadatastoreConnection: java.sql.Connection
 ): ReconciliationService {
+
     override fun reconciliation() {
         println("$hbaseConnection")
         println("$metadatastoreConnection")
@@ -18,18 +19,19 @@ class ReconciliationServiceImpl(
             }
         }
     }
+
     // retrieve records from metadata store
-    private fun fetchUnreconciledRecords(): Array<String> {
+    fun fetchUnreconciledRecords(): Array<String> {
         return arrayOf("a", "b")
     }
 
     // check for items in HBase
-    private fun recordExistsInHbase(record: String): Boolean {
+    fun recordExistsInHbase(record: String): Boolean {
         return true
     }
 
     // If found then update metadata store
-    private fun reconcileRecord() {
+    fun reconcileRecord() {
 
     }
 }

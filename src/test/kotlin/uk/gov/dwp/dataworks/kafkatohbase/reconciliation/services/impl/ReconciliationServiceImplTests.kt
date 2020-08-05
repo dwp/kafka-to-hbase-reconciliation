@@ -1,11 +1,13 @@
 package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.impl
 
+import com.nhaarman.mockitokotlin2.times
+import com.nhaarman.mockitokotlin2.verify
+import org.apache.hadoop.hbase.client.Connection
 import org.junit.jupiter.api.Test
 import org.junit.runner.RunWith
-import org.mockito.Mockito
-import org.mockito.Mockito.times
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.test.mock.mockito.SpyBean
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.junit4.SpringRunner
@@ -27,8 +29,12 @@ class ReconciliationServiceImplTests {
 	@Autowired
 	private lateinit var reconciliationService: ReconciliationService
 
-//	@MockBean
-//	private lateinit var context: Context
+	@MockBean
+	private lateinit var hbaseConnection: Connection
+
+	@MockBean
+	private lateinit var metadatastoreConnection: java.sql.Connection
+
 
 	@Test
 	fun contextLoads() {
@@ -43,12 +49,18 @@ class ReconciliationServiceImplTests {
 	@Test
 	fun willHandleEmptyResultFromMetadataStore() {
 	}
+
 	// limit the number of records returned when querying metadata store
 	@Test
 	fun limitsTheNumberOfRecordsReturnedFromMetadataStore() {
-		//ReconciliationServiceImpl.run()
-		verify(reconciliationService, times(2)).fetchUnreconciledRecords()
-		verify(reconciliationService, times(4)).reconcileRecord()
+		reconciliationService.reconciliation()
+
+		// I think this will be ditched and the calls to the connections validated instead
+		// (at which point the 2 methods below can be reverted to private).
+		if (reconciliationService is ReconciliationServiceImpl) {
+			verify(reconciliationService as ReconciliationServiceImpl, times(1)).fetchUnreconciledRecords()
+			verify(reconciliationService as ReconciliationServiceImpl, times(2)).reconcileRecord()
+		}
 	}
 	// limit age of messages for reconciliation i.e. older records not returned from metadata store
 	// reconciled records are not returned
