@@ -21,6 +21,7 @@ dependencies {
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 	implementation("mysql:mysql-connector-java")
 	implementation("org.apache.hbase:hbase-client:1.4.13")
+	testImplementation("com.nhaarman.mockitokotlin2", "mockito-kotlin", "2.2.0")
 	testImplementation("org.springframework.boot:spring-boot-starter-test") {
 		exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
 	}
