@@ -72,7 +72,20 @@ class ReconciliationServiceImplTests {
 		verify(statement, times(1)).executeQuery(captor.capture())
 		assert(captor.firstValue.contains("LIMIT"))
 	}
+
 	// limit age of messages for reconciliation i.e. older records not returned from metadata store
+	@Test
+	fun limitsTheAgeOfRecordsReturnedFromMetadataStore() {
+		val statement = mock<Statement>()
+		given(metadatastoreConnection.createStatement()).willReturn(statement)
+		reconciliationService.reconciliation()
+
+		verify(metadatastoreConnection, times(1)).createStatement()
+		val captor = argumentCaptor<String>()
+		verify(statement, times(1)).executeQuery(captor.capture())
+		assert(captor.firstValue.contains("WHERE write_timestamp >"))
+	}
+
 	// reconciled records are not returned
 	// validate result when querying metadata store
 	// query non-master hbase region
