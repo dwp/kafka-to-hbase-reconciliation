@@ -1,7 +1,6 @@
 package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.impl
 
-import com.nhaarman.mockitokotlin2.times
-import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.*
 import org.apache.hadoop.hbase.client.Connection
 import org.junit.jupiter.api.Test
 import org.junit.runner.RunWith
@@ -12,6 +11,8 @@ import org.springframework.boot.test.mock.mockito.SpyBean
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.junit4.SpringRunner
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationService
+import java.sql.ResultSet
+import java.sql.Statement
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(classes = [ReconciliationServiceImpl::class])
@@ -38,9 +39,6 @@ class ReconciliationServiceImplTests {
 
 	@Test
 	fun contextLoads() {
-//		given(context.hbaseConnection()).willReturn(ConnectionFactory.createConnection())
-//		given(context.metadatastoreConnection()).willReturn(DriverManager.getConnection("jdbc:mysql://localhost:3306/"))
-//		assertEquals(123, 123)
 	}
 
 	// open a connection to metadata store
@@ -53,14 +51,26 @@ class ReconciliationServiceImplTests {
 	// limit the number of records returned when querying metadata store
 	@Test
 	fun limitsTheNumberOfRecordsReturnedFromMetadataStore() {
+		val resultSet = mock<ResultSet> {
+			on {
+				next()
+			} doReturnConsecutively listOf(true, true, false)
+			on {
+				getInt("id")
+			} doReturnConsecutively listOf(1, 2)
+		}
+		val statement = mock<Statement> {
+			on {
+				executeQuery(any())
+			} doReturn resultSet
+		}
+		given(metadatastoreConnection.createStatement()).willReturn(statement)
 		reconciliationService.reconciliation()
 
-		// I think this will be ditched and the calls to the connections validated instead
-		// (at which point the 2 methods below can be reverted to private).
-		if (reconciliationService is ReconciliationServiceImpl) {
-			verify(reconciliationService as ReconciliationServiceImpl, times(1)).fetchUnreconciledRecords()
-			verify(reconciliationService as ReconciliationServiceImpl, times(2)).reconcileRecord()
-		}
+		verify(metadatastoreConnection, times(1)).createStatement()
+		val captor = argumentCaptor<String>()
+		verify(statement, times(1)).executeQuery(captor.capture())
+		assert(captor.firstValue.contains("LIMIT"))
 	}
 	// limit age of messages for reconciliation i.e. older records not returned from metadata store
 	// reconciled records are not returned
@@ -71,6 +81,7 @@ class ReconciliationServiceImplTests {
 	// limit max items in hbase query batch
 	// run parallel HBase queries
 	// if found in Hbase, update metadata store records with reconciled_result=true and reconciled_timestamp=current_timestamp
+	// if not found in HBase don't update metadata verifyZeroInteractions
 	// metadata store updates are done in batches
 	// response from metadata store updates are validated
 	// application runs on an interval i.e. it pauses between runs
