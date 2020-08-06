@@ -21,17 +21,19 @@ class ReconciliationServiceImpl(
     }
 
     // retrieve records from metadata store
-    fun fetchUnreconciledRecords(): Array<String> {
+    private fun fetchUnreconciledRecords(): Array<String> {
+        val stmt = metadatastoreConnection.createStatement()
+        stmt.executeQuery("SELECT * FROM ucfs LIMIT 100")
         return arrayOf("a", "b")
     }
 
     // check for items in HBase
-    fun recordExistsInHbase(record: String): Boolean {
+    private fun recordExistsInHbase(record: String): Boolean {
         return true
     }
 
     // If found then update metadata store
-    fun reconcileRecord() {
+    private fun reconcileRecord() {
 
     }
 }
