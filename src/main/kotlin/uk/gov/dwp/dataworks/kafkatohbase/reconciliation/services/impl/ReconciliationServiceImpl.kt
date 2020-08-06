@@ -14,17 +14,33 @@ class ReconciliationServiceImpl(
         println("$hbaseConnection")
         println("$metadatastoreConnection")
         fetchUnreconciledRecords().forEach {
-            if (recordExistsInHbase(it)) {
+            if (recordExistsInHbase(it["topic_name"], it["hbase_id"], it["hbase_timestamp"])) {
                 reconcileRecord()
             }
         }
     }
 
     // retrieve records from metadata store
-    private fun fetchUnreconciledRecords(): Array<String> {
+    private fun fetchUnreconciledRecords(): List<Map<String, String>> {
+        val result = listOf<Map<String, String>>().toMutableList()
         val stmt = metadatastoreConnection.createStatement()
-        stmt.executeQuery("SELECT * FROM ucfs LIMIT 100")
-        return arrayOf("a", "b")
+        val resultSet = stmt.executeQuery("SELECT * FROM ucfs WHERE write_timestamp > AND reconciled_result = false LIMIT 100")
+        while (resultSet.next()) {
+             result.add(mapOf<String, String>(
+                 "id" to resultSet.getString("id"),
+                 "hbase_id" to resultSet.getString("hbase_id"),
+                 "hbase_timestamp" to resultSet.getString("hbase_timestamp"),
+                 "write_timestamp" to resultSet.getString("write_timestamp"),
+                 "correlation_id" to resultSet.getString("correlation_id"),
+                 "topic_name" to resultSet.getString("topic_name"),
+                 "kafka_partition" to resultSet.getString("kafka_partition"),
+                 "kafka_offest" to resultSet.getString("kafka_offest"),
+                 "reconciled_result" to resultSet.getString("reconciled_result"),
+                 "reconciled_timestamp" to resultSet.getString("reconciled_timestamp")
+            ))
+        }
+
+        return result
     }
 
     // check for items in HBase
