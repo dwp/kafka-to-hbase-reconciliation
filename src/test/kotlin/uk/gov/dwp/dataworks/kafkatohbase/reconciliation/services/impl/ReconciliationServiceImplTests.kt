@@ -2,6 +2,7 @@ package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.impl
 
 import com.nhaarman.mockitokotlin2.*
 import org.apache.hadoop.hbase.client.Connection
+import org.junit.Ignore
 import org.junit.jupiter.api.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
@@ -76,6 +77,7 @@ class ReconciliationServiceImplTests {
 	// limit age of messages for reconciliation i.e. older records not returned from metadata store
 	@Test
 	fun limitsTheAgeOfRecordsReturnedFromMetadataStore() {
+		val pattern = Regex("""(WHERE|AND) write_timestamp >""")
 		val statement = mock<Statement>()
 		given(metadatastoreConnection.createStatement()).willReturn(statement)
 		reconciliationService.reconciliation()
@@ -83,12 +85,13 @@ class ReconciliationServiceImplTests {
 		verify(metadatastoreConnection, times(1)).createStatement()
 		val captor = argumentCaptor<String>()
 		verify(statement, times(1)).executeQuery(captor.capture())
-		assert(captor.firstValue.contains("WHERE write_timestamp >"))
+		assert(captor.firstValue.contains(pattern))
 	}
 
 	// reconciled records are not returned
 	@Test
 	fun reconcileRecordsNotReturnedFromMetadataStore() {
+		val pattern = Regex("""(WHERE|AND) reconciled_result = false""")
 		val statement = mock<Statement>()
 		given(metadatastoreConnection.createStatement()).willReturn(statement)
 		reconciliationService.reconciliation()
@@ -96,7 +99,7 @@ class ReconciliationServiceImplTests {
 		verify(metadatastoreConnection, times(1)).createStatement()
 		val captor = argumentCaptor<String>()
 		verify(statement, times(1)).executeQuery(captor.capture())
-		assert(captor.firstValue.contains("WHERE reconciled_result = false"))
+		assert(captor.firstValue.contains(pattern))
 	}
 	// validate result when querying metadata store
 	// query non-master hbase region
