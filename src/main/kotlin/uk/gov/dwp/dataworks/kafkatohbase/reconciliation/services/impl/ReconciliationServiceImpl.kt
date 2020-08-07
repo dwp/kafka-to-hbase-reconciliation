@@ -11,7 +11,8 @@ import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationS
 @Service
 class ReconciliationServiceImpl(
     private val hbaseConnection: Connection,
-    private val metadatastoreConnection: java.sql.Connection
+    private val metadatastoreConnection: java.sql.Connection,
+    private val textUtils: TextUtils
 ): ReconciliationService {
 
     override fun reconciliation() {
@@ -72,8 +73,6 @@ class ReconciliationServiceImpl(
         val decoded = Hex.decodeHex(rawish)
         return decoded + printable.substring(16).toByteArray()
     }
-
-    private val textUtils = TextUtils()
 
     private fun tableName(topic: String): String? {
         val matcher = textUtils.topicNameTableMatcher(topic)

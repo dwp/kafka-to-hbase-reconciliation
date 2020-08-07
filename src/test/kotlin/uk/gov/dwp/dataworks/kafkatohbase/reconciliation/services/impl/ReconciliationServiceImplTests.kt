@@ -12,25 +12,29 @@ import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.test.mock.mockito.SpyBean
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.junit4.SpringRunner
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.TextUtils
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationService
 import java.sql.ResultSet
 import java.sql.Statement
 
 @RunWith(SpringRunner::class)
-@SpringBootTest(classes = [ReconciliationServiceImpl::class])
+@SpringBootTest(classes = [ReconciliationServiceImpl::class, TextUtils::class])
 @TestPropertySource(properties = [
 	"hbase.zookeeper.quorum=localhost",
+	"hbase.table.pattern=^\\w+\\.([-\\w]+)\\.([-\\w]+)$",
 	"metadatastore.endpoint=localhost",
 	"metadatastore.port=3306",
 	"metadatastore.user=dummy_user",
 	"metadatastore.password=user_password"
-
 ])
 class ReconciliationServiceImplTests {
 
 	@SpyBean
 	@Autowired
 	private lateinit var reconciliationService: ReconciliationService
+
+	@Autowired
+	private lateinit var textUtils: TextUtils
 
 	@MockBean
 	private lateinit var hbaseConnection: Connection
