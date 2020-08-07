@@ -21,7 +21,7 @@ import java.sql.Statement
 @SpringBootTest(classes = [ReconciliationServiceImpl::class, TextUtils::class])
 @TestPropertySource(properties = [
 	"hbase.zookeeper.quorum=localhost",
-	"hbase.table.pattern=^\\w+\\.([-\\w]+)\\.([-\\w]+)$",
+	"hbase.table.pattern=^\\\\w+\\\\.([-\\\\w]+)\\.([-\\\\w]+)$",
 	"metadatastore.endpoint=localhost",
 	"metadatastore.port=3306",
 	"metadatastore.user=dummy_user",
