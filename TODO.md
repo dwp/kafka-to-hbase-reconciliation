@@ -15,3 +15,5 @@ Outstanding items
 * query HBase replica region instead of master
 * threading request to HBase and UPDATEs to metadata store
 * Move SQL query LIMIT value and date offest to variables (i.e. config and env vars)
+* Use Java 14 environment in gradle build step of the pipeline
+* After PR pipeline job succeeds, put the gradle build steps in the main pipeline
