@@ -18,8 +18,13 @@ class ReconciliationServiceImpl(
         println("$hbaseConnection")
         println("$metadatastoreConnection")
         fetchUnreconciledRecords().forEach {
-            if (recordExistsInHbase(it["topic_name"], it["hbase_id"], it["hbase_timestamp"])) {
-                reconcileRecord()
+            val topicName = it["topic_name"]
+            val hbaseId = it["hbase_id"]
+            val hbaseTimestamp = it["hbase_timestamp"]
+            if (topicName != null && hbaseId != null && hbaseTimestamp != null) {
+                if (recordExistsInHbase(topicName, hbaseId, hbaseTimestamp)) {
+                    reconcileRecord()
+                }
             }
         }
     }
@@ -44,21 +49,24 @@ class ReconciliationServiceImpl(
             ))
         }
 
+        //TODO: verify response
+
         return result
     }
 
     // check for items in HBase
     private fun recordExistsInHbase(table: String, id: String, version: String): Boolean {
-        hbaseConnection.getTable(TableName.valueOf(tableName(table))).exists(Get(decodePrintable(id)))
-        return true
+        return hbaseConnection.getTable(TableName.valueOf(tableName(table))).exists(Get(decodePrintable(id)))
     }
 
     // If found then update metadata store
     private fun reconcileRecord() {
-
+        val stmt = metadatastoreConnection.createStatement()
+        stmt.executeQuery("UPDATE ucfs SET reconciled_result=true, reconciled_timestamp=current_timestamp")
     }
 
     private fun decodePrintable(printable: String): ByteArray {
+        return printable.toByteArray()
         val checksum = printable.substring(0, 16)
         val rawish = checksum.replace(Regex("""\\x"""), "")
         val decoded = Hex.decodeHex(rawish)
