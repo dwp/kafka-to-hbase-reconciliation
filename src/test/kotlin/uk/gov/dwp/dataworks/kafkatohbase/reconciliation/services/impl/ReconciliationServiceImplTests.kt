@@ -155,10 +155,10 @@ class ReconciliationServiceImplTests {
 			} doReturnConsecutively listOf("1", "2")
 			on {
 				getString("hbase_id")
-			} doReturnConsecutively listOf("1", "2")
+			} doReturnConsecutively listOf("\\x12\\xFC\\xCB\\x23_1", "\\x12\\xFC\\xCB\\x23_2")
 			on {
-				getString("hbase_timestamp")
-			} doReturnConsecutively listOf("1", "2")
+				getLong("hbase_timestamp")
+			} doReturnConsecutively listOf(1L, 2L)
 			on {
 				getString("write_timestamp")
 			} doReturnConsecutively listOf("1", "2")

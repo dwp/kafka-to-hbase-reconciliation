@@ -27,6 +27,9 @@ dependencies {
 		exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
 	}
 }
+configurations.all {
+	exclude(group = "org.slf4j", module = "slf4j-log4j12")
+}
 
 tasks.withType<Test> {
 	useJUnitPlatform()

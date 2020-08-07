@@ -19,9 +19,9 @@ class ReconciliationServiceImpl(
         println("$hbaseConnection")
         println("$metadatastoreConnection")
         fetchUnreconciledRecords().forEach {
-            val topicName = it["topic_name"]
-            val hbaseId = it["hbase_id"]
-            val hbaseTimestamp = it["hbase_timestamp"]
+            val topicName = it["topic_name"] as String
+            val hbaseId = it["hbase_id"] as String
+            val hbaseTimestamp = it["hbase_timestamp"] as Long
             if (topicName != null && hbaseId != null && hbaseTimestamp != null) {
                 if (recordExistsInHbase(topicName, hbaseId, hbaseTimestamp)) {
                     reconcileRecord()
@@ -31,15 +31,15 @@ class ReconciliationServiceImpl(
     }
 
     // retrieve records from metadata store
-    private fun fetchUnreconciledRecords(): List<Map<String, String>> {
-        val result = listOf<Map<String, String>>().toMutableList()
+    private fun fetchUnreconciledRecords(): List<Map<String, Any>> {
+        val result = listOf<Map<String, Any>>().toMutableList()
         val stmt = metadatastoreConnection.createStatement()
         val resultSet = stmt.executeQuery("SELECT * FROM ucfs WHERE write_timestamp > AND reconciled_result = false LIMIT 100")
         while (resultSet.next()) {
-             result.add(mapOf<String, String>(
+             result.add(mapOf<String, Any>(
                  "id" to resultSet.getString("id"),
                  "hbase_id" to resultSet.getString("hbase_id"),
-                 "hbase_timestamp" to resultSet.getString("hbase_timestamp"),
+                 "hbase_timestamp" to resultSet.getLong("hbase_timestamp"),
                  "write_timestamp" to resultSet.getString("write_timestamp"),
                  "correlation_id" to resultSet.getString("correlation_id"),
                  "topic_name" to resultSet.getString("topic_name"),
@@ -56,7 +56,7 @@ class ReconciliationServiceImpl(
     }
 
     // check for items in HBase
-    private fun recordExistsInHbase(table: String, id: String, version: String): Boolean {
+    private fun recordExistsInHbase(table: String, id: String, version: Long): Boolean {
         return hbaseConnection.getTable(TableName.valueOf(tableName(table))).exists(Get(decodePrintable(id)))
     }
 
@@ -67,7 +67,6 @@ class ReconciliationServiceImpl(
     }
 
     private fun decodePrintable(printable: String): ByteArray {
-        return printable.toByteArray()
         val checksum = printable.substring(0, 16)
         val rawish = checksum.replace(Regex("""\\x"""), "")
         val decoded = Hex.decodeHex(rawish)
@@ -82,7 +81,6 @@ class ReconciliationServiceImpl(
             return targetTable(namespace, tableName)
         } else {
             throw Exception("Could not derive table name from topic: $topic")
-            //logger.error("Could not derive table name from topic", "topic", record.topic())
         }
     }
 
