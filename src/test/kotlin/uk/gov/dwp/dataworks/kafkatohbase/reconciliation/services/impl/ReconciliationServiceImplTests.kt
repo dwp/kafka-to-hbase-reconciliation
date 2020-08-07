@@ -55,10 +55,7 @@ class ReconciliationServiceImplTests {
 		val resultSet = mock<ResultSet> {
 			on {
 				next()
-			} doReturnConsecutively listOf(true, true, false)
-			on {
-				getInt("id")
-			} doReturnConsecutively listOf(1, 2)
+			} doReturnConsecutively listOf(false)
 		}
 		val statement = mock<Statement> {
 			on {
@@ -78,7 +75,16 @@ class ReconciliationServiceImplTests {
 	@Test
 	fun limitsTheAgeOfRecordsReturnedFromMetadataStore() {
 		val pattern = Regex("""(WHERE|AND) write_timestamp >""")
-		val statement = mock<Statement>()
+		val resultSet = mock<ResultSet> {
+			on {
+				next()
+			} doReturnConsecutively listOf(false)
+		}
+		val statement = mock<Statement> {
+			on {
+				executeQuery(any())
+			} doReturn resultSet
+		}
 		given(metadatastoreConnection.createStatement()).willReturn(statement)
 		reconciliationService.reconciliation()
 
@@ -92,7 +98,16 @@ class ReconciliationServiceImplTests {
 	@Test
 	fun reconcileRecordsNotReturnedFromMetadataStore() {
 		val pattern = Regex("""(WHERE|AND) reconciled_result = false""")
-		val statement = mock<Statement>()
+		val resultSet = mock<ResultSet> {
+			on {
+				next()
+			} doReturnConsecutively listOf(false)
+		}
+		val statement = mock<Statement> {
+			on {
+				executeQuery(any())
+			} doReturn resultSet
+		}
 		given(metadatastoreConnection.createStatement()).willReturn(statement)
 		reconciliationService.reconciliation()
 
