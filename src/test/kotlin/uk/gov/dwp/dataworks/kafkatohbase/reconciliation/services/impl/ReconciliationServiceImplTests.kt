@@ -93,7 +93,7 @@ class ReconciliationServiceImplTests {
 	// limit age of messages for reconciliation i.e. older records not returned from metadata store
 	@Test
 	fun limitsTheAgeOfRecordsReturnedFromMetadataStore() {
-		val pattern = Regex("""(WHERE|AND) write_timestamp >""")
+		val pattern = Regex("""(WHERE|AND) write_timestamp > CURRENT_DATE - INTERVAL""")
 		val resultSet = mock<ResultSet> {
 			on {
 				next()
@@ -204,7 +204,7 @@ class ReconciliationServiceImplTests {
 		// Check data is only reconciled when found in HBase
 		assert(captor.secondValue.contains("UPDATE"))
 		assert(captor.secondValue.contains("reconciled_result=true"))
-		assert(captor.secondValue.contains("reconciled_timestamp=current_timestamp"))
+		assert(captor.secondValue.contains("reconciled_timestamp=CURRENT_TIMESTAMP"))
 	}
 
 	// metadata store updates are done in batches

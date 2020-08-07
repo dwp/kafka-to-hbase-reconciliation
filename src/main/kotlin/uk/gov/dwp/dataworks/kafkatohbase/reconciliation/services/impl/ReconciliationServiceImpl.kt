@@ -34,7 +34,7 @@ class ReconciliationServiceImpl(
     private fun fetchUnreconciledRecords(): List<Map<String, Any>> {
         val result = listOf<Map<String, Any>>().toMutableList()
         val stmt = metadatastoreConnection.createStatement()
-        val resultSet = stmt.executeQuery("SELECT * FROM ucfs WHERE write_timestamp > AND reconciled_result = false LIMIT 100")
+        val resultSet = stmt.executeQuery("SELECT * FROM ucfs WHERE write_timestamp > CURRENT_DATE - INTERVAL 14 DAY AND reconciled_result = false LIMIT 100")
         while (resultSet.next()) {
              result.add(mapOf<String, Any>(
                  "id" to resultSet.getString("id"),
@@ -63,7 +63,7 @@ class ReconciliationServiceImpl(
     // If found then update metadata store
     private fun reconcileRecord() {
         val stmt = metadatastoreConnection.createStatement()
-        stmt.executeQuery("UPDATE ucfs SET reconciled_result=true, reconciled_timestamp=current_timestamp")
+        stmt.executeQuery("UPDATE ucfs SET reconciled_result=true, reconciled_timestamp=CURRENT_TIMESTAMP")
     }
 
     private fun decodePrintable(printable: String): ByteArray {

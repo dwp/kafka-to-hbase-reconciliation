@@ -14,3 +14,4 @@ Outstanding items
 * run application/service in an infinite loop with interval
 * query HBase replica region instead of master
 * threading request to HBase and UPDATEs to metadata store
+* Move SQL query LIMIT value and date offest to variables (i.e. config and env vars)
