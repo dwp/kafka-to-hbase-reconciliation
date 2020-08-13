@@ -13,15 +13,19 @@ java.sourceCompatibility = JavaVersion.VERSION_11
 
 repositories {
 	mavenCentral()
+	jcenter()
+	maven(url = "https://jitpack.io")
 }
 
 dependencies {
+	annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 	implementation("org.springframework.boot:spring-boot-starter")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 	implementation("mysql:mysql-connector-java")
 	implementation("org.apache.hbase:hbase-client:1.4.13")
 	implementation("commons-codec:commons-codec:1.14")
+	implementation("com.github.dwp:dataworks-common-logging:0.0.5")
 	testImplementation("com.nhaarman.mockitokotlin2", "mockito-kotlin", "2.2.0")
 	testImplementation("org.springframework.boot:spring-boot-starter-test") {
 		exclude(group = "org.junit.vintage", module = "junit-vintage-engine")

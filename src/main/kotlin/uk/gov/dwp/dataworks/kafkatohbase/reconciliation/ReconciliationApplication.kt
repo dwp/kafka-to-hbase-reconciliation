@@ -8,7 +8,7 @@ import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationS
 @SpringBootApplication
 class ReconciliationApplication(private val reconciliationService: ReconciliationService) : CommandLineRunner {
     override fun run(vararg args: String?) {
-        reconciliationService.reconciliation()
+        reconciliationService.startReconciliation()
     }
 }
 

@@ -1,18 +1,16 @@
-package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration
+package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.utils
 
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.HbaseConfiguration
 
 @Component
-class TextUtils {
+class TextUtils(hbaseConfiguration: HbaseConfiguration) {
 
-    @Value("\${hbase.table.pattern}")
-    private lateinit var qualifiedTablePattern: String
+    private val qualifiedTablePattern = hbaseConfiguration.qualifiedTablePattern()
 
     private val coalescedNames: Map<String, String> = mapOf("agent_core:agentToDoArchive" to "agent_core:agentToDo")
 
     fun topicNameTableMatcher(topicName: String): MatchResult? {
-        println(qualifiedTablePattern)
         return Regex(qualifiedTablePattern).find(topicName)
     }
 
