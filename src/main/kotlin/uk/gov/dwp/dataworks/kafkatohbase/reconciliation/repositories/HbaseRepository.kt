@@ -1,38 +1,29 @@
 package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories
 
-import org.apache.commons.codec.binary.Hex
 import org.apache.hadoop.hbase.TableName
 import org.apache.hadoop.hbase.client.Connection
 import org.apache.hadoop.hbase.client.Get
 import org.springframework.stereotype.Repository
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.utils.TextUtils
+import uk.gov.dwp.dataworks.logging.DataworksLogger
 
 @Repository
-class HbaseRepository(val hbaseConnection: Connection,
+class HbaseRepository(private val hbaseConnection: Connection,
                       private val textUtils: TextUtils) {
 
-    fun recordExistsInHbase(table: String, id: String, version: Long): Boolean {
-        return hbaseConnection.getTable(TableName.valueOf(tableName(table))).exists(Get(decodePrintable(id)))
+    companion object {
+        val logger = DataworksLogger.getLogger(HbaseRepository::class.toString())
     }
 
-    private fun tableName(topic: String): String? {
-        val matcher = textUtils.topicNameTableMatcher(topic)
-        if (matcher != null) {
-            val namespace = matcher.groupValues[1]
-            val tableName = matcher.groupValues[2]
-            return targetTable(namespace, tableName)
-        } else {
-            throw Exception("Could not derive table name from topic: $topic")
-        }
-    }
+    fun recordExistsInHbase(topicName: String, id: String, version: Long): Boolean {
 
-    private fun targetTable(namespace: String, tableName: String) =
-            textUtils.coalescedName("$namespace:$tableName").replace("-", "_")
+        val table = TableName.valueOf(textUtils.getTableNameFromTopic(topicName))
+        val decodedId = Get(textUtils.decodePrintable(id))
 
-    private fun decodePrintable(printable: String): ByteArray {
-        val checksum = printable.substring(0, 16)
-        val rawish = checksum.replace(Regex("""\\x"""), "")
-        val decoded = Hex.decodeHex(rawish)
-        return decoded + printable.substring(16).toByteArray()
+        logger.info("Verifying that record exists within the table",
+                "table" to table.nameAsString,
+                "decoded_id" to decodedId.id)
+
+        return hbaseConnection.getTable(table).exists(decodedId)
     }
 }

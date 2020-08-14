@@ -1,10 +1,15 @@
 package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories
 
 import org.springframework.stereotype.Repository
+import uk.gov.dwp.dataworks.logging.DataworksLogger
 import java.sql.Connection
 
 @Repository
 class MetadataStoreRepository(private val connection: Connection) {
+
+    companion object {
+        val logger = DataworksLogger.getLogger(MetadataStoreRepository::class.toString())
+    }
 
     fun fetchUnreconciledRecords(): List<Map<String, Any>> {
         val result = listOf<Map<String, Any>>().toMutableList()
@@ -31,7 +36,17 @@ class MetadataStoreRepository(private val connection: Connection) {
     }
 
     fun reconcileRecord(topicName: String) {
-        val stmt = connection.createStatement()
-        stmt.executeQuery("UPDATE ucfs SET reconciled_result=true, reconciled_timestamp=CURRENT_TIMESTAMP WHERE topic_name=$topicName")
+        val rowsInserted = reconcileRecordStatement.apply {
+            setString(1, topicName)
+        }.executeUpdate()
+        logger.info("Recorded processing attempt", "topic_name" to topicName, "rows_inserted" to "$rowsInserted")
+    }
+
+    private val reconcileRecordStatement by lazy {
+        connection.prepareStatement("""
+            UPDATE ucfs 
+            SET reconciled_result=true, reconciled_timestamp=CURRENT_TIMESTAMP 
+            WHERE topic_name=?
+        """.trimIndent())
     }
 }
