@@ -1,43 +1,24 @@
-name: High vulns Snyk PR scan
-
-on: pull_request
-
-env:
-  IMAGE_NAME: dwpdigital/example
+name: 'Pull Request'
+on:
+  pull_request:
+    branches:
+      - master
 
 jobs:
-  gradle-build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Gradle Build Jar
-        id: gradle-build
-        run: gradle build
-      - name: Upload jar
-        uses: actions/upload-artifact@v1
-        with:
-          name: gradle-build
-          path: build/libs/*.jar
+  pull_request:
 
-  docker-build-and-scan:
     runs-on: ubuntu-latest
-    needs: gradle-build
+
     steps:
-      - uses: actions/checkout@v2
-      - name: Download jar
-        uses: actions/download-artifact@v1
-        with:
-          name: gradle-build
-      - shell: bash
-        run: |
-          mkdir -p build/libs
-          cp gradle-build/*.jar build/libs/
-      - name: Build Docker image
-        run: docker build -t ${{ env.IMAGE_NAME }}:latest .
-      - name: Run Snyk to check image for high vulnerabilities
-        uses: snyk/actions/docker@master
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: build
+        run: gradle clean build test
+
+      - name: snyk-scan
+        uses: snyk/actions/gradle@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          image: ${{ env.IMAGE_NAME }}
-          args: --file=Dockerfile --policy-path=./.snyk --severity-threshold=high --exclude-base-image-vulns --org=dwp-dataworks
+          args: --org=dwp-dataworks --severity-threshold=high
