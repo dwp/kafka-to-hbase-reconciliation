@@ -5,15 +5,8 @@ import org.springframework.stereotype.Component
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.HbaseConfiguration
 
 @Component
-class TextUtils(hbaseConfiguration: HbaseConfiguration) {
-
-    private val qualifiedTablePattern = hbaseConfiguration.qualifiedTablePattern()
-
-    private val coalescedNames: Map<String, String> = mapOf("agent_core:agentToDoArchive" to "agent_core:agentToDo")
-
-    fun topicNameTableMatcher(topicName: String): MatchResult? {
-        return Regex(qualifiedTablePattern).find(topicName)
-    }
+class TableNameUtil(private val hbaseConfiguration: HbaseConfiguration,
+                    private val coalescedNameUtil: CoalescedNameUtil) {
 
     fun getTableNameFromTopic(topic: String): String? {
         val matcher = topicNameTableMatcher(topic)
@@ -26,6 +19,11 @@ class TextUtils(hbaseConfiguration: HbaseConfiguration) {
         }
     }
 
+    fun topicNameTableMatcher(topicName: String): MatchResult? {
+        val qualifiedTablePattern = hbaseConfiguration.qualifiedTablePattern()
+        return Regex(qualifiedTablePattern).find(topicName)
+    }
+
     fun decodePrintable(printable: String): ByteArray {
         val checksum = printable.substring(0, 16)
         val rawish = checksum.replace(Regex("""\\x"""), "")
@@ -33,8 +31,6 @@ class TextUtils(hbaseConfiguration: HbaseConfiguration) {
         return decoded + printable.substring(16).toByteArray()
     }
 
-    private fun coalescedName(tableName: String) = coalescedNames[tableName] ?: tableName
-
     private fun targetTable(namespace: String, tableName: String) =
-            coalescedName("$namespace:$tableName").replace("-", "_")
+            coalescedNameUtil.coalescedName("$namespace:$tableName").replace("-", "_")
 }
