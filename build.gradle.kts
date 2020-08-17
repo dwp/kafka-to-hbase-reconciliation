@@ -7,8 +7,8 @@ plugins {
 	kotlin("plugin.spring") version "1.3.72"
 }
 
-group = "uk.gov.dwp.dataworks.kafkatohbase"
-version = "0.0.1-SNAPSHOT"
+group = "uk.gov.dwp.dataworks.reconciliation"
+version = "0.0.1"
 java.sourceCompatibility = JavaVersion.VERSION_11
 
 repositories {

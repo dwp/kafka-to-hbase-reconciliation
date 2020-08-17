@@ -2,14 +2,64 @@ version: '3'
 
 services:
 
+  reconciliation:
+    image: reconciliation:latest
+    build: ./
+    container_name: reconciliation
+    ports:
+      - "5005:5005"
+    depends_on:
+      - hbase
+      - metadatastore
+    environment:
+      JAVA_OPTS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
+      K2HB_ENVIRONMENT: "local-dev"
+      K2HB_APPLICATION_NAME: "reconciliation"
+      K2HB_APP_VERSION: "test"
+      INSTANCE_ID: "localhost"
+      K2HB_KAFKA_INSECURE: "true"
+      K2HB_KAFKA_TOPIC_REGEX: "^db.(.*)"
+      K2HB_KAFKA_META_REFRESH_MS: "1000"
+      K2HB_KAFKA_POLL_TIMEOUT: "PT10S"
+      K2HB_RETRY_MAX_ATTEMPTS: "3"
+      K2HB_RETRY_INITIAL_BACKOFF: "1"
+      K2HB_RETRY_BACKOFF_MULTIPLIER: "1"
+      K2HB_KAFKA_MAX_POLL_RECORDS: "10"
+      K2HB_HBASE_RPC_TIMEOUT_MILLISECONDS: "1200"
+      K2HB_HBASE_OPERATION_TIMEOUT_MILLISECONDS": "1800"
+      K2HB_HBASE_PAUSE_MILLISECONDS: "50"
+      K2HB_HBASE_RETRIES": "3"
+      K2HB_KAFKA_DLQ_TOPIC: "test-dlq-topic"
+      K2HB_RDS_USERNAME: "dummy_user"
+      K2HB_RDS_PASSWORD_SECRET_NAME: "metastore_password"
+      K2HB_RDS_DATABASE_NAME: "dummy_database"
+      K2HB_RDS_ENDPOINT: "metadatastore"
+      K2HB_RDS_PORT: "3306"
+      K2HB_USE_AWS_SECRETS: "false"
+      DUMMY_SECRET_METASTORE_PASSWORD: "user_password"
+      AWS_ACCESS_KEY_ID: "aws-access-key"
+      AWS_SECRET_ACCESS_KEY: "aws-secret-access-key"
+      K2HB_IMAGE_DIGEST: "latest"
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:4.1.0
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+
   hbase:
-    image: harisekhon/hbase:1.4o
+    image: hbase:latest
+    container_name: hbase
     ports:
       - 9090:9090
       - 9095:9095
-      - 2181:2181
       - 16201:16201
-    container_name: hbase
+    depends_on:
+      - zookeeper
+    environment:
+      ZOOKEEPER_QUORUM: zookeeper
 
   metadatastore:
     image: mysql:5.7
