@@ -1,7 +1,6 @@
 import java.text.SimpleDateFormat
 import java.util.*
 
-
 fun getId() = """{ "exampleId": "aaaa1111-abcd-4567-1234-1234567890ab"}"""
 
 fun getISO8601Timestamp(): String {

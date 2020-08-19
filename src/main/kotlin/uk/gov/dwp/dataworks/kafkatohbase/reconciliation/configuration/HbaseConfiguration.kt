@@ -14,11 +14,15 @@ import org.springframework.stereotype.Component
 @ConfigurationProperties(prefix = "hbase")
 @EnableConfigurationProperties
 class HbaseConfiguration(
-        var zookeeperQuorum: String? = null,
-        @DefaultValue("NOT_SET") var tablePattern: String) {
+    var zookeeperQuorum: String? = null,
+    @DefaultValue("NOT_SET") var qualifiedTablePattern: String,
+    var columnFamily: String? = null,
+    var columnQualifier: String? = null,
+    var regionReplication: String? = null
+) {
 
     @Bean
-    fun qualifiedTablePattern() = tablePattern
+    fun qualifiedTablePattern() = qualifiedTablePattern
 
     @Bean
     fun hbaseConnection(): Connection {

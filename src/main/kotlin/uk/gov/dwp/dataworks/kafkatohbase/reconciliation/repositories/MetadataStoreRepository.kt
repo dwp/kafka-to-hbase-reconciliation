@@ -2,6 +2,7 @@ package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories
 
 import org.springframework.stereotype.Repository
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.MetadataStoreConfiguration
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationService
 import uk.gov.dwp.dataworks.logging.DataworksLogger
 import java.sql.Connection
 import java.sql.ResultSet
@@ -10,8 +11,9 @@ import java.sql.ResultSet
 class MetadataStoreRepository(private val connection: Connection,
                               private val configuration: MetadataStoreConfiguration) {
 
+
     companion object {
-        val logger = DataworksLogger.getLogger(MetadataStoreRepository::class.toString())
+        val logger = DataworksLogger.getLogger(ReconciliationService::class.toString())
     }
 
     fun fetchUnreconciledRecords(): List<Map<String, Any>> {
