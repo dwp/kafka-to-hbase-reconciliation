@@ -46,3 +46,27 @@ tasks.withType<KotlinCompile> {
 		jvmTarget = "11"
 	}
 }
+
+sourceSets {
+	create("integration") {
+		java.srcDir(file("src/integration/kotlin"))
+		compileClasspath += sourceSets.getByName("main").output + configurations.testRuntimeClasspath
+		runtimeClasspath += output + compileClasspath
+	}
+}
+
+tasks.register<Test>("integration-test") {
+	description = "Runs the integration tests"
+	group = "verification"
+	testClassesDirs = sourceSets["integration"].output.classesDirs
+	classpath = sourceSets["integration"].runtimeClasspath
+	filter {
+		includeTestsMatching("ReconciliationIntegrationTest*")
+	}
+
+	useJUnitPlatform { }
+	testLogging {
+		exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+		events = setOf(org.gradle.api.tasks.testing.logging.TestLogEvent.SKIPPED, org.gradle.api.tasks.testing.logging.TestLogEvent.PASSED, org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED, org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_OUT)
+	}
+}

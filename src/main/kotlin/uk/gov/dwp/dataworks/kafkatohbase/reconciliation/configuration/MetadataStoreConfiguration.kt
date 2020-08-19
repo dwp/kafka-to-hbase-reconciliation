@@ -4,6 +4,7 @@ import ch.qos.logback.core.util.OptionHelper
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.utils.readFile
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
+import org.springframework.boot.context.properties.bind.DefaultValue
 import org.springframework.context.annotation.Bean
 import org.springframework.stereotype.Component
 import java.sql.Connection
@@ -17,7 +18,9 @@ data class MetadataStoreConfiguration(
         var endpoint: String? = null,
         var port: String? = null,
         var user: String? = null,
-        var password: String? = null) {
+        var password: String? = null,
+        var table: String? = null,
+        @DefaultValue("14") var queryLimit: String) {
 
     @Bean
     fun metadataStoreConnection(): Connection {
@@ -27,7 +30,8 @@ data class MetadataStoreConfiguration(
 
         val properties = Properties().apply {
             put("user", user)
-            put("rds.password.secret.name", OptionHelper.getEnv("K2HB_RDS_PASSWORD_SECRET_NAME") ?: "metastore_password")
+            put("rds.password.secret.name", OptionHelper.getEnv("K2HB_RDS_PASSWORD_SECRET_NAME")
+                    ?: "metastore_password")
             put("database", OptionHelper.getEnv("K2HB_RDS_DATABASE_NAME") ?: "database")
             put("rds.endpoint", endpoint)
             put("rds.port", port)

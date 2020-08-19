@@ -1,20 +1,58 @@
 package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories
 
 import org.springframework.stereotype.Repository
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.MetadataStoreConfiguration
 import uk.gov.dwp.dataworks.logging.DataworksLogger
 import java.sql.Connection
+import java.sql.ResultSet
 
 @Repository
-class MetadataStoreRepository(private val connection: Connection) {
+class MetadataStoreRepository(private val connection: Connection,
+                              private val configuration: MetadataStoreConfiguration) {
 
     companion object {
         val logger = DataworksLogger.getLogger(MetadataStoreRepository::class.toString())
     }
 
     fun fetchUnreconciledRecords(): List<Map<String, Any>> {
+        logger.info("Fetching unreconciled records from metadata store")
+        val unreconciledRecords = getUnreconciledRecordsQuery()
+        return mapResultSet(unreconciledRecords)
+    }
+
+    fun reconcileRecord(topicName: String) {
+        val rowsInserted = updateUnreconciledRecordsQuery(topicName)
+        logger.info("Recorded processing attempt", "topic_name" to topicName, "rows_inserted" to "$rowsInserted")
+    }
+
+    private fun getUnreconciledRecordsQuery(): ResultSet? {
+        val statement = connection.createStatement()
+        return statement.executeQuery("""
+            SELECT * FROM ${configuration.table} 
+            WHERE write_timestamp > CURRENT_DATE - INTERVAL 14 DAY AND 
+            reconciled_result = false 
+            LIMIT ${configuration.queryLimit}
+        """.trimIndent())
+    }
+
+    private fun updateUnreconciledRecordsQuery(topicName: String): Int {
+        val statement = connection.createStatement()
+        return statement.executeUpdate("""
+            UPDATE ${configuration.table} 
+            SET reconciled_result=true, reconciled_timestamp=CURRENT_TIMESTAMP 
+            WHERE topic_name=$topicName
+        """.trimIndent())
+    }
+
+    private fun mapResultSet(resultSet: ResultSet?): MutableList<Map<String, Any>> {
+
         val result = listOf<Map<String, Any>>().toMutableList()
-        val stmt = connection.createStatement()
-        val resultSet = stmt.executeQuery("SELECT * FROM ucfs WHERE write_timestamp > CURRENT_DATE - INTERVAL 14 DAY AND reconciled_result = false LIMIT 100")
+
+        if (resultSet == null) {
+            logger.info("No records to be fetched from the metadata store")
+            return result
+        }
+
         while (resultSet.next()) {
             result.add(mapOf(
                     "id" to resultSet.getString("id"),
@@ -29,24 +67,7 @@ class MetadataStoreRepository(private val connection: Connection) {
                     "reconciled_timestamp" to resultSet.getString("reconciled_timestamp")
             ))
         }
-
-        //TODO: verify response
-
+        logger.info("Fetched unreconciled records from metadata store", "number_of_records" to result.size.toString())
         return result
-    }
-
-    fun reconcileRecord(topicName: String) {
-        val rowsInserted = reconcileRecordStatement.apply {
-            setString(1, topicName)
-        }.executeUpdate()
-        logger.info("Recorded processing attempt", "topic_name" to topicName, "rows_inserted" to "$rowsInserted")
-    }
-
-    private val reconcileRecordStatement by lazy {
-        connection.prepareStatement("""
-            UPDATE ucfs 
-            SET reconciled_result=true, reconciled_timestamp=CURRENT_TIMESTAMP 
-            WHERE topic_name=?
-        """.trimIndent())
     }
 }

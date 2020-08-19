@@ -72,3 +72,38 @@ services:
       MYSQL_DATABASE: "dummy_database"
       MYSQL_USER: "dummy_user"
       MYSQL_PASSWORD: "user_password"
+
+  integration-test:
+    image: reconciliation-integration:latest
+    container_name: integration-test
+    build:
+      dockerfile: Dockerfile_integration
+      context: ./
+    depends_on:
+      - reconciliation
+    command: "true"
+    environment:
+      K2HB_ENVIRONMENT: "local-dev"
+      K2HB_APPLICATION_NAME: "k2hb-reconciliation-test"
+      K2HB_APP_VERSION: "test"
+      INSTANCE_ID: "localhost"
+      USER_NAME: "user"
+      GROUP_NAME: "usergroup"
+      K2HB_KAFKA_INSECURE: "true"
+      K2HB_KAFKA_META_REFRESH_MS: "1000"
+      K2HB_KAFKA_POLL_TIMEOUT: "PT10S"
+      K2HB_RETRY_MAX_ATTEMPTS: "3"
+      K2HB_RETRY_INITIAL_BACKOFF: "1"
+      K2HB_RETRY_BACKOFF_MULTIPLIER: "1"
+      K2HB_KAFKA_DLQ_TOPIC: "test-dlq-topic"
+      K2HB_RDS_USERNAME: "dummy_user"
+      K2HB_RDS_PASSWORD_SECRET_NAME: "metastore_password"
+      K2HB_RDS_DATABASE_NAME: "dummy_database"
+      K2HB_RDS_ENDPOINT: "metadatastore"
+      K2HB_RDS_PORT: "3306"
+      K2HB_USE_AWS_SECRETS: "false"
+      DUMMY_SECRET_METASTORE_PASSWORD: "user_password"
+      AWS_ACCESS_KEY_ID: "aws-access-key"
+      AWS_SECRET_ACCESS_KEY: "aws-secret-access-key"
+      K2HB_KAFKA_TOPIC_REGEX: "^db.(.*)"
+      ZOOKEEPER_QUORUM: zookeeper

@@ -3,8 +3,6 @@ package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories
 import com.nhaarman.mockitokotlin2.*
 import org.apache.hadoop.hbase.TableName
 import org.apache.hadoop.hbase.client.Connection
-import org.apache.hadoop.hbase.client.Get
-import org.apache.hadoop.hbase.client.Put
 import org.apache.hadoop.hbase.client.Table
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -15,7 +13,6 @@ import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.test.mock.mockito.SpyBean
 import org.springframework.test.context.junit4.SpringRunner
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.utils.TableNameUtil
-import java.io.IOException
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(classes = [HbaseRepository::class])
