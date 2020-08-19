@@ -17,8 +17,8 @@ class ReconciliationIntegrationTest: StringSpec() {
 
     init {
         "Reconciles records that are in metadata store and in hbase" {
-            setupMetadataStoreData()
             setupHbaseData()
+            setupMetadataStoreData()
 
 
         }

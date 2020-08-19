@@ -1,6 +1,7 @@
-SHELL:=bash
-
-default: help
+SHELL=bash
+aws_dev_account=NOT_SET
+temp_image_name=NOT_SET
+aws_default_region=NOT_SET
 
 .PHONY: help
 help:
@@ -8,34 +9,40 @@ help:
 
 .PHONY: bootstrap
 bootstrap: ## Bootstrap local environment for first use
-	@make git-hooks
+	make git-hooks
 
 .PHONY: git-hooks
-git-hooks: ## Set up hooks in .githooks
-	@git submodule update --init .githooks ; \
-	git config core.hooksPath .githooks \
-
-build-jar: ## Build all code including tests and main jar
-	gradle clean build test
-
-dist: ## Assemble distribution files in build/dist
-	gradle assembleDist
-
-.PHONY: build-all
-build-all: build-jar build-images ## Build the jar file and then all docker images
-
-.PHONY: build-base-images
-build-base-images: ## Build base images to avoid rebuilding frequently
+git-hooks: ## Set up hooks in .git/hooks
 	@{ \
-		pushd resources; \
-		docker build --tag dwp-centos-with-java:latest --file Dockerfile_centos_java . ; \
-		docker build --tag dwp-python-preinstall:latest --file Dockerfile_python_preinstall . ; \
-		popd; \
-		docker build --tag dwp-gradle:latest --file resources/Dockerfile_gradle . ; \
+		HOOK_DIR=.git/hooks; \
+		for hook in $(shell ls .githooks); do \
+			if [ ! -h $${HOOK_DIR}/$${hook} -a -x $${HOOK_DIR}/$${hook} ]; then \
+				mv $${HOOK_DIR}/$${hook} $${HOOK_DIR}/$${hook}.local; \
+				echo "moved existing $${hook} to $${hook}.local"; \
+			fi; \
+			ln -s -f ../../.githooks/$${hook} $${HOOK_DIR}/$${hook}; \
+		done \
 	}
 
-.PHONY: up-all
-up-all: build-images up
+local-build: ## Build Kafka2Hbase with gradle
+	gradle :unit build -x test
+
+local-dist: ## Assemble distribution files in build/dist with gradle
+	gradle assembleDist
+
+local-test: ## Run the unit tests with gradle
+	gradle --rerun-tasks unit
+
+local-all: local-build local-test local-dist ## Build and test with gradle
+
+services: ## Bring up supporting services in docker
+	docker-compose -f docker-compose.yaml up --build -d zookeeper hbase metadatastore
+	@{ \
+		while ! docker logs aws-s3 2> /dev/null | grep -q $(S3_READY_REGEX); do \
+			echo Waiting for s3.; \
+			sleep 2; \
+		done; \
+	}
 
 up: services ## Bring up Kafka2Hbase in Docker with supporting services
 	docker-compose -f docker-compose.yaml up --build -d reconciliation
@@ -57,4 +64,34 @@ integration-test: ## Run the integration tests in a Docker container
 		docker rm integration-test ;\
  		set -e ;\
  	}
-	docker-compose -f docker-compose.yml run --name integration-test integration-test gradle --no-daemon --rerun-tasks integration-test -x test
+	docker-compose -f docker-compose.yaml run --name integration-test integration-test gradle --no-daemon --rerun-tasks integration-test -x test
+
+
+.PHONY: integration-all ## Build and Run all the tests in containers from a clean start
+integration-all: down destroy build up integration-test
+
+hbase-shell: ## Open an Hbase shell onto the running Hbase container
+	docker-compose run --rm hbase shell
+
+build: build-base ## build main images
+	docker-compose build
+
+build-base: ## build the base images which certain images extend.
+	@{ \
+		pushd docker; \
+		docker build --tag dwp-java:latest --file .java/Dockerfile . ; \
+		cp ../settings.gradle.kts ../gradle.properties . ; \
+		docker build --tag dwp-kotlin-slim-gradle-reconciliation:latest --file ./gradle/Dockerfile . ; \
+		rm -rf settings.gradle.kts gradle.properties ; \
+		popd; \
+	}
+
+push-local-to-ecr: #Push a temp version of k2hb to AWS DEV ECR
+	@{ \
+		export AWS_DEV_ACCOUNT=$(aws_dev_account); \
+		export TEMP_IMAGE_NAME=$(temp_image_name); \
+		export AWS_DEFAULT_REGION=$(aws_default_region); \
+		aws ecr get-login-password --region ${AWS_DEFAULT_REGION} --profile dataworks-development | docker login --username AWS --password-stdin ${AWS_DEV_ACCOUNT}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com; \
+		docker tag kafka2hbase ${AWS_DEV_ACCOUNT}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${TEMP_IMAGE_NAME}; \
+		docker push ${AWS_DEV_ACCOUNT}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${TEMP_IMAGE_NAME}; \
+	}
