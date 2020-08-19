@@ -28,7 +28,7 @@ local-build: ## Build Kafka2Hbase with gradle
 	gradle :unit build -x test
 
 local-dist: ## Assemble distribution files in build/dist with gradle
-	gradle assembleDist
+	gradle distTar
 
 local-test: ## Run the unit tests with gradle
 	gradle --rerun-tasks unit
@@ -79,7 +79,7 @@ build: build-base ## build main images
 build-base: ## build the base images which certain images extend.
 	@{ \
 		pushd docker; \
-		docker build --tag dwp-java:latest --file .java/Dockerfile . ; \
+		docker build --tag dwp-java:latest --file ./java/Dockerfile . ; \
 		cp ../settings.gradle.kts ../gradle.properties . ; \
 		docker build --tag dwp-kotlin-slim-gradle-reconciliation:latest --file ./gradle/Dockerfile . ; \
 		rm -rf settings.gradle.kts gradle.properties ; \

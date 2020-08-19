@@ -5,6 +5,7 @@ plugins {
 	id("io.spring.dependency-management") version "1.0.9.RELEASE"
 	kotlin("jvm") version "1.3.72"
 	kotlin("plugin.spring") version "1.3.72"
+	distribution
 }
 
 group = "uk.gov.dwp.dataworks.reconciliation"
@@ -55,6 +56,11 @@ sourceSets {
 		compileClasspath += sourceSets.getByName("main").output + configurations.testRuntimeClasspath
 		runtimeClasspath += output + compileClasspath
 	}
+	create("unit") {
+		java.srcDir(file("src/test/kotlin"))
+		compileClasspath += sourceSets.getByName("main").output + configurations.testRuntimeClasspath
+		runtimeClasspath += output + compileClasspath
+	}
 }
 
 tasks.register<Test>("integration-test") {
@@ -70,5 +76,19 @@ tasks.register<Test>("integration-test") {
 	testLogging {
 		exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
 		events = setOf(org.gradle.api.tasks.testing.logging.TestLogEvent.SKIPPED, org.gradle.api.tasks.testing.logging.TestLogEvent.PASSED, org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED, org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_OUT)
+	}
+}
+
+tasks.register<Test>("unit") {
+	description = "Runs the unit tests"
+	group = "verification"
+	testClassesDirs = sourceSets["unit"].output.classesDirs
+	classpath = sourceSets["unit"].runtimeClasspath
+
+	testLogging {
+		outputs.upToDateWhen {false}
+		showStandardStreams = true
+		exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+		events = setOf(org.gradle.api.tasks.testing.logging.TestLogEvent.SKIPPED, org.gradle.api.tasks.testing.logging.TestLogEvent.PASSED, org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED)
 	}
 }
