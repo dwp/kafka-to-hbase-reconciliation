@@ -11,9 +11,11 @@ COPY build.gradle.kts .
 COPY src/ ./src
 
 # Create DistTar
-RUN gradle :unit build -x test \
-    && gradle distTar
-
+RUN java -version
+RUN gradle -version
+RUN gradle :unit build -x test
+RUN gradle --debug distTar
+RUN find build -type f
 RUN cp build/distributions/*.* /reconciliation_builds/
 RUN ls -la /reconciliation_builds/
 
