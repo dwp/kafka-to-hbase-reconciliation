@@ -12,13 +12,10 @@ COPY build.gradle.kts .
 COPY src/ ./src
 
 # Create DistTar
-RUN gradle :unit build -x test \
-    && gradle distTar
-
-RUN ls build
+RUN gradle :unit build -x test
+RUN gradle distTar
 
 RUN cp build/distributions/*.* /reconciliation_builds/
-RUN ls -la /reconciliation_builds/
 
 # Second build stage starts here
 FROM openjdk:14-alpine
@@ -47,7 +44,6 @@ COPY ./AmazonRootCA1.pem /certs/
 RUN chown -R ${GROUP_NAME}:${USER_NAME} /certs
 RUN chmod -R a+rx /certs
 RUN chmod 600 /certs/AmazonRootCA1.pem
-RUN ls -la /certs
 
 # Set environment variables for apk
 ENV http_proxy=${http_proxy_full}
@@ -77,9 +73,12 @@ RUN echo "===> Installing Dependencies ..." \
 
 WORKDIR /reconciliation
 
-COPY --from=build /reconciliation_builds/$DIST_FILE .
+RUN echo $DIST_FILE
 
-RUN tar -xf $DIST_FILE --strip-components=1
+COPY --from=build /reconciliation_builds/ .
+
+RUN ls $DIST_FILE | xargs -n1 tar -xf
+
 RUN chown ${USER_NAME}:${GROUP_NAME} . -R
 
 USER $USER_NAME

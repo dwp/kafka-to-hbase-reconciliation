@@ -11,7 +11,8 @@ import org.springframework.stereotype.Component
 @ConfigurationProperties(prefix = "secrets")
 @EnableConfigurationProperties
 class SecretsManagerConfiguration(
-    private var region: String? = null
+    private var region: String? = null,
+    internal val metadataStorePasswordSecret: String? = null
 ) {
 
     @Bean

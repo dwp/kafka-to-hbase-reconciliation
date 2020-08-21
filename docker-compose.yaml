@@ -46,11 +46,8 @@ services:
 
   hbase:
     image: hbase:latest
+    build: ./docker/hbase
     container_name: hbase
-    ports:
-      - 9090:9090
-      - 9095:9095
-      - 16201:16201
     depends_on:
       - zookeeper
     environment:
@@ -90,7 +87,8 @@ services:
       METADATASTORE_ENDPOINT: "metadatastore"
       METADATASTORE_PORT: "3306"
       METADATASTORE_USE_AWS_SECRETS: "false"
-      DUMMY_SECRET_METASTORE_PASSWORD: "user_password"
+      SECRETS_REGION: "eu-west-2"
+      SECRETS_METADATASTORE_PASSWORD_DUMMY: "user_password"
       AWS_ACCESS_KEY_ID: "aws-access-key"
       AWS_SECRET_ACCESS_KEY: "aws-secret-access-key"
       ZOOKEEPER_QUORUM: zookeeper
