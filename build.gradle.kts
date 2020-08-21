@@ -1,8 +1,8 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-	id("org.springframework.boot") version "2.3.2.RELEASE"
-	id("io.spring.dependency-management") version "1.0.9.RELEASE"
+	id("org.springframework.boot") version "2.3.3.RELEASE"
+	id("io.spring.dependency-management") version "1.0.10.RELEASE"
 	kotlin("jvm") version "1.3.72"
 	kotlin("plugin.spring") version "1.3.72"
 	distribution
@@ -35,6 +35,7 @@ dependencies {
 	}
 	testImplementation("io.kotlintest:kotlintest-runner-junit5:3.3.2")
 }
+
 configurations.all {
 	exclude(group = "org.slf4j", module = "slf4j-log4j12")
 }
@@ -46,7 +47,7 @@ tasks.withType<Test> {
 tasks.withType<KotlinCompile> {
 	kotlinOptions {
 		freeCompilerArgs = listOf("-Xjsr305=strict")
-		jvmTarget = "11"
+		jvmTarget = "1.8"
 	}
 }
 

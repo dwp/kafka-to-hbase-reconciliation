@@ -1,0 +1,11 @@
+FROM python:3.7.3-stretch
+
+ENV SERVICE_USER=dataworks
+ENV SERVICE_USER_HOME=/home/${SERVICE_USER}
+RUN mkdir -p ${SERVICE_USER_HOME} ${INSTALL_DIR}/data
+RUN useradd -d ${SERVICE_USER_HOME} ${SERVICE_USER}
+RUN id -a ${SERVICE_USER}
+
+RUN pip install awscli
+
+RUN chown -R ${SERVICE_USER}.${SERVICE_USER} ${SERVICE_USER_HOME}

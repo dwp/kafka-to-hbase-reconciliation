@@ -37,12 +37,6 @@ local-all: local-build local-test local-dist ## Build and test with gradle
 
 services: ## Bring up supporting services in docker
 	docker-compose -f docker-compose.yaml up --build -d zookeeper hbase metadatastore
-	@{ \
-		while ! docker logs aws-s3 2> /dev/null | grep -q $(S3_READY_REGEX); do \
-			echo Waiting for s3.; \
-			sleep 2; \
-		done; \
-	}
 
 up: services ## Bring up Kafka2Hbase in Docker with supporting services
 	docker-compose -f docker-compose.yaml up --build -d reconciliation
@@ -80,6 +74,7 @@ build-base: ## build the base images which certain images extend.
 	@{ \
 		pushd docker; \
 		docker build --tag dwp-java:latest --file ./java/Dockerfile . ; \
+		docker build --tag dwp-python-preinstall:latest --file ./python/Dockerfile . ; \
 		cp ../settings.gradle.kts ../gradle.properties . ; \
 		docker build --tag dwp-kotlin-slim-gradle-reconciliation:latest --file ./gradle/Dockerfile . ; \
 		rm -rf settings.gradle.kts gradle.properties ; \

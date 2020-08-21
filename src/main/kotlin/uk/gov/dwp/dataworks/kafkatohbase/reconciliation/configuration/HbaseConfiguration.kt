@@ -14,7 +14,13 @@ import org.springframework.stereotype.Component
 @ConfigurationProperties(prefix = "hbase")
 @EnableConfigurationProperties
 class HbaseConfiguration(
+    var zookeeperParent: String? = null,
     var zookeeperQuorum: String? = null,
+    var zookeeperPort: String? = null,
+    var rpcTimeoutMilliseconds: String? = null,
+    var operationTimeoutMilliseconds: String? = null,
+    var pauseMilliseconds: String? = null,
+    var retries: String? = null,
     @DefaultValue("NOT_SET") var qualifiedTablePattern: String,
     var columnFamily: String? = null,
     var columnQualifier: String? = null,
@@ -29,10 +35,18 @@ class HbaseConfiguration(
         val configuration = HBaseConfiguration.create().apply {
             set(HConstants.ZOOKEEPER_QUORUM, zookeeperQuorum)
             setInt("hbase.zookeeper.port", 2181)
+            set("zookeeper.znode.parent", zookeeperParent ?: "/hbase")
+            set("hbase.zookeeper.quorum", zookeeperQuorum ?: "zookeeper")
+            setInt("hbase.zookeeper.port", zookeeperPort?.toIntOrNull() ?: 2181)
+            set("hbase.rpc.timeout", rpcTimeoutMilliseconds ?: "1200000")
+            set("hbase.client.operation.timeout", operationTimeoutMilliseconds ?: "1800000")
+            set("hbase.client.pause", pauseMilliseconds ?: "50")
+            set("hbase.client.retries.number", retries ?: "50")
         }
 
-        val connection = ConnectionFactory.createConnection(configuration)
+        val connection = ConnectionFactory.createConnection(HBaseConfiguration.create(configuration))
         addShutdownHook(connection)
+
         return connection
     }
 

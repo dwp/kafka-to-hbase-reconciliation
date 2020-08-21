@@ -3,6 +3,7 @@ FROM dwp-kotlin-slim-gradle-reconciliation:latest as build
 
 # Output folder
 RUN mkdir -p /reconciliation_builds
+RUN ls
 
 # Copy the gradle config and install dependencies
 COPY build.gradle.kts .
@@ -13,6 +14,8 @@ COPY src/ ./src
 # Create DistTar
 RUN gradle :unit build -x test \
     && gradle distTar
+
+RUN ls build
 
 RUN cp build/distributions/*.* /reconciliation_builds/
 RUN ls -la /reconciliation_builds/
