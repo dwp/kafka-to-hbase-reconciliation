@@ -8,7 +8,7 @@ import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.HbaseConfi
 @Component
 class TableNameUtil(private val coalescedNameUtil: CoalescedNameUtil) {
 
-    @Value("\${hbase.qualified.table.pattern}")
+    @Value("\${hbase.table.pattern}")
     lateinit var qualifiedTablePattern: String
 
     fun getTableNameFromTopic(topic: String): String? {

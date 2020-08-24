@@ -13,7 +13,12 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
 
-      - name: build
+      - name: Java Setup
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+
+      - name: gradle build
         run: gradle clean build test
 
       - name: snyk-scan

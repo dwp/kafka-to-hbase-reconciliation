@@ -1,6 +1,7 @@
 import io.kotlintest.specs.StringSpec
 import org.apache.hadoop.hbase.TableName
 import org.apache.hadoop.hbase.client.Put
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.extension.ExtendWith
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -35,6 +36,25 @@ class ReconciliationIntegrationTest : StringSpec() {
     private lateinit var reconciliationService: ReconciliationServiceImpl
 
     init {
+
+        "not null" {
+            Assertions.assertNotNull(metadataStoreConfiguration.table)
+            Assertions.assertNotNull(metadataStoreConfiguration.databaseName)
+            Assertions.assertNotNull(metadataStoreConfiguration.endpoint)
+            Assertions.assertNotNull(metadataStoreConfiguration.password)
+            Assertions.assertNotNull(metadataStoreConfiguration.passwordSecretName)
+            Assertions.assertNotNull(metadataStoreConfiguration.port)
+            Assertions.assertNotNull(metadataStoreConfiguration.queryLimit)
+            Assertions.assertNotNull(metadataStoreConfiguration.table)
+
+            Assertions.assertNotNull(hbaseConfig.zookeeperParent)
+            Assertions.assertNotNull(hbaseConfig.zookeeperPort)
+            Assertions.assertNotNull(hbaseConfig.zookeeperQuorum)
+            Assertions.assertNotNull(hbaseConfig.rpcTimeoutMilliseconds)
+            Assertions.assertNotNull(hbaseConfig.operationTimeoutMilliseconds)
+            Assertions.assertNotNull(hbaseConfig.pauseMilliseconds)
+        }
+
         "Reconciles records that are in metadata store and in hbase" {
             setupHbaseData(5)
             setupMetadataStoreData(5)
