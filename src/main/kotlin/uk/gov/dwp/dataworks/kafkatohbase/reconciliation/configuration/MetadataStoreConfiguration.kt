@@ -4,6 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.context.properties.bind.DefaultValue
 import org.springframework.context.annotation.Bean
+import org.springframework.scheduling.annotation.EnableAsync
 import org.springframework.stereotype.Component
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.secrets.AWSSecretHelper
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.secrets.DummySecretHelper
@@ -15,6 +16,7 @@ import java.util.*
 
 @Component
 @ConfigurationProperties(prefix = "metadatastore")
+@EnableAsync
 @EnableConfigurationProperties
 data class MetadataStoreConfiguration(
     var endpoint: String? = null,

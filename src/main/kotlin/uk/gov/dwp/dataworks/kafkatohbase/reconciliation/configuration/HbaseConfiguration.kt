@@ -8,10 +8,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.context.properties.bind.DefaultValue
 import org.springframework.context.annotation.Bean
+import org.springframework.scheduling.annotation.EnableAsync
 import org.springframework.stereotype.Component
 
 @Component
 @ConfigurationProperties(prefix = "hbase")
+@EnableAsync
 @EnableConfigurationProperties
 class HbaseConfiguration(
     var zookeeperParent: String? = null,
@@ -21,10 +23,7 @@ class HbaseConfiguration(
     var operationTimeoutMilliseconds: String? = null,
     var pauseMilliseconds: String? = null,
     var retries: String? = null,
-    @DefaultValue("NOT_SET") var qualifiedTablePattern: String,
-    var columnFamily: String? = null,
-    var columnQualifier: String? = null,
-    var regionReplication: String? = null
+    @DefaultValue("NOT_SET") var qualifiedTablePattern: String
 ) {
 
     @Bean

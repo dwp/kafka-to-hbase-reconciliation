@@ -1,9 +1,8 @@
-import io.kotlintest.specs.StringSpec
 import org.apache.hadoop.hbase.TableName
 import org.apache.hadoop.hbase.client.Put
+import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.extension.ExtendWith
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
@@ -21,11 +20,7 @@ import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.impl.Reconcilia
 )
 @TestPropertySource(locations = ["classpath:application.yml"])
 @EnableAutoConfiguration
-class ReconciliationIntegrationTest : StringSpec() {
-
-    companion object {
-        val logger: Logger = LoggerFactory.getLogger(ReconciliationIntegrationTest::class.toString())
-    }
+class ReconciliationIntegrationTestJUnit {
 
     @Autowired
     private lateinit var metadataStoreConfiguration: MetadataStoreConfiguration
@@ -36,23 +31,39 @@ class ReconciliationIntegrationTest : StringSpec() {
     @Autowired
     private lateinit var reconciliationService: ReconciliationServiceImpl
 
-    init {
-        "Reconciles records that are in metadata store and in hbase" {
-            setupHbaseData(5)
-            setupMetadataStoreData(5)
+    @Test
+    fun applicationIsConfiguredCorrectly() {
+        assertNotNull(metadataStoreConfiguration.table)
+        assertNotNull(metadataStoreConfiguration.databaseName)
+        assertNotNull(metadataStoreConfiguration.endpoint)
+        assertNotNull(metadataStoreConfiguration.password)
+        assertNotNull(metadataStoreConfiguration.passwordSecretName)
+        assertNotNull(metadataStoreConfiguration.port)
+        assertNotNull(metadataStoreConfiguration.queryLimit)
+        assertNotNull(metadataStoreConfiguration.table)
 
-            reconciliationService.startReconciliation()
-
-            val haveBeenReconciled = verifyRecordsInMetadataAreReconciled(5)
-
-            assert(haveBeenReconciled)
-        }
+        assertNotNull(hbaseConfiguration.zookeeperParent)
+        assertNotNull(hbaseConfiguration.zookeeperPort)
+        assertNotNull(hbaseConfiguration.zookeeperQuorum)
+        assertNotNull(hbaseConfiguration.rpcTimeoutMilliseconds)
+        assertNotNull(hbaseConfiguration.operationTimeoutMilliseconds)
+        assertNotNull(hbaseConfiguration.pauseMilliseconds)
+        assertNotNull(hbaseConfiguration.qualifiedTablePattern)
     }
 
-    private fun createHbaseTable() {
+    @Test
+    fun test() {
 
-        val connection = hbaseConfiguration.hbaseConnection()
+        setupHbaseData(5)
+        setupMetadataStoreData(5)
+
+        reconciliationService.startReconciliation()
+
+        val haveBeenReconciled = verifyRecordsInMetadataAreReconciled(5)
+
+        assert(haveBeenReconciled)
     }
+
 
     private fun setupHbaseData(entries: Int) {
 
@@ -70,10 +81,10 @@ class ReconciliationIntegrationTest : StringSpec() {
                 addColumn(columnFamily, columnQualifier, 1544799662000, body)
             })
         }
-        logger.info("Setup hbase data entries for integration test", "entries" to entries)
     }
 
     private fun setupMetadataStoreData(entries: Int) {
+
         val connection = metadataStoreConfiguration.metadataStoreConnection()
         for (i in 0..entries) {
             val key = i.toString()
@@ -85,18 +96,17 @@ class ReconciliationIntegrationTest : StringSpec() {
                 """.trimIndent()
             )
         }
-        logger.info("Setup metadata store data entries for integration test", "entries" to entries)
     }
 
     private fun verifyRecordsInMetadataAreReconciled(shouldBeReconciledCount: Int): Boolean {
         val connection = metadataStoreConfiguration.metadataStoreConnection()
         val statement = connection.createStatement()
-        return statement.execute(
+        return statement.executeQuery(
             """
-                SELECT CASE WHEN COUNT(*) = $shouldBeReconciledCount THEN TRUE ELSE FALSE END;
+                SELECT COUNT(*)
                 FROM ${metadataStoreConfiguration.table}
                 WHERE reconciled_result=true
             """.trimIndent()
-        )
+        ).getInt(1) == shouldBeReconciledCount
     }
 }
