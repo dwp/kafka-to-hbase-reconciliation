@@ -1,7 +1,9 @@
-FROM dwp-kotlin-slim-gradle-reconciliation:latest
+FROM dwp-gradle:latest
 
 COPY build.gradle.kts .
 COPY settings.gradle.kts .
+COPY gradle.properties .
 COPY src/ ./src
-
-RUN gradle compileKotlin build integrationClasses -x test
+COPY build/ ./build
+COPY .gradle/ ./gradle
+RUN gradle build

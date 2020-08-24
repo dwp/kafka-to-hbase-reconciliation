@@ -8,14 +8,14 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.junit.jupiter.SpringExtension
-import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.HbaseConfiguration
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.HbaseConfig
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.MetadataStoreConfiguration
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.SecretsManagerConfiguration
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.impl.ReconciliationServiceImpl
 
 @ExtendWith(SpringExtension::class)
 @SpringBootTest(
-    classes = [HbaseConfiguration::class, MetadataStoreConfiguration::class, SecretsManagerConfiguration::class],
+    classes = [HbaseConfig::class, MetadataStoreConfiguration::class, SecretsManagerConfiguration::class],
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
 @TestPropertySource(locations = ["classpath:application.yml"])
@@ -26,7 +26,7 @@ class ReconciliationIntegrationTestJUnit {
     private lateinit var metadataStoreConfiguration: MetadataStoreConfiguration
 
     @Autowired
-    private lateinit var hbaseConfiguration: HbaseConfiguration
+    private lateinit var hbaseConfig: HbaseConfig
 
     @Autowired
     private lateinit var reconciliationService: ReconciliationServiceImpl
@@ -42,13 +42,13 @@ class ReconciliationIntegrationTestJUnit {
         assertNotNull(metadataStoreConfiguration.queryLimit)
         assertNotNull(metadataStoreConfiguration.table)
 
-        assertNotNull(hbaseConfiguration.zookeeperParent)
-        assertNotNull(hbaseConfiguration.zookeeperPort)
-        assertNotNull(hbaseConfiguration.zookeeperQuorum)
-        assertNotNull(hbaseConfiguration.rpcTimeoutMilliseconds)
-        assertNotNull(hbaseConfiguration.operationTimeoutMilliseconds)
-        assertNotNull(hbaseConfiguration.pauseMilliseconds)
-        assertNotNull(hbaseConfiguration.qualifiedTablePattern)
+        assertNotNull(hbaseConfig.zookeeperParent)
+        assertNotNull(hbaseConfig.zookeeperPort)
+        assertNotNull(hbaseConfig.zookeeperQuorum)
+        assertNotNull(hbaseConfig.rpcTimeoutMilliseconds)
+        assertNotNull(hbaseConfig.operationTimeoutMilliseconds)
+        assertNotNull(hbaseConfig.pauseMilliseconds)
+        assertNotNull(hbaseConfig.qualifiedTablePattern)
     }
 
     @Test
@@ -67,7 +67,7 @@ class ReconciliationIntegrationTestJUnit {
 
     private fun setupHbaseData(entries: Int) {
 
-        val connection = hbaseConfiguration.hbaseConnection()
+        val connection = hbaseConfig.hbaseConnection()
         val columnFamily = "cf".toByteArray()
         val columnQualifier = "record".toByteArray()
 

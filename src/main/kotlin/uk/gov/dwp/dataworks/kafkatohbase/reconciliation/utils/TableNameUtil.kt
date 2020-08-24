@@ -1,12 +1,15 @@
 package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.utils
 
 import org.apache.commons.codec.binary.Hex
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
-import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.HbaseConfiguration
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.HbaseConfig
 
 @Component
-class TableNameUtil(private val hbaseConfiguration: HbaseConfiguration,
-                    private val coalescedNameUtil: CoalescedNameUtil) {
+class TableNameUtil(private val coalescedNameUtil: CoalescedNameUtil) {
+
+    @Value("\${hbase.qualified.table.pattern}")
+    lateinit var qualifiedTablePattern: String
 
     fun getTableNameFromTopic(topic: String): String? {
         val matcher = topicNameTableMatcher(topic)
@@ -20,7 +23,7 @@ class TableNameUtil(private val hbaseConfiguration: HbaseConfiguration,
     }
 
     fun topicNameTableMatcher(topicName: String): MatchResult? {
-        val qualifiedTablePattern = hbaseConfiguration.qualifiedTablePattern()
+        val qualifiedTablePattern = qualifiedTablePattern
         return Regex(qualifiedTablePattern).find(topicName)
     }
 

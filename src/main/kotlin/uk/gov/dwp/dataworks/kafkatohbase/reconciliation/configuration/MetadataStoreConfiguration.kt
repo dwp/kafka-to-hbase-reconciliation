@@ -4,7 +4,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.context.properties.bind.DefaultValue
 import org.springframework.context.annotation.Bean
-import org.springframework.scheduling.annotation.EnableAsync
 import org.springframework.stereotype.Component
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.secrets.AWSSecretHelper
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.secrets.DummySecretHelper
@@ -16,7 +15,6 @@ import java.util.*
 
 @Component
 @ConfigurationProperties(prefix = "metadatastore")
-@EnableAsync
 @EnableConfigurationProperties
 data class MetadataStoreConfiguration(
     var endpoint: String? = null,
@@ -34,11 +32,13 @@ data class MetadataStoreConfiguration(
     private val isUsingAWS = useAWSSecrets == "true"
     private val secretHelper: SecretHelperInterface = if (isUsingAWS) AWSSecretHelper() else DummySecretHelper()
 
-    @Bean
-    fun metadataStoreConnection(): Connection {
+    fun databaseUrl(): String {
         val hostname = endpoint
         val port = port
-        val jdbcUrl = "jdbc:mysql://$hostname:$port/"
+        return "jdbc:mysql://$hostname:$port/"
+    }
+
+    fun databaseProperties(): Properties {
 
         val properties = Properties().apply {
             put("user", user)
@@ -57,6 +57,9 @@ data class MetadataStoreConfiguration(
 
         properties["password"] = secretHelper.getSecret(passwordSecretName)
 
-        return DriverManager.getConnection(jdbcUrl, properties)
+        return properties
     }
+
+    @Bean
+    fun metadataStoreConnection(): Connection = DriverManager.getConnection(databaseUrl(), databaseProperties())
 }

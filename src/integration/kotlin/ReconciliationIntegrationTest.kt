@@ -9,15 +9,13 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.junit.jupiter.SpringExtension
-import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.HbaseConfiguration
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.HbaseConfig
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.MetadataStoreConfiguration
-import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.SecretsManagerConfiguration
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.impl.ReconciliationServiceImpl
 
 @ExtendWith(SpringExtension::class)
 @SpringBootTest(
-    classes = [HbaseConfiguration::class, MetadataStoreConfiguration::class, SecretsManagerConfiguration::class],
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
+    classes = [HbaseConfig::class, MetadataStoreConfiguration::class, ReconciliationServiceImpl::class]
 )
 @TestPropertySource(locations = ["classpath:application.yml"])
 @EnableAutoConfiguration
@@ -31,7 +29,7 @@ class ReconciliationIntegrationTest : StringSpec() {
     private lateinit var metadataStoreConfiguration: MetadataStoreConfiguration
 
     @Autowired
-    private lateinit var hbaseConfiguration: HbaseConfiguration
+    private lateinit var hbaseConfig: HbaseConfig
 
     @Autowired
     private lateinit var reconciliationService: ReconciliationServiceImpl
@@ -51,12 +49,12 @@ class ReconciliationIntegrationTest : StringSpec() {
 
     private fun createHbaseTable() {
 
-        val connection = hbaseConfiguration.hbaseConnection()
+        val connection = hbaseConfig.hbaseConnection()
     }
 
     private fun setupHbaseData(entries: Int) {
 
-        val connection = hbaseConfiguration.hbaseConnection()
+        val connection = hbaseConfig.hbaseConnection()
         val columnFamily = "cf".toByteArray()
         val columnQualifier = "record".toByteArray()
 

@@ -70,10 +70,10 @@ services:
     container_name: integration-test
     build:
       dockerfile: Dockerfile_integration
-      context: ./
+      context: .
     depends_on:
       - reconciliation
-    command: "true"
+    command: "gradle --rerun-tasks integration"
     environment:
       K2HB_ENVIRONMENT: "local-dev"
       K2HB_APPLICATION_NAME: "k2hb-reconciliation-test"
