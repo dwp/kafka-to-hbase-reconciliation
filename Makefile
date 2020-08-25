@@ -36,9 +36,9 @@ local-test: ## Run the unit tests with gradle
 local-all: local-build local-test local-dist ## Build and test with gradle
 
 services: ## Bring up supporting services in docker
-	docker-compose -f docker-compose.yaml up --build -d zookeeper hbase metadatastore
+	docker-compose -f docker-compose.yaml up --build -d hbase metadatastore
 
-up: services ## Bring up Kafka2Hbase in Docker with supporting services
+up: services ## Bring up Reconciliation in Docker with supporting services
 	docker-compose -f docker-compose.yaml up --build -d reconciliation
 
 restart: ## Restart Kafka2Hbase and all supporting services

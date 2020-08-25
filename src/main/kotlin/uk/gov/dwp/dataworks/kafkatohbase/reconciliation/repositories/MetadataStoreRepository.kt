@@ -11,10 +11,10 @@ import java.sql.ResultSet
 class MetadataStoreRepository(private val connection: Connection,
                               private val configuration: MetadataStoreConfiguration) {
 
-
     companion object {
         val logger = DataworksLogger.getLogger(ReconciliationService::class.toString())
     }
+
 
     fun fetchUnreconciledRecords(): List<Map<String, Any>> {
         logger.info("Fetching unreconciled records from metadata store")
@@ -42,7 +42,7 @@ class MetadataStoreRepository(private val connection: Connection,
         return statement.executeUpdate("""
             UPDATE ${configuration.table} 
             SET reconciled_result=true, reconciled_timestamp=CURRENT_TIMESTAMP 
-            WHERE topic_name=$topicName
+            WHERE topic_name=${topicName}
         """.trimIndent())
     }
 
@@ -69,6 +69,7 @@ class MetadataStoreRepository(private val connection: Connection,
                     "reconciled_timestamp" to resultSet.getString("reconciled_timestamp")
             ))
         }
+
         logger.info("Fetched unreconciled records from metadata store", "number_of_records" to result.size.toString())
         return result
     }

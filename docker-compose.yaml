@@ -36,22 +36,22 @@ services:
       HBASE_QUALIFIED_TABLE_PATTERN: ([-\w]+)\.([-\w]+)
       K2HB_IMAGE_DIGEST: "latest"
 
-  zookeeper:
-    image: confluentinc/cp-zookeeper:4.1.0
-    container_name: zookeeper
-    ports:
-      - "2181:2181"
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
+#  zookeeper:
+#    image: confluentinc/cp-zookeeper:4.1.0
+#    container_name: zookeeper
+#    ports:
+#      - "2181:2181"
+#    environment:
+#      ZOOKEEPER_CLIENT_PORT: 2181
 
   hbase:
-    image: hbase:latest
-    build: ./docker/hbase
+    image: harisekhon/hbase:1.4
+    ports:
+      - 9090:9090
+      - 9095:9095
+      - 2181:2181
+      - 16201:16201
     container_name: hbase
-    depends_on:
-      - zookeeper
-    environment:
-      ZOOKEEPER_QUORUM: zookeeper
 
   metadatastore:
     image: mysql:5.7

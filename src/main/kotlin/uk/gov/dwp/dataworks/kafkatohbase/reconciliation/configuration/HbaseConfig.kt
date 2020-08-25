@@ -5,14 +5,15 @@ import org.apache.hadoop.hbase.HBaseConfiguration
 import org.apache.hadoop.hbase.HConstants
 import org.apache.hadoop.hbase.client.Connection
 import org.apache.hadoop.hbase.client.ConnectionFactory
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.context.properties.ConfigurationProperties
-import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Primary
 import org.springframework.stereotype.Component
+import uk.gov.dwp.dataworks.logging.DataworksLogger
 
 @Component
 @ConfigurationProperties(prefix = "hbase")
-@EnableConfigurationProperties
 data class HbaseConfig(
     var zookeeperParent: String? = null,
     var zookeeperQuorum: String? = null,
@@ -25,18 +26,17 @@ data class HbaseConfig(
 
     fun hbaseConfiguration(): Configuration = HBaseConfiguration.create().apply {
         set(HConstants.ZOOKEEPER_ZNODE_PARENT, zookeeperParent ?: "/hbase")
-        set(HConstants.ZOOKEEPER_QUORUM, zookeeperQuorum ?: "zookeeper")
-        setInt("hbase.zookeeper.port", 2181)
+        set(HConstants.ZOOKEEPER_QUORUM, zookeeperQuorum ?: "localhost")
         setInt("hbase.zookeeper.port", zookeeperPort?.toIntOrNull() ?: 2181)
         set("hbase.rpc.timeout", rpcTimeoutMilliseconds ?: "1200000")
         set("hbase.client.operation.timeout", operationTimeoutMilliseconds ?: "1800000")
         set("hbase.client.pause", pauseMilliseconds ?: "50")
-        set("hbase.client.retries.number", retries ?: "50")
+        set("hbase.client.retries.number", retries ?: "3")
     }
 
+    @Primary
     @Bean
     fun hbaseConnection(): Connection {
-
         val connection = ConnectionFactory.createConnection(hbaseConfiguration())
         addShutdownHook(connection)
 

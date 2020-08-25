@@ -12,7 +12,6 @@ import uk.gov.dwp.dataworks.logging.DataworksLogger
 class HbaseRepository(private val hbaseConnection: Connection,
                       private val tableNameUtil: TableNameUtil) {
 
-
     companion object {
         val logger = DataworksLogger.getLogger(ReconciliationService::class.toString())
     }

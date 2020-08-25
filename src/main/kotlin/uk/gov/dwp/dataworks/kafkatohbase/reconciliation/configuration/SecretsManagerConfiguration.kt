@@ -3,16 +3,16 @@ package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration
 import com.amazonaws.services.secretsmanager.AWSSecretsManager
 import com.amazonaws.services.secretsmanager.AWSSecretsManagerClientBuilder
 import org.springframework.boot.context.properties.ConfigurationProperties
-import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 
 @Component
+@Profile("usingAws")
 @ConfigurationProperties(prefix = "secrets")
-@EnableConfigurationProperties
 data class SecretsManagerConfiguration(
-    private var region: String? = null,
-    internal val metadataStorePasswordSecret: String? = null
+    var region: String? = null,
+    var metadataStorePasswordSecret: String? = null
 ) {
 
     @Bean
