@@ -53,6 +53,24 @@ services:
       - 16201:16201
     container_name: hbase
 
+
+#  zookeeper:
+#    image: confluentinc/cp-zookeeper:4.1.0
+#    container_name: zookeeper
+#    ports:
+#      - "2181:2181"
+#    environment:
+#      ZOOKEEPER_CLIENT_PORT: 2181
+#
+#  hbase:
+#    image: hbase:latest
+#    build: ./docker/hbase
+#    container_name: hbase
+#    depends_on:
+#      - zookeeper
+#    environment:
+#      ZOOKEEPER_QUORUM: zookeeper
+
   metadatastore:
     image: mysql:5.7
     restart: always
@@ -84,13 +102,12 @@ services:
       METADATASTORE_USER: "reconciliationwriter"
       METADATASTORE_PASSWORD_SECRET_NAME: "metastore_password"
       METADATASTORE_DATABASE_NAME: "metadatastore"
-      METADATASTORE_ENDPOINT: "metadatastore"
+      METADATASTORE_ENDPOINT: "localhost"
       METADATASTORE_PORT: "3306"
       METADATASTORE_USE_AWS_SECRETS: "false"
       METADATASTORE_TABLE: "ucfs"
       SECRETS_REGION: "eu-west-2"
-      SECRETS_METADATASTORE_PASSWORD_DUMMY: "user_password"
       AWS_ACCESS_KEY_ID: "aws-access-key"
       AWS_SECRET_ACCESS_KEY: "aws-secret-access-key"
-      ZOOKEEPER_QUORUM: zookeeper
+      ZOOKEEPER_QUORUM: "localhost"
       SPRING_PROFILES_ACTIVE: DUMMY_SECRETS

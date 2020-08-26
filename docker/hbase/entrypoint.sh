@@ -27,7 +27,7 @@ trap_func() {
     /hbase/bin/local-regionservers.sh stop 1 || :
     /hbase/bin/stop-hbase.sh
     sleep 2
-    ps -ef | grep org.apache.hadoop.hbase | grep -v -i org.apache.hadoop.hbase.zookeeper | awk '{print $1}' | xargs kill 2>/dev/null || :
+    pgrep -ef | grep org.apache.hadoop.hbase | grep -v -i org.apache.hadoop.hbase.zookeeper | awk '{print $1}' | xargs kill 2>/dev/null || :
     sleep 3
     pkill -f org.apache.hadoop.hbase.zookeeper 2>/dev/null || :
     sleep 2

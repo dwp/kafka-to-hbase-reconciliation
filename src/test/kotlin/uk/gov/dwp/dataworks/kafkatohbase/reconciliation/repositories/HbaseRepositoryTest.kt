@@ -2,8 +2,8 @@ package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories
 
 import com.nhaarman.mockitokotlin2.*
 import org.apache.hadoop.hbase.TableName
+import org.apache.hadoop.hbase.client.Admin
 import org.apache.hadoop.hbase.client.Connection
-import org.apache.hadoop.hbase.client.Table
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.runner.RunWith
@@ -12,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.test.mock.mockito.SpyBean
 import org.springframework.test.context.junit4.SpringRunner
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.HbaseConfiguration
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.utils.TableNameUtil
 
 @RunWith(SpringRunner::class)
@@ -23,7 +24,7 @@ class HbaseRepositoryTest {
     private lateinit var hbaseRepository: HbaseRepository
 
     @MockBean
-    private lateinit var hbaseConnection: Connection
+    private lateinit var hbaseConfiguration: HbaseConfiguration
 
     @MockBean
     private lateinit var tableNameUtil: TableNameUtil
@@ -32,45 +33,52 @@ class HbaseRepositoryTest {
     fun givenARecordExistsWhenCheckingIfItExistsFromTheTopicThenATrueResponseWillBeReturned() {
 
         val tableName = "ucfs_data"
-        val table = TableName.valueOf(tableName)
         val topic = "ucfs:data"
         val id = "1"
         val version = 1L
 
-        val tableMock = mock<Table> {
-            on { exists(any()) } doReturn true
+        val adm = mock<Admin> {
+            on { tableExists(TableName.valueOf(tableName)) } doReturn true
         }
 
+        val hbaseConnection = mock<Connection> {
+            on { admin } doReturn adm
+        }
+
+        whenever(hbaseConfiguration.hbaseConnection()).thenReturn(hbaseConnection)
         whenever(tableNameUtil.getTableNameFromTopic(topic)).thenReturn(tableName)
         whenever(tableNameUtil.decodePrintable("1")).thenReturn("123".toByteArray())
-        whenever(hbaseConnection.getTable(table)).thenReturn(tableMock)
 
         val booleanResult = hbaseRepository.recordExistsInHbase(topic, id, version)
 
         assertThat(booleanResult).isTrue()
-        verify(tableMock, times(1)).exists(any())
+        verify(hbaseConnection, times(1)).close()
     }
 
     @Test
     fun givenARecordDoesNotExistWhenCheckingIfItExistsFromTheTopicThenAFalseResponseWillBeReturned() {
 
         val tableName = "ucfs_data"
-        val table = TableName.valueOf(tableName)
         val topic = "ucfs:data"
         val id = "1"
         val version = 1L
 
-        val tableMock = mock<Table> {
-            on { exists(any()) } doReturn false
+        val adm = mock<Admin> {
+            on { tableExists(TableName.valueOf(tableName)) } doReturn false
         }
+
+        val hbaseConnection = mock<Connection> {
+            on { admin } doReturn adm
+        }
+
+        whenever(hbaseConfiguration.hbaseConnection()).thenReturn(hbaseConnection)
 
         whenever(tableNameUtil.getTableNameFromTopic(topic)).thenReturn(tableName)
         whenever(tableNameUtil.decodePrintable("1")).thenReturn("123".toByteArray())
-        whenever(hbaseConnection.getTable(table)).thenReturn(tableMock)
 
         val booleanResult = hbaseRepository.recordExistsInHbase(topic, id, version)
 
         assertThat(booleanResult).isFalse()
-        verify(tableMock, times(1)).exists(any())
+        verify(hbaseConnection, times(1)).close()
     }
 }

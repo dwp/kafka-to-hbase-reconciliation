@@ -74,6 +74,13 @@ tasks.register<Test>("integration-test") {
 	}
 
 	environment("METADATASTORE_TABLE", "ucfs")
+	environment("METADATASTORE_USER", "reconciliationwriter")
+	environment("METADATASTORE_PASSWORD_SECRET_NAME", "metastore_password")
+	environment("METADATASTORE_DATABASE_NAME", "metadatastore")
+	environment("METADATASTORE_ENDPOINT", "localhost")
+	environment("METADATASTORE_PORT", "3306")
+	environment("METADATASTORE_USE_AWS_SECRETS", "false")
+	environment("METADATASTORE_TABLE", "ucfs")
 
 	useJUnitPlatform { }
 	testLogging {
