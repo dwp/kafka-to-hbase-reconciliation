@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 
 @Configuration
-@Profile("usingAws")
+@Profile("!DUMMY_SECRETS")
 @ConfigurationProperties(prefix = "secrets")
 data class SecretsManagerConfiguration(
     var region: String? = null,
