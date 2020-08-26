@@ -3,7 +3,6 @@ package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.utils
 import org.apache.commons.codec.binary.Hex
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
-import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.HbaseConfig
 
 @Component
 class TableNameUtil(private val coalescedNameUtil: CoalescedNameUtil) {

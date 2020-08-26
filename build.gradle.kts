@@ -73,6 +73,8 @@ tasks.register<Test>("integration-test") {
 		includeTestsMatching("ReconciliationIntegrationTest*")
 	}
 
+	environment("METADATASTORE_TABLE", "ucfs")
+
 	useJUnitPlatform { }
 	testLogging {
 		exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL

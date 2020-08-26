@@ -2,6 +2,7 @@ SHELL=bash
 aws_dev_account=NOT_SET
 temp_image_name=NOT_SET
 aws_default_region=NOT_SET
+RDBMS_READY_REGEX='mysqld: ready for connections'
 
 .PHONY: help
 help:
@@ -35,7 +36,28 @@ local-test: ## Run the unit tests with gradle
 
 local-all: local-build local-test local-dist ## Build and test with gradle
 
-services: ## Bring up supporting services in docker
+rdbms: ## Bring up and provision mysql
+	docker-compose -f docker-compose.yaml up -d metadatastore
+	@{ \
+		while ! docker logs metadatastore 2>&1 | grep "^Version" | grep 3306; do \
+			echo Waiting for metadatastore.; \
+			sleep 2; \
+		done; \
+		sleep 5; \
+	}
+	docker exec -i metadatastore mysql --host=127.0.0.1 --user=root --password=password metadatastore  < ./docker/metadatastore/create_table.sql
+	docker exec -i metadatastore mysql --host=127.0.0.1 --user=root --password=password metadatastore  < ./docker/metadatastore/grant_user.sql
+
+mysql_root: ## Get a client session on the metadatastore database.
+	docker exec -it metadatastore mysql --host=127.0.0.1 --user=root --password=password metadatastore
+
+mysql_writer: ## Get a client session on the metadatastore database.
+	docker exec -it metadatastore mysql --host=127.0.0.1 --user=reconciliationwriter --password=password metadatastore
+
+hbase-shell: ## Open an Hbase shell onto the running Hbase container
+	docker-compose run --rm hbase shell
+
+services: rdbms ## Bring up supporting services in docker
 	docker-compose -f docker-compose.yaml up --build -d hbase metadatastore
 
 up: services ## Bring up Reconciliation in Docker with supporting services

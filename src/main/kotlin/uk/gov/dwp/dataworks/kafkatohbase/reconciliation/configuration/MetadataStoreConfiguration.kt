@@ -2,14 +2,16 @@ package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration
 
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.context.annotation.Bean
-import org.springframework.stereotype.Component
+import org.springframework.context.annotation.ComponentScan
+import org.springframework.context.annotation.Configuration
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.secrets.AWSSecretHelper
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.utils.readFile
 import java.sql.Connection
 import java.sql.DriverManager
 import java.util.*
 
-@Component
+@ComponentScan
+@Configuration
 @ConfigurationProperties(prefix = "metadatastore")
 data class MetadataStoreConfiguration(
     var endpoint: String? = null,

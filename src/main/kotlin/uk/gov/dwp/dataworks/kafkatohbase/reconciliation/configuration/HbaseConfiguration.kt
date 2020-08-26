@@ -5,16 +5,13 @@ import org.apache.hadoop.hbase.HBaseConfiguration
 import org.apache.hadoop.hbase.HConstants
 import org.apache.hadoop.hbase.client.Connection
 import org.apache.hadoop.hbase.client.ConnectionFactory
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Primary
-import org.springframework.stereotype.Component
-import uk.gov.dwp.dataworks.logging.DataworksLogger
 
-@Component
+@org.springframework.context.annotation.Configuration
 @ConfigurationProperties(prefix = "hbase")
-data class HbaseConfig(
+data class HbaseConfiguration(
     var zookeeperParent: String? = null,
     var zookeeperQuorum: String? = null,
     var zookeeperPort: String? = null,
@@ -37,6 +34,7 @@ data class HbaseConfig(
     @Primary
     @Bean
     fun hbaseConnection(): Connection {
+
         val connection = ConnectionFactory.createConnection(hbaseConfiguration())
         addShutdownHook(connection)
 
