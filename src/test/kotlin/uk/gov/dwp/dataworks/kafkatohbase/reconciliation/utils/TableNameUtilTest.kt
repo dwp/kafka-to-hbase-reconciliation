@@ -13,11 +13,11 @@ import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.test.mock.mockito.SpyBean
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.junit4.SpringRunner
+import org.springframework.test.util.ReflectionTestUtils
 import java.lang.Exception
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(classes = [TableNameUtil::class])
-@TestPropertySource(properties = ["hbase.table.pattern=^\\\\w+\\\\.([-\\\\w]+)\\.([-\\\\w]+)\$"])
 class TableNameUtilTest {
 
     @SpyBean
@@ -29,6 +29,8 @@ class TableNameUtilTest {
 
     @Test
     fun givenAValidTopicAndMainRegexWhenCalledToGetTableNameThenATableNameMatchedIsReturned() {
+
+        tableNameUtil.qualifiedTablePattern = """^\w+\.([-\w]+)\.([-.\w]+)$"""
 
         whenever(coalescedNameUtil.coalescedName("ucfs:data")).thenReturn("ucfs_data")
 
@@ -44,6 +46,8 @@ class TableNameUtilTest {
     @Test
     fun givenAnInvalidTopicAndMainRegexWhenCalledToGetTableNameThenThereIsAnError() {
 
+        tableNameUtil.qualifiedTablePattern = """^\w+\.([-\w]+)\.([-.\w]+)$"""
+
         val topic = "ucfs.data"
 
         val exception = shouldThrow<Exception> {
@@ -58,6 +62,8 @@ class TableNameUtilTest {
 
     @Test
     fun givenAValidTopicAndEqualityRegexWhenCalledToGetTableNameThenATableNameMatchedIsReturned() {
+
+        tableNameUtil.qualifiedTablePattern = """([-\w]+)\.([-\w]+)"""
 
         whenever(coalescedNameUtil.coalescedName("data:equality")).thenReturn("data_equality")
 
