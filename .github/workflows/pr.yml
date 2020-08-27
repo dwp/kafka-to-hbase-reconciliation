@@ -69,6 +69,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: built-app
+          path: build
       - name: show dir
         run: ls -la && ls -la build
 #      - name: Get release version
