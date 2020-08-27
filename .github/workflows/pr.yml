@@ -4,6 +4,9 @@ on:
     branches:
       - master
 
+env:
+  IMAGE_NAME: dwpdigital/kafka-to-hbase-reconciliation
+
 jobs:
   pull_request:
 
