@@ -15,9 +15,11 @@ import uk.gov.dwp.dataworks.logging.DataworksLogger
 data class HbaseConfiguration(
     var zookeeperParent: String? = null,
     var zookeeperQuorum: String? = null,
+    var zookeeperPort: String? = null,
     var timeoutMs: String? = null,
     var clientTimeoutMs: String? = null,
-    var rpcReadTimeoutMs: String? = null
+    var rpcReadTimeoutMs: String? = null,
+    var retries: String? = null
 ) {
 
     companion object {
@@ -29,10 +31,11 @@ data class HbaseConfiguration(
         val configuration = org.apache.hadoop.conf.Configuration().apply {
             set(HConstants.ZOOKEEPER_ZNODE_PARENT, zookeeperParent ?: "/hbase")
             set(HConstants.ZOOKEEPER_QUORUM, zookeeperQuorum ?: "localhost")
-            setInt("hbase.zookeeper.port", 2181)
+            setInt("hbase.zookeeper.port", zookeeperPort?.toIntOrNull() ?: 2181)
             setInt(HConstants.HBASE_CLIENT_SCANNER_TIMEOUT_PERIOD, timeoutMs?.toIntOrNull() ?: 1800000)
             setInt(HConstants.HBASE_CLIENT_OPERATION_TIMEOUT, clientTimeoutMs?.toIntOrNull() ?: 3600000)
             setInt(HConstants.HBASE_RPC_READ_TIMEOUT_KEY, rpcReadTimeoutMs?.toIntOrNull() ?: 1800000)
+            setInt(HConstants.HBASE_CLIENT_RETRIES_NUMBER, retries?.toIntOrNull() ?: 3)
         }
 
         logger.info(

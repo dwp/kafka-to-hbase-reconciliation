@@ -28,22 +28,26 @@ class MetadataStoreRepository(private val configuration: MetadataStoreConfigurat
     private fun getUnreconciledRecordsQuery(): ResultSet? {
         val connection = configuration.metadataStoreConnection()
         val statement = connection.createStatement()
-        return statement.executeQuery("""
-            SELECT * FROM ${configuration.table} 
-            WHERE write_timestamp > CURRENT_DATE - INTERVAL 14 DAY AND 
-            reconciled_result = false 
-            LIMIT ${configuration.queryLimit}
-        """.trimIndent())
+        return statement.executeQuery(
+            """
+                SELECT * FROM ${configuration.table} 
+                WHERE write_timestamp > CURRENT_DATE - INTERVAL 14 DAY AND 
+                reconciled_result = false 
+                LIMIT 14
+            """.trimIndent()
+        )
     }
 
     private fun updateUnreconciledRecordsQuery(topicName: String): Int {
         val connection = configuration.metadataStoreConnection()
         val statement = connection.createStatement()
-        return statement.executeUpdate("""
-            UPDATE ${configuration.table} 
-            SET reconciled_result=true, reconciled_timestamp=CURRENT_TIMESTAMP 
-            WHERE topic_name=${topicName}
-        """.trimIndent())
+        return statement.executeUpdate(
+            """
+                UPDATE ${configuration.table} 
+                SET reconciled_result=true, reconciled_timestamp=CURRENT_TIMESTAMP 
+                WHERE topic_name=${topicName}
+            """.trimIndent()
+        )
     }
 
     private fun mapResultSet(resultSet: ResultSet?): MutableList<Map<String, Any>> {
@@ -56,7 +60,8 @@ class MetadataStoreRepository(private val configuration: MetadataStoreConfigurat
         }
 
         while (resultSet.next()) {
-            result.add(mapOf(
+            result.add(
+                mapOf(
                     "id" to resultSet.getString("id"),
                     "hbase_id" to resultSet.getString("hbase_id"),
                     "hbase_timestamp" to resultSet.getLong("hbase_timestamp"),
@@ -64,10 +69,11 @@ class MetadataStoreRepository(private val configuration: MetadataStoreConfigurat
                     "correlation_id" to resultSet.getString("correlation_id"),
                     "topic_name" to resultSet.getString("topic_name"),
                     "kafka_partition" to resultSet.getString("kafka_partition"),
-                    "kafka_offest" to resultSet.getString("kafka_offest"),
+                    "kafka_offset" to resultSet.getString("kafka_offset"),
                     "reconciled_result" to resultSet.getString("reconciled_result"),
                     "reconciled_timestamp" to resultSet.getString("reconciled_timestamp")
-            ))
+                )
+            )
         }
 
         logger.info("Fetched unreconciled records from metadata store", "number_of_records" to result.size.toString())

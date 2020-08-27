@@ -17,32 +17,23 @@ services:
       K2HB_APPLICATION_NAME: "reconciliation"
       K2HB_APP_VERSION: "test"
       INSTANCE_ID: "localhost"
-      RETRY_MAX_ATTEMPTS: "3"
-      RETRY_INITIAL_BACKOFF: "1"
-      RETRY_BACKOFF_MULTIPLIER: "1"
+      HBASE_ZOOKEEPER_QUORUM: "hbase"
       HBASE_RPC_TIMEOUT_MILLISECONDS: "1200"
       HBASE_OPERATION_TIMEOUT_MILLISECONDS": "1800"
       HBASE_PAUSE_MILLISECONDS: "50"
       HBASE_RETRIES": "3"
-      METADATASTORE_USERNAME: "dummy_user"
+      METADATASTORE_USER: "reconciliationwriter"
       METADATASTORE_PASSWORD_SECRET_NAME: "metastore_password"
-      METADATASTORE_DATABASE_NAME: "dummy_database"
+      METADATASTORE_DATABASE_NAME: "metadatastore"
       METADATASTORE_ENDPOINT: "metadatastore"
       METADATASTORE_PORT: "3306"
       METADATASTORE_USE_AWS_SECRETS: "false"
+      METADATASTORE_TABLE: "ucfs"
       AWS_ACCESS_KEY_ID: "aws-access-key"
       AWS_SECRET_ACCESS_KEY: "aws-secret-access-key"
-      HBASE_QUALIFIED_TABLE_PATTERN: ([-\w]+)\.([-\w]+)
+      HBASE_TABLE_PATTERN: ([-\w]+)\.([-\w]+)
       K2HB_IMAGE_DIGEST: "latest"
       SPRING_PROFILES_ACTIVE: DUMMY_SECRETS
-
-#  zookeeper:
-#    image: confluentinc/cp-zookeeper:4.1.0
-#    container_name: zookeeper
-#    ports:
-#      - "2181:2181"
-#    environment:
-#      ZOOKEEPER_CLIENT_PORT: 2181
 
   hbase:
     image: harisekhon/hbase:1.4
@@ -52,24 +43,6 @@ services:
       - 2181:2181
       - 16201:16201
     container_name: hbase
-
-
-#  zookeeper:
-#    image: confluentinc/cp-zookeeper:4.1.0
-#    container_name: zookeeper
-#    ports:
-#      - "2181:2181"
-#    environment:
-#      ZOOKEEPER_CLIENT_PORT: 2181
-#
-#  hbase:
-#    image: hbase:latest
-#    build: ./docker/hbase
-#    container_name: hbase
-#    depends_on:
-#      - zookeeper
-#    environment:
-#      ZOOKEEPER_QUORUM: zookeeper
 
   metadatastore:
     image: mysql:5.7
@@ -101,7 +74,7 @@ services:
       GROUP_NAME: "usergroup"
       METADATASTORE_USER: "reconciliationwriter"
       METADATASTORE_PASSWORD_SECRET_NAME: "metastore_password"
-      METADATASTORE_DATABASE_NAME: "metadatastore"
+      METADATASTORE_DATABASE_NAME: "metadatastore2"
       METADATASTORE_ENDPOINT: "localhost"
       METADATASTORE_PORT: "3306"
       METADATASTORE_USE_AWS_SECRETS: "false"
