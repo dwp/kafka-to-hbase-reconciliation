@@ -20,10 +20,3 @@ jobs:
 
       - name: gradle build
         run: gradle clean build test
-
-      - name: snyk-scan
-        uses: snyk/actions/gradle@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --org=dwp-dataworks --severity-threshold=high
