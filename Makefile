@@ -58,7 +58,7 @@ hbase-shell: ## Open an Hbase shell onto the running Hbase container
 	docker-compose run --rm hbase shell
 
 services: rdbms ## Bring up supporting services in docker
-	docker-compose -f docker-compose.yaml up --build -d hbase metadatastore
+	docker-compose -f docker-compose.yaml up --build -d hbase
 
 up: services ## Bring up Reconciliation in Docker with supporting services
 	docker-compose -f docker-compose.yaml up --build -d reconciliation
