@@ -24,5 +24,8 @@ jobs:
       - name: gradle unit
         run: gradle unit
 
+      - name: make
+        run: which make
+
       - name: gradle integration
         run: gradle integration-test
