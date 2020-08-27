@@ -82,11 +82,14 @@ integration-test: ## Run the integration tests in a Docker container
  	}
 	docker-compose -f docker-compose.yaml run --name integration-test integration-test gradle --no-daemon --rerun-tasks integration-test -x test
 
+gradle-image: ## Build gradle image.
+	cp settings.gradle.kts gradle.properties docker/gradle
+	cd docker/gradle && docker build --tag dwp-gradle:latest .
 
 .PHONY: integration-all ## Build and Run all the tests in containers from a clean start
 integration-all: down destroy build up integration-test
 
-build: build-base ## build main images
+build: build-base gradle-image ## build main images
 	docker-compose build
 
 build-base: ## build the base images which certain images extend.

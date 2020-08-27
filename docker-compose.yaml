@@ -87,7 +87,7 @@ services:
     image: reconciliation-integration:latest
     container_name: integration-test
     build:
-      dockerfile: Dockerfile_integration
+      dockerfile: docker/integration/Dockerfile
       context: .
     depends_on:
       - reconciliation

@@ -6,4 +6,5 @@ COPY gradle.properties .
 COPY src/ ./src
 COPY build/ ./build
 COPY .gradle/ ./gradle
+
 RUN gradle build
