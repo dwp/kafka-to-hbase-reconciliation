@@ -19,4 +19,10 @@ jobs:
           java-version: 1.8
 
       - name: gradle build
-        run: gradle clean build test
+        run: gradle clean build
+
+      - name: gradle unit
+        run: gradle unit
+
+      - name: gradle integration
+        run: gradle integration-test
