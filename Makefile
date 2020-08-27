@@ -86,9 +86,6 @@ integration-test: ## Run the integration tests in a Docker container
 .PHONY: integration-all ## Build and Run all the tests in containers from a clean start
 integration-all: down destroy build up integration-test
 
-hbase-shell: ## Open an Hbase shell onto the running Hbase container
-	docker-compose run --rm hbase shell
-
 build: build-base ## build main images
 	docker-compose build
 
