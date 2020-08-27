@@ -52,7 +52,7 @@ class ReconciliationIntegrationTest {
     lateinit var service: ReconciliationService
 
     @Test
-    fun integrationTestsLoad() {}
+    fun integrationSpringContextLoads() {}
 
     @Ignore
     fun givenNoRecordsInMetadataStoreAndHbaseWhenStartingReconciliationThenNoRecordsAreReconciled() {
@@ -102,17 +102,17 @@ class ReconciliationIntegrationTest {
     @Ignore
     fun givenFiveRecordsToBeReconciledInMetadataStoreAndTwoInHbaseWhenRequestingToReconcileThenOnlyTwoAreReconciled() {
 
-//        createMetadataStoreTable()
-//        createHbaseTable()
+        createMetadataStoreTable()
+        createHbaseTable()
 
-//        setupHbaseData(2)
-//        setupMetadataStoreData(5)
-//
-//        service.startReconciliation()
-//
-//        val haveBeenReconciled = verifyRecordsInMetadataAreReconciled(2)
-//
-//        assert(haveBeenReconciled)
+        setupHbaseData(2)
+        setupMetadataStoreData(5)
+
+        service.startReconciliation()
+
+        val haveBeenReconciled = verifyRecordsInMetadataAreReconciled(2)
+
+        assert(haveBeenReconciled)
     }
 
     private fun createMetadataStoreTable() {

@@ -49,7 +49,5 @@ class ReconciliationServiceImplTests {
 
 		reconciliationService.startReconciliation()
 		verify(metadataStoreRepository, times(1)).fetchUnreconciledRecords()
-
-        // todo check the messages
 	}
 }

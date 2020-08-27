@@ -13,10 +13,9 @@ services:
       - metadatastore
     environment:
       JAVA_OPTS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
-      K2HB_ENVIRONMENT: "local-dev"
-      K2HB_APPLICATION_NAME: "reconciliation"
-      K2HB_APP_VERSION: "test"
-      INSTANCE_ID: "localhost"
+      ENVIRONMENT: "local-dev"
+      APPLICATION_NAME: "reconciliation"
+      APP_VERSION: "test"
       HBASE_ZOOKEEPER_QUORUM: "hbase"
       HBASE_RPC_TIMEOUT_MILLISECONDS: "1200"
       HBASE_OPERATION_TIMEOUT_MILLISECONDS": "1800"
@@ -29,10 +28,7 @@ services:
       METADATASTORE_PORT: "3306"
       METADATASTORE_USE_AWS_SECRETS: "false"
       METADATASTORE_TABLE: "ucfs"
-      AWS_ACCESS_KEY_ID: "aws-access-key"
-      AWS_SECRET_ACCESS_KEY: "aws-secret-access-key"
       HBASE_TABLE_PATTERN: ([-\w]+)\.([-\w]+)
-      K2HB_IMAGE_DIGEST: "latest"
       SPRING_PROFILES_ACTIVE: DUMMY_SECRETS
 
   hbase:
@@ -66,21 +62,21 @@ services:
       - reconciliation
     command: "gradle --rerun-tasks integration"
     environment:
-      K2HB_ENVIRONMENT: "local-dev"
-      K2HB_APPLICATION_NAME: "k2hb-reconciliation-test"
-      K2HB_APP_VERSION: "test"
-      INSTANCE_ID: "localhost"
-      USER_NAME: "user"
-      GROUP_NAME: "usergroup"
+      JAVA_OPTS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
+      ENVIRONMENT: "local-dev"
+      APPLICATION_NAME: "reconciliation"
+      APP_VERSION: "test"
+      HBASE_ZOOKEEPER_QUORUM: "hbase"
+      HBASE_RPC_TIMEOUT_MILLISECONDS: "1200"
+      HBASE_OPERATION_TIMEOUT_MILLISECONDS": "1800"
+      HBASE_PAUSE_MILLISECONDS: "50"
+      HBASE_RETRIES": "3"
       METADATASTORE_USER: "reconciliationwriter"
       METADATASTORE_PASSWORD_SECRET_NAME: "metastore_password"
-      METADATASTORE_DATABASE_NAME: "metadatastore2"
-      METADATASTORE_ENDPOINT: "localhost"
+      METADATASTORE_DATABASE_NAME: "metadatastore"
+      METADATASTORE_ENDPOINT: "metadatastore"
       METADATASTORE_PORT: "3306"
       METADATASTORE_USE_AWS_SECRETS: "false"
       METADATASTORE_TABLE: "ucfs"
-      SECRETS_REGION: "eu-west-2"
-      AWS_ACCESS_KEY_ID: "aws-access-key"
-      AWS_SECRET_ACCESS_KEY: "aws-secret-access-key"
-      ZOOKEEPER_QUORUM: "localhost"
+      HBASE_TABLE_PATTERN: ([-\w]+)\.([-\w]+)
       SPRING_PROFILES_ACTIVE: DUMMY_SECRETS
