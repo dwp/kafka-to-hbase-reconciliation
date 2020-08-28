@@ -1,0 +1,82 @@
+version: '3'
+
+services:
+
+  reconciliation:
+    image: reconciliation:latest
+    build: ./
+    container_name: reconciliation
+    ports:
+      - "5005:5005"
+    depends_on:
+      - hbase
+      - metadatastore
+    environment:
+      JAVA_OPTS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
+      ENVIRONMENT: "local-dev"
+      APPLICATION_NAME: "reconciliation"
+      APP_VERSION: "test"
+      HBASE_ZOOKEEPER_QUORUM: "hbase"
+      HBASE_RPC_TIMEOUT_MILLISECONDS: "1200"
+      HBASE_OPERATION_TIMEOUT_MILLISECONDS": "1800"
+      HBASE_PAUSE_MILLISECONDS: "50"
+      HBASE_RETRIES": "3"
+      METADATASTORE_USER: "reconciliationwriter"
+      METADATASTORE_PASSWORD_SECRET_NAME: "metastore_password"
+      METADATASTORE_DATABASE_NAME: "metadatastore"
+      METADATASTORE_ENDPOINT: "metadatastore"
+      METADATASTORE_PORT: "3306"
+      METADATASTORE_USE_AWS_SECRETS: "false"
+      METADATASTORE_TABLE: "ucfs"
+      HBASE_TABLE_PATTERN: ([-\w]+)\.([-\w]+)
+      SPRING_PROFILES_ACTIVE: DUMMY_SECRETS
+
+  hbase:
+    image: harisekhon/hbase:1.4
+    ports:
+      - 9090:9090
+      - 9095:9095
+      - 2181:2181
+      - 16201:16201
+    container_name: hbase
+
+  metadatastore:
+    image: mysql:5.7
+    restart: always
+    container_name: metadatastore
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: "password"
+      MYSQL_DATABASE: "metadatastore"
+      MYSQL_USER: "reconciliationwriter"
+      MYSQL_PASSWORD: "password"
+
+  integration-test:
+    image: reconciliation-integration:latest
+    container_name: integration-test
+    build:
+      dockerfile: docker/integration/Dockerfile
+      context: .
+    depends_on:
+      - reconciliation
+    command: "gradle --rerun-tasks integration"
+    environment:
+      JAVA_OPTS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
+      ENVIRONMENT: "local-dev"
+      APPLICATION_NAME: "reconciliation"
+      APP_VERSION: "test"
+      HBASE_ZOOKEEPER_QUORUM: "hbase"
+      HBASE_RPC_TIMEOUT_MILLISECONDS: "1200"
+      HBASE_OPERATION_TIMEOUT_MILLISECONDS": "1800"
+      HBASE_PAUSE_MILLISECONDS: "50"
+      HBASE_RETRIES": "3"
+      METADATASTORE_USER: "reconciliationwriter"
+      METADATASTORE_PASSWORD_SECRET_NAME: "metastore_password"
+      METADATASTORE_DATABASE_NAME: "metadatastore"
+      METADATASTORE_ENDPOINT: "metadatastore"
+      METADATASTORE_PORT: "3306"
+      METADATASTORE_USE_AWS_SECRETS: "false"
+      METADATASTORE_TABLE: "ucfs"
+      HBASE_TABLE_PATTERN: ([-\w]+)\.([-\w]+)
+      SPRING_PROFILES_ACTIVE: DUMMY_SECRETS

@@ -39,11 +39,35 @@ jobs:
           draft: false
           prerelease: false
 
-  publish-docker:
+  build-app:
     runs-on: ubuntu-latest
-    needs: get-publish-version
     steps:
       - uses: actions/checkout@master
+      - name: java setup
+        uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+      - name: gradle build
+        run: gradle clean build
+      - name: Upload app
+        uses: actions/upload-artifact@v2
+        with:
+          name: built-app
+          path: build
+
+
+  build-and-publish-docker:
+    runs-on: ubuntu-latest
+    needs: [get-publish-version, build-app]
+    steps:
+      - uses: actions/checkout@master
+      - name: Download built app
+        uses: actions/download-artifact@v2
+        with:
+          name: built-app
+          path: build
+      - name: show dir
+        run: ls -la && ls -la build
       - name: Get release version
         id: get_version
         run: echo ::set-env name=RELEASE_VERSION::$(echo ${GITHUB_REF:10})
@@ -55,17 +79,3 @@ jobs:
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
           tags: "latest, ${{ needs.get-publish-version.outputs.publish-version }}"
           tag_semver: true
-
-  snyk-monitor:
-    runs-on: ubuntu-latest
-    needs: publish-docker
-    steps:
-      - uses: actions/checkout@v2
-      - name: Run Snyk monitoring
-        uses: snyk/actions/docker@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          command: monitor
-          image: ${{ env.IMAGE_NAME }}
-          args: --file=Dockerfile --policy-path=./.snyk --org=dwp-dataworks

@@ -1,0 +1,3 @@
+CREATE USER IF NOT EXISTS reconciliationwriter;
+
+GRANT SELECT, INSERT ON `ucfs` to reconciliationwriter;
