@@ -56,7 +56,7 @@ jobs:
           path: build
 
 
-  build-and-publish-docker:
+  publish-docker:
     runs-on: ubuntu-latest
     needs: [get-publish-version, build-app]
     steps:
