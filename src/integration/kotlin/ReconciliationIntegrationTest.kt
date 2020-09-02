@@ -2,6 +2,7 @@ import org.apache.hadoop.hbase.HColumnDescriptor
 import org.apache.hadoop.hbase.HTableDescriptor
 import org.apache.hadoop.hbase.TableName
 import org.apache.hadoop.hbase.client.HBaseAdmin
+import org.apache.hadoop.hbase.client.HTable
 import org.apache.hadoop.hbase.client.Put
 import org.apache.hadoop.hbase.util.Bytes.toBytes
 import org.junit.Ignore
@@ -69,10 +70,11 @@ class ReconciliationIntegrationTest {
         assert(recordsInHbase == 0)
     }
 
-    @Ignore
-    fun givenRecordsToBeReconciledInMetadataStoreWhenRecordsExistExactlyInHbaseThenTheRecordsAreReconciled() {
+    @Test
+    fun givenRecordsToBeReconciledInMetadataStoreWhenRecordsExistInHbaseThenTheRecordsAreReconciled() {
 
         createMetadataStoreTable()
+        createHbaseTable()
 
         setupHbaseData(5)
         setupMetadataStoreData(5)
@@ -146,7 +148,7 @@ class ReconciliationIntegrationTest {
 
         val admin = HBaseAdmin(hbaseConfiguration.hbaseConfiguration())
 
-        val table = HTableDescriptor(toBytes("test_table"))
+        val table = HTableDescriptor(TableName.valueOf("test_table"))
 
         val family = HColumnDescriptor(toBytes("cf"))
 

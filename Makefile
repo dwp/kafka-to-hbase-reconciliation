@@ -36,6 +36,15 @@ local-test: ## Run the unit tests with gradle
 
 local-all: local-build local-test local-dist ## Build and test with gradle
 
+mysql_root: ## Get a client session on the metadatastore database.
+	docker exec -it metadatastore mysql --host=127.0.0.1 --user=root --password=password metadatastore
+
+mysql_writer: ## Get a client session on the metadatastore database.
+	docker exec -it metadatastore mysql --host=127.0.0.1 --user=reconciliationwriter --password=password metadatastore
+
+hbase-shell: ## Open an Hbase shell onto the running Hbase container
+	docker-compose run --rm hbase shell
+
 rdbms: ## Bring up and provision mysql
 	docker-compose -f docker-compose.yaml up -d metadatastore
 	@{ \
@@ -48,17 +57,12 @@ rdbms: ## Bring up and provision mysql
 	docker exec -i metadatastore mysql --host=127.0.0.1 --user=root --password=password metadatastore  < ./docker/metadatastore/create_table.sql
 	docker exec -i metadatastore mysql --host=127.0.0.1 --user=root --password=password metadatastore  < ./docker/metadatastore/grant_user.sql
 
-mysql_root: ## Get a client session on the metadatastore database.
-	docker exec -it metadatastore mysql --host=127.0.0.1 --user=root --password=password metadatastore
+hbase-populate:
+	docker exec -i hbase hbase shell <<< "create_namespace 'claimant_advances'"; \
+	docker-compose up hbase-populate; \
 
-mysql_writer: ## Get a client session on the metadatastore database.
-	docker exec -it metadatastore mysql --host=127.0.0.1 --user=reconciliationwriter --password=password metadatastore
-
-hbase-shell: ## Open an Hbase shell onto the running Hbase container
-	docker-compose run --rm hbase shell
-
-services: rdbms ## Bring up supporting services in docker
-	docker-compose -f docker-compose.yaml up --build -d hbase
+services: rdbms hbase-populate ## Bring up supporting services in docker
+	docker-compose -f docker-compose.yaml up --build -d hbase;
 
 up: services ## Bring up Reconciliation in Docker with supporting services
 	docker-compose -f docker-compose.yaml up --build -d reconciliation
