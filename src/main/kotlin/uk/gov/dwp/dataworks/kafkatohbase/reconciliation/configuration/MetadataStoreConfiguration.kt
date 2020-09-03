@@ -13,29 +13,28 @@ import java.util.*
 @Configuration
 @ConfigurationProperties(prefix = "metadatastore")
 data class MetadataStoreConfiguration(
-    var endpoint: String? = "127.0.0.1",
-    var port: String? = "3306",
-    var user: String? = "reconciliationwriter",
-    var passwordSecretName: String? = "metastore_password",
-    var passwordDummy: String? = "password",
-    var table: String? = null,
-    var databaseName: String? = "metadatastore",
-    var caCertPath: String? = "/certs/AmazonRootCA1.pem",
-    var queryLimit: String? = "14",
-    var useAwsSecrets: String? = "false"
+    var endpoint: String? = "NOT_SET",
+    var port: String? = "NOT_SET",
+    var user: String? = "NOT_SET",
+    var passwordSecretName: String? = "NOT_SET",
+    var dummyPassword: String? = "NOT_SET",
+    var table: String? = "NOT_SET",
+    var databaseName: String? = "NOT_SET",
+    var caCertPath: String? = "NOT_SET",
+    var queryLimit: String? = "NOT_SET",
+    var useAwsSecrets: String? = "NOT_SET"
 ) {
 
     companion object {
         val logger = DataworksLogger.getLogger(MetadataStoreConfiguration::class.toString())
     }
-
-    private val isUsingAWS = useAwsSecrets == "true"
+    private val isUsingAWS = useAwsSecrets!!.toLowerCase() == "true"
 
     fun databaseUrl() = "jdbc:mysql://$endpoint:$port/$databaseName"
 
     fun databaseProperties(): Properties {
 
-        val properties = Properties().apply {
+        return Properties().apply {
             put("user", user)
 
             if (isUsingAWS) {
@@ -44,15 +43,24 @@ data class MetadataStoreConfiguration(
                 put("ssl_verify_cert", true)
             }
         }
-
-        properties["password"] = if (isUsingAWS) AWSSecretHelper().getSecret(passwordSecretName!!) else passwordDummy
-
-        return properties
     }
 
     @Bean
     fun metadataStoreConnection(): Connection {
+        val metaStorePassword = if (isUsingAWS) {
+            AWSSecretHelper().getSecret(passwordSecretName!!)!!
+        } else {
+            logger.info("Using dummy password")
+            dummyPassword!!
+        }
+        logger.info("Metastore properties loaded", "metastore_properties" to databaseProperties().toString())
+        val metastoreProperties = databaseProperties().apply {
+            put("password", metaStorePassword)
+        }
+
+        logger.info("Establishing connection with Metadata Store", "url" to databaseUrl())
+        val connection = DriverManager.getConnection(databaseUrl(), metastoreProperties)
         logger.info("Established connection with Metadata Store", "url" to databaseUrl())
-        return DriverManager.getConnection(databaseUrl(), databaseProperties())
+        return connection
     }
 }

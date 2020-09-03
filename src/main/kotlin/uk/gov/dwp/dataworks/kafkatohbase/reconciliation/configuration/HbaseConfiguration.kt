@@ -13,13 +13,13 @@ import uk.gov.dwp.dataworks.logging.DataworksLogger
 @Configuration
 @ConfigurationProperties(prefix = "hbase")
 data class HbaseConfiguration(
-    var zookeeperParent: String? = null,
-    var zookeeperQuorum: String? = null,
-    var zookeeperPort: String? = null,
-    var timeoutMs: String? = null,
-    var clientTimeoutMs: String? = null,
-    var rpcReadTimeoutMs: String? = null,
-    var retries: String? = null
+    var zookeeperParent: String? = "NOT_SET",
+    var zookeeperQuorum: String? = "NOT_SET",
+    var zookeeperPort: String? = "NOT_SET",
+    var clientScannerTimeoutPeriodMs: String? = "NOT_SET",
+    var clientTimeoutMs: String? = "NOT_SET",
+    var rpcReadTimeoutMs: String? = "NOT_SET",
+    var retries: String? = "NOT_SET"
 ) {
 
     companion object {
@@ -29,13 +29,13 @@ data class HbaseConfiguration(
     fun hbaseConfiguration(): org.apache.hadoop.conf.Configuration {
 
         val configuration = org.apache.hadoop.conf.Configuration().apply {
-            set(HConstants.ZOOKEEPER_ZNODE_PARENT, zookeeperParent ?: "/hbase")
-            set(HConstants.ZOOKEEPER_QUORUM, zookeeperQuorum ?: "localhost")
-            setInt("hbase.zookeeper.port", zookeeperPort?.toIntOrNull() ?: 2181)
-            setInt(HConstants.HBASE_CLIENT_SCANNER_TIMEOUT_PERIOD, timeoutMs?.toIntOrNull() ?: 1800000)
-            setInt(HConstants.HBASE_CLIENT_OPERATION_TIMEOUT, clientTimeoutMs?.toIntOrNull() ?: 3600000)
-            setInt(HConstants.HBASE_RPC_READ_TIMEOUT_KEY, rpcReadTimeoutMs?.toIntOrNull() ?: 1800000)
-            setInt(HConstants.HBASE_CLIENT_RETRIES_NUMBER, retries?.toIntOrNull() ?: 3)
+            set(HConstants.ZOOKEEPER_ZNODE_PARENT, zookeeperParent ?: "NOPE")
+            set(HConstants.ZOOKEEPER_QUORUM, zookeeperQuorum ?: "NOPE")
+            setInt("hbase.zookeeper.port", zookeeperPort?.toIntOrNull() ?: 666)
+            setInt(HConstants.HBASE_CLIENT_SCANNER_TIMEOUT_PERIOD, clientScannerTimeoutPeriodMs?.toIntOrNull() ?: 66)
+            setInt(HConstants.HBASE_CLIENT_OPERATION_TIMEOUT, clientTimeoutMs?.toIntOrNull() ?: 666)
+            setInt(HConstants.HBASE_RPC_READ_TIMEOUT_KEY, rpcReadTimeoutMs?.toIntOrNull() ?: 666)
+            setInt(HConstants.HBASE_CLIENT_RETRIES_NUMBER, retries?.toIntOrNull() ?: 666)
         }
 
         logger.info(
