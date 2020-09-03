@@ -25,17 +25,17 @@ import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationS
 @SpringBootTest(
     classes = [ReconciliationApplication::class]
 )
-@TestPropertySource(
-    properties = [
-        "hbase.zookeeper.quorum=localhost",
-        "hbase.table.pattern=^\\\\w+\\\\.([-\\\\w]+)\\.([-\\\\w]+)$",
-        "metadatastore.endpoint=localhost",
-        "metadatastore.port=3306",
-        "metadatastore.user=reconciliationwriter",
-        "metadatastore.password=password",
-        "metadatastore.database.name=metadatastore",
-        "metadatastore.table=ucfs"]
-)
+//@TestPropertySource(
+//    properties = [
+//        "hbase.zookeeper.quorum=localhost",
+//        "hbase.table.pattern=^\\\\w+\\\\.([-\\\\w]+)\\.([-\\\\w]+)$",
+//        "metadatastore.endpoint=localhost",
+//        "metadatastore.port=3306",
+//        "metadatastore.user=reconciliationwriter",
+//        "metadatastore.password=password",
+//        "metadatastore.database.name=metadatastore",
+//        "metadatastore.table=ucfs"]
+//)
 @ActiveProfiles("DUMMY_SECRETS")
 class ReconciliationIntegrationTest {
 
