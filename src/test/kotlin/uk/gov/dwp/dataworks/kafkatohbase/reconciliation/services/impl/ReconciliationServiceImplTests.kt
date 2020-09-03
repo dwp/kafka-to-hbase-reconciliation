@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.junit4.SpringRunner
-import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.HbaseRepository
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.HBaseRepository
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.MetadataStoreRepository
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationService
 
@@ -24,7 +24,7 @@ class ReconciliationServiceImplTests {
 	private lateinit var metadataStoreRepository: MetadataStoreRepository
 
 	@MockBean
-	private lateinit var hbaseRepository: HbaseRepository
+	private lateinit var HBaseRepository: HBaseRepository
 
 	@Test
 	fun willHandleEmptyResultFromMetadataStore() {
@@ -36,7 +36,7 @@ class ReconciliationServiceImplTests {
 	}
 
 	@Test
-	fun updatesMetadataStoreOnlyWhenFoundInHbase() {
+	fun updatesMetadataStoreOnlyWhenFoundInHBase() {
 
         val result = listOf(
                 mapOf("topic_name" to "incorrect", "hbase_id" to "banana", "hbase_timestamp" to 66L),
@@ -44,8 +44,8 @@ class ReconciliationServiceImplTests {
         )
 
         given(metadataStoreRepository.fetchUnreconciledRecords()).willReturn(result)
-        given(hbaseRepository.recordExistsInHbase("incorrect", "banana", 66L)).willReturn(false)
-		given(hbaseRepository.recordExistsInHbase("table", "1", 1L)).willReturn(true)
+        given(HBaseRepository.recordExistsInHBase("incorrect", "banana", 66L)).willReturn(false)
+		given(HBaseRepository.recordExistsInHBase("table", "1", 1L)).willReturn(true)
 
 		reconciliationService.startReconciliation()
 		verify(metadataStoreRepository, times(1)).fetchUnreconciledRecords()

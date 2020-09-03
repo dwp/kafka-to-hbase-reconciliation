@@ -14,7 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.ReconciliationApplication
-import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.HbaseConfiguration
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.HBaseConfiguration
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.MetadataStoreConfiguration
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationService
 
@@ -34,7 +34,7 @@ class ReconciliationIntegrationTest {
     lateinit var metadataStoreConfiguration: MetadataStoreConfiguration
 
     @Autowired
-    lateinit var hbaseConfiguration: HbaseConfiguration
+    lateinit var HBaseConfiguration: HBaseConfiguration
 
     @Autowired
     lateinit var service: ReconciliationService
@@ -53,7 +53,7 @@ class ReconciliationIntegrationTest {
 
     @Test
     fun testWeCanEmptyHBase() {
-        emptyHbaseTable()
+        emptyHBaseTable()
     }
 
     @Test
@@ -62,27 +62,27 @@ class ReconciliationIntegrationTest {
     }
 
     @Ignore
-    fun givenNoRecordsInMetadataStoreAndHbaseWhenStartingReconciliationThenNoRecordsAreReconciled() {
+    fun givenNoRecordsInMetadataStoreAndHBaseWhenStartingReconciliationThenNoRecordsAreReconciled() {
 
         val recordsInMetadataStore = recordsInMetadataStore()
-        val recordsInHbase = recordsInHbase()
+        val recordsInHBase = recordsInHBase()
 
         assert(recordsInMetadataStore == 0)
-        assert(recordsInHbase == 0)
+        assert(recordsInHBase == 0)
 
         service.startReconciliation()
 
         assert(recordsInMetadataStore == 0)
-        assert(recordsInHbase == 0)
+        assert(recordsInHBase == 0)
     }
 
     @Ignore
-    fun givenRecordsToBeReconciledInMetadataStoreWhenRecordsExistInHbaseThenTheRecordsAreReconciled() {
+    fun givenRecordsToBeReconciledInMetadataStoreWhenRecordsExistInHBaseThenTheRecordsAreReconciled() {
 
         createMetadataStoreTable()
-        createHbaseTable()
+        createHBaseTable()
 
-        setupHbaseData(5)
+        setupHBaseData(5)
         setupMetadataStoreData(5)
 
         service.startReconciliation()
@@ -93,11 +93,11 @@ class ReconciliationIntegrationTest {
     }
 
     @Ignore
-    fun givenRecordsToBeReconciledInMetadataStoreWhenRecordsExistInHbasePlusExtraThenTheRecordsAreReconciledThatOnlyExistInMetadataStore() {
+    fun givenRecordsToBeReconciledInMetadataStoreWhenRecordsExistInHBasePlusExtraThenTheRecordsAreReconciledThatOnlyExistInMetadataStore() {
 
         createMetadataStoreTable()
 
-        setupHbaseData(10)
+        setupHBaseData(10)
         setupMetadataStoreData(5)
 
         service.startReconciliation()
@@ -108,12 +108,12 @@ class ReconciliationIntegrationTest {
     }
 
     @Ignore
-    fun givenFiveRecordsToBeReconciledInMetadataStoreAndTwoInHbaseWhenRequestingToReconcileThenOnlyTwoAreReconciled() {
+    fun givenFiveRecordsToBeReconciledInMetadataStoreAndTwoInHBaseWhenRequestingToReconcileThenOnlyTwoAreReconciled() {
 
         createMetadataStoreTable()
-        createHbaseTable()
+        createHBaseTable()
 
-        setupHbaseData(2)
+        setupHBaseData(2)
         setupMetadataStoreData(5)
 
         service.startReconciliation()
@@ -162,9 +162,9 @@ class ReconciliationIntegrationTest {
         logger.info("End emptyMetadataStoreTable")
     }
 
-    private fun createHbaseTable() {
-        logger.info("Start createHbaseTable")
-        val admin = HBaseAdmin(hbaseConfiguration.hbaseConfiguration())
+    private fun createHBaseTable() {
+        logger.info("Start createHBaseTable")
+        val admin = HBaseAdmin(HBaseConfiguration.hbaseConfiguration())
 
         val table = HTableDescriptor(hbaseTableObject)
 
@@ -176,19 +176,19 @@ class ReconciliationIntegrationTest {
         table.addFamily(qualifier)
 
         admin.createTable(table)
-        logger.info("End createHbaseTable")
+        logger.info("End createHBaseTable")
     }
 
-    private fun emptyHbaseTable() {
-        logger.info("Start emptyHbaseTable")
-        val admin = HBaseAdmin(hbaseConfiguration.hbaseConfiguration())
+    private fun emptyHBaseTable() {
+        logger.info("Start emptyHBaseTable")
+        val admin = HBaseAdmin(HBaseConfiguration.hbaseConfiguration())
         admin.truncateTable(hbaseTableObject, true)
-        logger.info("End emptyHbaseTable")
+        logger.info("End emptyHBaseTable")
     }
 
-    private fun setupHbaseData(entries: Int) {
+    private fun setupHBaseData(entries: Int) {
         logger.info("Start Setup hbase data entries for integration test", "entries" to entries)
-        hbaseConfiguration.hbaseConnection().use { connection ->
+        HBaseConfiguration.hbaseConnection().use { connection ->
 
             with(connection.getTable(hbaseTableObject)) {
 
@@ -249,7 +249,7 @@ class ReconciliationIntegrationTest {
         }
     }
 
-    private fun recordsInHbase(): Int {
+    private fun recordsInHBase(): Int {
         val connection = metadataStoreConfiguration.metadataStoreConnection()
         val statement = connection.createStatement()
         val rs = statement.executeQuery(

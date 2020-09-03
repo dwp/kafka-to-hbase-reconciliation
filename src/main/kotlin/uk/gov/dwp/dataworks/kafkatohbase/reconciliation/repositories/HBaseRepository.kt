@@ -3,14 +3,14 @@ package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories
 import org.apache.hadoop.hbase.TableName
 import org.apache.hadoop.hbase.client.Get
 import org.springframework.stereotype.Repository
-import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.HbaseConfiguration
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.HBaseConfiguration
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationService
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.utils.TableNameUtil
 import uk.gov.dwp.dataworks.logging.DataworksLogger
 
 @Repository
-class HbaseRepository(
-    private val configuration: HbaseConfiguration,
+class HBaseRepository(
+    private val configuration: HBaseConfiguration,
     private val tableNameUtil: TableNameUtil
 ) {
 
@@ -18,7 +18,7 @@ class HbaseRepository(
         val logger = DataworksLogger.getLogger(ReconciliationService::class.toString())
     }
 
-    fun recordExistsInHbase(topicName: String, id: String, version: Long): Boolean {
+    fun recordExistsInHBase(topicName: String, id: String, version: Long): Boolean {
         configuration.hbaseConnection().use { connection ->
             with(TableName.valueOf(tableNameUtil.getTableNameFromTopic(topicName))) {
                 return if (connection.admin.tableExists(this)) {

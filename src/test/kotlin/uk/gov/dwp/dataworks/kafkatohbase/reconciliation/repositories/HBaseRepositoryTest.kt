@@ -12,19 +12,19 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.test.mock.mockito.SpyBean
 import org.springframework.test.context.junit4.SpringRunner
-import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.HbaseConfiguration
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.HBaseConfiguration
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.utils.TableNameUtil
 
 @RunWith(SpringRunner::class)
-@SpringBootTest(classes = [HbaseRepository::class])
-class HbaseRepositoryTest {
+@SpringBootTest(classes = [HBaseRepository::class])
+class HBaseRepositoryTest {
 
     @SpyBean
     @Autowired
-    private lateinit var hbaseRepository: HbaseRepository
+    private lateinit var HBaseRepository: HBaseRepository
 
     @MockBean
-    private lateinit var hbaseConfiguration: HbaseConfiguration
+    private lateinit var HBaseConfiguration: HBaseConfiguration
 
     @MockBean
     private lateinit var tableNameUtil: TableNameUtil
@@ -45,11 +45,11 @@ class HbaseRepositoryTest {
             on { admin } doReturn adm
         }
 
-        whenever(hbaseConfiguration.hbaseConnection()).thenReturn(hbaseConnection)
+        whenever(HBaseConfiguration.hbaseConnection()).thenReturn(hbaseConnection)
         whenever(tableNameUtil.getTableNameFromTopic(topic)).thenReturn(tableName)
         whenever(tableNameUtil.decodePrintable("1")).thenReturn("123".toByteArray())
 
-        val booleanResult = hbaseRepository.recordExistsInHbase(topic, id, version)
+        val booleanResult = HBaseRepository.recordExistsInHBase(topic, id, version)
 
         assertThat(booleanResult).isTrue()
         verify(hbaseConnection, times(1)).close()
@@ -71,12 +71,12 @@ class HbaseRepositoryTest {
             on { admin } doReturn adm
         }
 
-        whenever(hbaseConfiguration.hbaseConnection()).thenReturn(hbaseConnection)
+        whenever(HBaseConfiguration.hbaseConnection()).thenReturn(hbaseConnection)
 
         whenever(tableNameUtil.getTableNameFromTopic(topic)).thenReturn(tableName)
         whenever(tableNameUtil.decodePrintable("1")).thenReturn("123".toByteArray())
 
-        val booleanResult = hbaseRepository.recordExistsInHbase(topic, id, version)
+        val booleanResult = HBaseRepository.recordExistsInHBase(topic, id, version)
 
         assertThat(booleanResult).isFalse()
         verify(hbaseConnection, times(1)).close()

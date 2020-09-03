@@ -25,7 +25,7 @@ git-hooks: ## Set up hooks in .git/hooks
 		done \
 	}
 
-local-build: ## Build Kafka2Hbase with gradle
+local-build: ## Build Kafka2HBase with gradle
 	gradle :unit build -x test
 
 local-dist: ## Assemble distribution files in build/dist with gradle
@@ -42,7 +42,7 @@ mysql-root: ## Get a root client session on the metadatastore database.
 mysql-writer: ## Get a writer client session on the metadatastore database.
 	docker exec -it metadatastore mysql --host=127.0.0.1 --user=reconciliationwriter --password=password metadatastore
 
-hbase-shell: ## Open an Hbase shell onto the running Hbase container
+hbase-shell: ## Open an HBase shell onto the running HBase container
 	docker-compose run --rm hbase shell
 
 rdbms-up: ## Bring up and provision mysql
@@ -82,13 +82,13 @@ services: hbase-up rdbms-up hbase-populate ## Bring up supporting services in do
 up: services ## Bring up Reconciliation in Docker with supporting services
 	docker-compose -f docker-compose.yaml up --build -d reconciliation
 
-restart: ## Restart Kafka2Hbase and all supporting services
+restart: ## Restart Kafka2HBase and all supporting services
 	docker-compose restart
 
-down: ## Bring down the Kafka2Hbase Docker container and support services
+down: ## Bring down the Kafka2HBase Docker container and support services
 	docker-compose down
 
-destroy: down ## Bring down the Kafka2Hbase Docker container and services then delete all volumes
+destroy: down ## Bring down the Kafka2HBase Docker container and services then delete all volumes
 	docker network prune -f
 	docker volume prune -f
 

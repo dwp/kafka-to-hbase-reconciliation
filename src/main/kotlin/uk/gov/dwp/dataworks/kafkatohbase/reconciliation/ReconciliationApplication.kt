@@ -4,10 +4,12 @@ import org.springframework.boot.CommandLineRunner
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan
 import org.springframework.boot.runApplication
+import org.springframework.scheduling.annotation.EnableScheduling
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationService
 
 @ConfigurationPropertiesScan
 @SpringBootApplication
+@EnableScheduling
 class ReconciliationApplication(private val reconciliationService: ReconciliationService) : CommandLineRunner {
     override fun run(vararg args: String?) {
         reconciliationService.startReconciliation()
