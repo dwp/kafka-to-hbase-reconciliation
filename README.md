@@ -36,14 +36,12 @@ You can do this for both the application, and the integration tests.
   * or
   * <img src="docs/run-ide-application.png" alt="run app" width="300"/>
 * For the integration tests: 
-  * <img src="docs/run-ide-integration-tests" alt="run tests" width="300"/>
+  * <img src="docs/run-ide-integration-tests.png" alt="run tests" width="300"/>
 
 Either, with local application.properties
-
 * Verify the that the [local application.properties](application.properties) matches all current docker compose settings
 
 Or, with env vars
-
 * Make a list duplicating the docker compose settings
 
 Then, for either
@@ -55,11 +53,13 @@ Then, for either
 * The ports exposed by the containers should already match.
 
 Then for both,
-* Add env vars for the logger
-  * `CONTAINER_VERSION: "latest"`
-  * `ENVIRONMENT: "local-dev"`
-  * `APPLICATION_NAME: "reconciliation"`
-  * `APP_VERSION: "test"`
-  * `LOG_LEVEL: DEBUG`
+* Add env vars for the logger - in intellij you can paste in this csv:
+```
+CONTAINER_VERSION=latest
+ENVIRONMENT=local-ids
+APPLICATION_NAME=reconciliation
+APP_VERSION=test
+LOG_LEVEL=DEBUG
+```
 * Run the application/test target you just made, it should start and connect up.
 
