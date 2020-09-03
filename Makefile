@@ -48,11 +48,13 @@ hbase-shell: ## Open an Hbase shell onto the running Hbase container
 rdbms-up: ## Bring up and provision mysql
 	docker-compose -f docker-compose.yaml up -d metadatastore
 	@{ \
+		echo Waiting for metadatastore.; \
 		while ! docker logs metadatastore 2>&1 | grep "^Version" | grep 3306; do \
-			echo Waiting for metadatastore.; \
 			sleep 2; \
+			echo Waiting for metadatastore.; \
 		done; \
 		sleep 5; \
+		echo ...metadatastore ready.; \
 	}
 	docker exec -i metadatastore mysql --host=127.0.0.1 --user=root --password=password metadatastore  < ./docker/metadatastore/create_table.sql
 	docker exec -i metadatastore mysql --host=127.0.0.1 --user=root --password=password metadatastore  < ./docker/metadatastore/grant_user.sql
@@ -60,17 +62,19 @@ rdbms-up: ## Bring up and provision mysql
 hbase-up: ## Bring up and provision mysql
 	docker-compose -f docker-compose.yaml up -d hbase
 	@{ \
+		echo Waiting for hbase.; \
 		while ! docker logs hbase 2>&1 | grep "Master has completed initialization" ; do \
-			echo Waiting for hbase.; \
 			sleep 2; \
+			echo Waiting for hbase.; \
 		done; \
 		sleep 5; \
+		echo ...hbase ready.; \
 	}
 
 hbase-populate: hbase-up
-	@echo "creating namespace 'claimant_advances'..." ; \
+	@echo "Creating namespace 'claimant_advances'..." ; \
 	docker exec -i hbase hbase shell <<< "create_namespace 'claimant_advances'"; \
-	@echo "created namespace 'claimant_advances'..." ; \
+	@echo "Created namespace 'claimant_advances'..." ; \
 	docker-compose up hbase-populate; \
 
 services: hbase-up rdbms-up hbase-populate ## Bring up supporting services in docker
