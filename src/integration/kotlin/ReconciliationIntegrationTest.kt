@@ -38,8 +38,8 @@ class ReconciliationIntegrationTest {
     @Autowired
     lateinit var HBaseConfiguration: HBaseConfiguration
 
-    @Autowired
-    lateinit var service: ReconciliationService
+//    @Autowired
+//    lateinit var service: ReconciliationService
 
     final val hbaseNamespace = "claimant_advances"
     final val hbaseTable = "advanceDetails"
