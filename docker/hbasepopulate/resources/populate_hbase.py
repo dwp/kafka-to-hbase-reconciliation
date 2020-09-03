@@ -31,14 +31,6 @@ def main():
 
             print(f"tables: '{tables}'")
 
-            print("data_key_service='{}'".format(args.data_key_service))
-#             if args.data_key_service:
-#                 content = requests.get(args.data_key_service).json()
-#                 encryption_key = content['plaintextDataKey']
-#                 encrypted_key = content['ciphertextDataKey']
-#                 master_key_id = content['dataKeyEncryptionKeyId']
-#                 print("Got data from dks")
-#             else:
             encryption_key = "czMQLgW/OrzBZwFV9u4EBA=="
             master_key_id = "1234567890"
             encrypted_key = "blahblah"

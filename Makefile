@@ -36,33 +36,48 @@ local-test: ## Run the unit tests with gradle
 
 local-all: local-build local-test local-dist ## Build and test with gradle
 
-mysql_root: ## Get a client session on the metadatastore database.
+mysql-root: ## Get a root client session on the metadatastore database.
 	docker exec -it metadatastore mysql --host=127.0.0.1 --user=root --password=password metadatastore
 
-mysql_writer: ## Get a client session on the metadatastore database.
+mysql-writer: ## Get a writer client session on the metadatastore database.
 	docker exec -it metadatastore mysql --host=127.0.0.1 --user=reconciliationwriter --password=password metadatastore
 
 hbase-shell: ## Open an Hbase shell onto the running Hbase container
 	docker-compose run --rm hbase shell
 
-rdbms: ## Bring up and provision mysql
+rdbms-up: ## Bring up and provision mysql
 	docker-compose -f docker-compose.yaml up -d metadatastore
 	@{ \
+		echo Waiting for metadatastore.; \
 		while ! docker logs metadatastore 2>&1 | grep "^Version" | grep 3306; do \
-			echo Waiting for metadatastore.; \
 			sleep 2; \
+			echo Waiting for metadatastore.; \
 		done; \
 		sleep 5; \
+		echo ...metadatastore ready.; \
 	}
 	docker exec -i metadatastore mysql --host=127.0.0.1 --user=root --password=password metadatastore  < ./docker/metadatastore/create_table.sql
 	docker exec -i metadatastore mysql --host=127.0.0.1 --user=root --password=password metadatastore  < ./docker/metadatastore/grant_user.sql
 
-hbase-populate:
+hbase-up: ## Bring up and provision mysql
+	docker-compose -f docker-compose.yaml up -d hbase
+	@{ \
+		echo Waiting for hbase.; \
+		while ! docker logs hbase 2>&1 | grep "Master has completed initialization" ; do \
+			sleep 2; \
+			echo Waiting for hbase.; \
+		done; \
+		sleep 5; \
+		echo ...hbase ready.; \
+	}
+
+hbase-populate: hbase-up
+	@echo "Creating namespace 'claimant_advances'..." ; \
 	docker exec -i hbase hbase shell <<< "create_namespace 'claimant_advances'"; \
+	@echo "Created namespace 'claimant_advances'..." ; \
 	docker-compose up hbase-populate; \
 
-services: rdbms hbase-populate ## Bring up supporting services in docker
-	docker-compose -f docker-compose.yaml up --build -d hbase;
+services: hbase-up rdbms-up hbase-populate ## Bring up supporting services in docker
 
 up: services ## Bring up Reconciliation in Docker with supporting services
 	docker-compose -f docker-compose.yaml up --build -d reconciliation
@@ -86,14 +101,10 @@ integration-test: ## Run the integration tests in a Docker container
  	}
 	docker-compose -f docker-compose.yaml run --name integration-test integration-test gradle --no-daemon --rerun-tasks integration-test -x test
 
-gradle-image: ## Build gradle image.
-	cp settings.gradle.kts gradle.properties docker/gradle
-	cd docker/gradle && docker build --tag dwp-gradle:latest .
-
 .PHONY: integration-all ## Build and Run all the tests in containers from a clean start
 integration-all: down destroy build up integration-test
 
-build: build-base gradle-image ## build main images
+build: local-all build-base ## build main images
 	docker-compose build
 
 build-base: ## build the base images which certain images extend.
@@ -102,7 +113,7 @@ build-base: ## build the base images which certain images extend.
 		docker build --tag dwp-java:latest --file ./java/Dockerfile . ; \
 		docker build --tag dwp-python-preinstall:latest --file ./python/Dockerfile . ; \
 		cp ../settings.gradle.kts ../gradle.properties . ; \
-		docker build --tag dwp-kotlin-slim-gradle-reconciliation:latest --file ./gradle/Dockerfile . ; \
+		docker build --tag dwp-gradle-reconciliation:latest --file ./gradle/Dockerfile . ; \
 		rm -rf settings.gradle.kts gradle.properties ; \
 		popd; \
 	}

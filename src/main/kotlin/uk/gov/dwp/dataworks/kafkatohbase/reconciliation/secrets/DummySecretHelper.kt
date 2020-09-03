@@ -19,7 +19,7 @@ class DummySecretHelper: SecretHelperInterface {
         logger.info("Getting value from dummy secret manager", "secret_name" to secretName)
 
         try {
-            return configuration.metadataStorePasswordSecret ?: "NOT_SET"
+            return configuration.dummySecret ?: "NOT_SET"
         } catch (e: Exception) {
             logger.error("Failed to get dummy secret manager result", e, "secret_name" to secretName)
             throw e
