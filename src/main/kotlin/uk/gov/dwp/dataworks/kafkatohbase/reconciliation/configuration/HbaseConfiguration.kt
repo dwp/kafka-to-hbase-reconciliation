@@ -44,26 +44,27 @@ data class HbaseConfiguration(
             "rpc" to configuration.get(HConstants.HBASE_RPC_READ_TIMEOUT_KEY),
             "client" to configuration.get(HConstants.HBASE_CLIENT_OPERATION_TIMEOUT)
         )
-
+        logger.info("HBase Configuration loaded", "hbase_configuration" to configuration.toString())
         return configuration
     }
 
     @Bean
     fun hbaseConnection(): Connection {
-
+        logger.info("Establishing connection with Hbase")
         val connection = ConnectionFactory.createConnection(HBaseConfiguration.create(hbaseConfiguration()))
         addShutdownHook(connection)
-
         logger.info("Established connection with Hbase")
 
         return connection
     }
 
     private fun addShutdownHook(connection: Connection) {
+        logger.info("Adding HBase shutdown hook")
         Runtime.getRuntime().addShutdownHook(object : Thread() {
             override fun run() {
                 connection.close()
             }
         })
+        logger.info("Added HBase shutdown hook")
     }
 }

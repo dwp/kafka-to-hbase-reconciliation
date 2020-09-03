@@ -34,7 +34,7 @@ data class MetadataStoreConfiguration(
 
     fun databaseProperties(): Properties {
 
-        return Properties().apply {
+        val properties = Properties().apply {
             put("user", user)
             put("useAwsSecrets", useAwsSecrets)
 
@@ -44,6 +44,9 @@ data class MetadataStoreConfiguration(
                 put("ssl_verify_cert", true)
             }
         }
+
+        HbaseConfiguration.logger.info("Metastore Configuration loaded", "metastore_properties" to properties.toString())
+        return properties
     }
 
     @Bean
@@ -54,7 +57,6 @@ data class MetadataStoreConfiguration(
             logger.info("Using dummy password")
             dummyPassword!!
         }
-        logger.info("Metastore properties loaded", "metastore_properties" to databaseProperties().toString())
         val metastoreProperties = databaseProperties().apply {
             put("password", metaStorePassword)
         }
@@ -62,6 +64,17 @@ data class MetadataStoreConfiguration(
         logger.info("Establishing connection with Metadata Store", "url" to databaseUrl())
         val connection = DriverManager.getConnection(databaseUrl(), metastoreProperties)
         logger.info("Established connection with Metadata Store", "url" to databaseUrl())
+        addShutdownHook(connection)
         return connection
+    }
+
+    private fun addShutdownHook(connection: Connection) {
+        logger.info("Adding Metastore shutdown hook")
+        Runtime.getRuntime().addShutdownHook(object : Thread() {
+            override fun run() {
+                connection.close()
+            }
+        })
+        logger.info("Added Metastore shutdown hook")
     }
 }
