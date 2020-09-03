@@ -6,7 +6,8 @@ import org.springframework.stereotype.Service
 @Service
 interface ReconciliationService {
 
-    @Scheduled(fixedDelayString="5000")
+    fun startReconciliationOnTimer()
+
     fun startReconciliation()
 
     fun reconcileRecords(records: List<Map<String, Any>>): Int

@@ -10,7 +10,6 @@ import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationS
 import uk.gov.dwp.dataworks.logging.DataworksLogger
 
 @Service
-@EnableScheduling
 class ReconciliationServiceImpl(
     private val HBaseRepository: HBaseRepository,
     private val metadataStoreRepository: MetadataStoreRepository) : ReconciliationService {
@@ -26,6 +25,10 @@ class ReconciliationServiceImpl(
     //@Scheduled(fixedDelayString="${reconciler.fixed.delay.millis}")
     //@Scheduled(fixedDelayString="#{ReconcilerConfiguration.fixedDelayMillis")
     @Scheduled(fixedDelayString="5000")
+    override fun startReconciliationOnTimer() {
+        startReconciliation()
+    }
+
     override fun startReconciliation() {
         logger.info("Starting reconciliation of metadata store records")
         val recordsToReconcile = metadataStoreRepository.fetchUnreconciledRecords()
