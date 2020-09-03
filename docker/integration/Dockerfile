@@ -7,4 +7,4 @@ COPY src/ ./src
 COPY build/ ./build
 COPY .gradle/ ./gradle
 
-RUN gradle build
+RUN gradle :unit build integrationClasses -x test

@@ -45,7 +45,7 @@ mysql_writer: ## Get a client session on the metadatastore database.
 hbase-shell: ## Open an Hbase shell onto the running Hbase container
 	docker-compose run --rm hbase shell
 
-rdbms: ## Bring up and provision mysql
+rdbms-up: ## Bring up and provision mysql
 	docker-compose -f docker-compose.yaml up -d metadatastore
 	@{ \
 		while ! docker logs metadatastore 2>&1 | grep "^Version" | grep 3306; do \
@@ -57,12 +57,21 @@ rdbms: ## Bring up and provision mysql
 	docker exec -i metadatastore mysql --host=127.0.0.1 --user=root --password=password metadatastore  < ./docker/metadatastore/create_table.sql
 	docker exec -i metadatastore mysql --host=127.0.0.1 --user=root --password=password metadatastore  < ./docker/metadatastore/grant_user.sql
 
-hbase-populate:
+hbase-up: ## Bring up and provision mysql
+	docker-compose -f docker-compose.yaml up -d hbase
+	@{ \
+		while ! docker logs hbase 2>&1 | grep "Master has completed initialization" ; do \
+			echo Waiting for hbase.; \
+			sleep 2; \
+		done; \
+		sleep 5; \
+	}
+
+hbase-populate: hbase-up
 	docker exec -i hbase hbase shell <<< "create_namespace 'claimant_advances'"; \
 	docker-compose up hbase-populate; \
 
-services: rdbms hbase-populate ## Bring up supporting services in docker
-	docker-compose -f docker-compose.yaml up --build -d hbase;
+services: hbase-up rdbms-up hbase-populate ## Bring up supporting services in docker
 
 up: services ## Bring up Reconciliation in Docker with supporting services
 	docker-compose -f docker-compose.yaml up --build -d reconciliation
