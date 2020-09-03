@@ -1,4 +1,4 @@
-FROM dwp-gradle:latest
+FROM dwp-gradle-reconciliation:latest
 
 COPY build.gradle.kts .
 COPY settings.gradle.kts .
