@@ -1,0 +1,58 @@
+[
+  {
+    "kafka_message_id": "00000100",
+    "kafka_message_timestamp": "1",
+    "kafka_message_value": {
+      "traceId": "3b195725-98e1-4d56-bcb8-945a244c2d45",
+      "unitOfWorkId": "ed9e614c-cd28-4860-b77d-ab5962a5599e",
+      "@type": "V4",
+      "message": {
+        "db": "claimant-advances",
+        "collection": "advanceDetails",
+        "_id": {
+          "advanceGroupId": "b0269a34-2e37-4081-b67f-ae08d0e4d813"
+        },
+        "_timeBasedHash": "hashbrowns",
+        "@type": "MONGO_INSERT",
+        "_lastModifiedDateTime": "2019-07-04T07:27:35.104+0000",
+        "encryption": {
+          "encryptionKeyId": "55556666-abcd-89ab-1234-1234567890ab",
+          "encryptedEncryptionKey": "bHJjhg2Jb0uyidkl867gtFkjl4fgh9Ab",
+          "initialisationVector": "kjGyvY67jhJHVdo2",
+          "keyEncryptionKeyId": "example-key_2019-12-14_01"
+        },
+        "dbObject": "YES"
+      },
+      "version": "core-4.master.9790",
+      "timestamp": "2019-07-04T07:27:35.104+0000"
+    }
+  },
+  {
+    "kafka_message_id": "00000100",
+    "kafka_message_timestamp": "2",
+    "kafka_message_value": {
+      "traceId": "3b195725-98e1-4d56-bcb8-945a244c2d45",
+      "unitOfWorkId": "ed9e614c-cd28-4860-b77d-ab5962a5599e",
+      "@type": "V4",
+      "message": {
+        "db": "claimant-advances",
+        "collection": "advanceDetails",
+        "_id": {
+          "advanceGroupId": "b0269a34-2e37-4081-b67f-ae08d0e4d813"
+        },
+        "_timeBasedHash": "hashbrowns",
+        "@type": "MONGO_INSERT",
+        "_lastModifiedDateTime": "2019-07-04T07:27:35.104+0000",
+        "encryption": {
+          "encryptionKeyId": "55556666-abcd-89ab-1234-1234567890ab",
+          "encryptedEncryptionKey": "bHJjhg2Jb0uyidkl867gtFkjl4fgh9Ab",
+          "initialisationVector": "kjGyvY67jhJHVdo2",
+          "keyEncryptionKeyId": "example-key_2019-12-14_01"
+        },
+        "dbObject": "YES"
+      },
+      "version": "core-4.master.9790",
+      "timestamp": "2019-07-04T07:27:35.104+0000"
+    }
+  }
+]

@@ -2,6 +2,7 @@ import org.apache.hadoop.hbase.HColumnDescriptor
 import org.apache.hadoop.hbase.HTableDescriptor
 import org.apache.hadoop.hbase.TableName
 import org.apache.hadoop.hbase.client.HBaseAdmin
+import org.apache.hadoop.hbase.client.HTable
 import org.apache.hadoop.hbase.client.Put
 import org.apache.hadoop.hbase.util.Bytes.toBytes
 import org.junit.Ignore
@@ -23,17 +24,6 @@ import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationS
 @RunWith(SpringRunner::class)
 @SpringBootTest(
     classes = [ReconciliationApplication::class]
-)
-@TestPropertySource(
-    properties = [
-        "hbase.zookeeper.quorum=localhost",
-        "hbase.table.pattern=^\\\\w+\\\\.([-\\\\w]+)\\.([-\\\\w]+)$",
-        "metadatastore.endpoint=localhost",
-        "metadatastore.port=3306",
-        "metadatastore.user=reconciliationwriter",
-        "metadatastore.password=password",
-        "metadatastore.database.name=metadatastore",
-        "metadatastore.table=ucfs"]
 )
 @ActiveProfiles("DUMMY_SECRETS")
 class ReconciliationIntegrationTest {
@@ -70,9 +60,10 @@ class ReconciliationIntegrationTest {
     }
 
     @Ignore
-    fun givenRecordsToBeReconciledInMetadataStoreWhenRecordsExistExactlyInHbaseThenTheRecordsAreReconciled() {
+    fun givenRecordsToBeReconciledInMetadataStoreWhenRecordsExistInHbaseThenTheRecordsAreReconciled() {
 
         createMetadataStoreTable()
+        createHbaseTable()
 
         setupHbaseData(5)
         setupMetadataStoreData(5)
@@ -146,7 +137,7 @@ class ReconciliationIntegrationTest {
 
         val admin = HBaseAdmin(hbaseConfiguration.hbaseConfiguration())
 
-        val table = HTableDescriptor(toBytes("test_table"))
+        val table = HTableDescriptor(TableName.valueOf("test_table"))
 
         val family = HColumnDescriptor(toBytes("cf"))
 

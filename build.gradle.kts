@@ -73,14 +73,10 @@ tasks.register<Test>("integration-test") {
 		includeTestsMatching("ReconciliationIntegrationTest*")
 	}
 
-	environment("METADATASTORE_TABLE", "ucfs")
-	environment("METADATASTORE_USER", "reconciliationwriter")
-	environment("METADATASTORE_PASSWORD_SECRET_NAME", "metastore_password")
-	environment("METADATASTORE_DATABASE_NAME", "metadatastore")
-	environment("METADATASTORE_ENDPOINT", "localhost")
-	environment("METADATASTORE_PORT", "3306")
-	environment("METADATASTORE_USE_AWS_SECRETS", "false")
-	environment("METADATASTORE_TABLE", "ucfs")
+	//copy all env vars from unix/your integration container into the test
+	setEnvironment(System.getenv())
+    //to copy individual ones do this
+	//environment("ABC", System.getEnv("ABC"))
 
 	useJUnitPlatform { }
 	testLogging {
@@ -94,6 +90,11 @@ tasks.register<Test>("unit") {
 	group = "verification"
 	testClassesDirs = sourceSets["unit"].output.classesDirs
 	classpath = sourceSets["unit"].runtimeClasspath
+
+	//copy all env vars from unix/your test container into the test
+	setEnvironment(System.getenv())
+	//to copy individual ones do this
+	//environment("ABC", System.getEnv("ABC"))
 
 	testLogging {
 		outputs.upToDateWhen {false}

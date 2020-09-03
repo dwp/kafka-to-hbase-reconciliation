@@ -1,4 +1,4 @@
-FROM dwp-gradle:latest
+FROM dwp-gradle-reconciliation:latest
 
 COPY build.gradle.kts .
 COPY settings.gradle.kts .
@@ -7,4 +7,4 @@ COPY src/ ./src
 COPY build/ ./build
 COPY .gradle/ ./gradle
 
-RUN gradle build
+RUN gradle :unit build integrationClasses -x test -x integration-test

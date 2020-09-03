@@ -12,8 +12,8 @@ import org.springframework.stereotype.Component
 @Profile("!DUMMY_SECRETS")
 @ConfigurationProperties(prefix = "secrets")
 data class SecretsManagerConfiguration(
-    var region: String? = null,
-    var metadataStorePasswordSecret: String? = null
+    var region: String? = "NOT_SET",
+    var dummySecret: String? = "NOT_SET"
 ) {
 
     @Bean
