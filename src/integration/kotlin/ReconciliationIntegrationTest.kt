@@ -17,6 +17,7 @@ import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.ReconciliationApplicatio
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.HBaseConfiguration
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.MetadataStoreConfiguration
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationService
+import java.lang.UnsupportedOperationException
 
 
 @RunWith(SpringRunner::class)
@@ -43,6 +44,7 @@ class ReconciliationIntegrationTest {
     val hbaseTable = "advanceDetails"
     val hbaseNamespaceAndTable = "$hbaseNamespace:$hbaseTable"
     val hbaseTableObject = TableName.valueOf(hbaseNamespaceAndTable)
+    val hbaseAdmin = HBaseConfiguration.hbaseConnection().admin
 
     val columnFamily = "cf".toByteArray()
     val columnQualifier = "record".toByteArray()
@@ -164,30 +166,26 @@ class ReconciliationIntegrationTest {
 
     private fun createHBaseTable() {
         logger.info("Start createHBaseTable")
-        val admin = HBaseAdmin(HBaseConfiguration.hbaseConfiguration())
-
         val table = HTableDescriptor(hbaseTableObject)
-
         val family = HColumnDescriptor(toBytes("cf"))
-
         val qualifier = HColumnDescriptor(toBytes("record"))
-
         table.addFamily(family)
         table.addFamily(qualifier)
-
-        admin.createTable(table)
+        hbaseAdmin.createTable(table)
         logger.info("End createHBaseTable")
     }
 
     private fun emptyHBaseTable() {
         logger.info("Start emptyHBaseTable")
-        val admin = HBaseAdmin(HBaseConfiguration.hbaseConfiguration())
-        admin.truncateTable(hbaseTableObject, true)
+        hbaseAdmin.disableTable(hbaseTableObject)
+        hbaseAdmin.truncateTable(hbaseTableObject, true)
+        hbaseAdmin.enableTable(hbaseTableObject)
         logger.info("End emptyHBaseTable")
     }
 
     private fun setupHBaseData(entries: Int) {
         logger.info("Start Setup hbase data entries for integration test", "entries" to entries)
+        hbaseAdmin.enableTable(hbaseTableObject)
         HBaseConfiguration.hbaseConnection().use { connection ->
 
             with(connection.getTable(hbaseTableObject)) {
@@ -223,7 +221,6 @@ class ReconciliationIntegrationTest {
     }
 
     private fun verifyRecordsInMetadataAreReconciled(shouldBeReconciledCount: Int): Boolean {
-
         metadataStoreConfiguration.metadataStoreConnection().use { connection ->
             with(connection.createStatement()) {
                 return this.execute(
@@ -250,12 +247,7 @@ class ReconciliationIntegrationTest {
     }
 
     private fun recordsInHBase(): Int {
-        val connection = metadataStoreConfiguration.metadataStoreConnection()
-        val statement = connection.createStatement()
-        val rs = statement.executeQuery(
-            """SELECT COUNT(*) FROM ${metadataStoreConfiguration.table} """.trimIndent()
-        )
-        rs.next()
-        return rs.getInt(1)
+        ///do table scan of hbase and count, see HTME integration tests
+        throw UnsupportedOperationException("TODO")
     }
 }
