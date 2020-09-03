@@ -2,7 +2,6 @@ import org.apache.hadoop.hbase.HColumnDescriptor
 import org.apache.hadoop.hbase.HTableDescriptor
 import org.apache.hadoop.hbase.TableName
 import org.apache.hadoop.hbase.client.HBaseAdmin
-import org.apache.hadoop.hbase.client.HTable
 import org.apache.hadoop.hbase.client.Put
 import org.apache.hadoop.hbase.util.Bytes.toBytes
 import org.junit.Ignore
@@ -13,7 +12,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
-import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.junit4.SpringRunner
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.ReconciliationApplication
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.HbaseConfiguration
@@ -24,17 +22,6 @@ import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationS
 @RunWith(SpringRunner::class)
 @SpringBootTest(
     classes = [ReconciliationApplication::class]
-)
-@TestPropertySource(
-    properties = [
-        "hbase.zookeeper.quorum=localhost",
-        "hbase.table.pattern=^\\\\w+\\\\.([-\\\\w]+)\\.([-\\\\w]+)$",
-        "metadatastore.endpoint=localhost",
-        "metadatastore.port=3306",
-        "metadatastore.user=reconciliationwriter",
-        "metadatastore.password=password",
-        "metadatastore.database.name=metadatastore",
-        "metadatastore.table=ucfs"]
 )
 @ActiveProfiles("DUMMY_SECRETS")
 class ReconciliationIntegrationTest {
@@ -52,8 +39,27 @@ class ReconciliationIntegrationTest {
     @Autowired
     lateinit var service: ReconciliationService
 
+    val hbaseNamespace = "claimant_advances"
+    val hbaseTable = "advanceDetails"
+    val hbaseNamespaceAndTable = "$hbaseNamespace:$hbaseTable"
+    val hbaseTableObject = TableName.valueOf(hbaseNamespaceAndTable)
+
+    val columnFamily = "cf".toByteArray()
+    val columnQualifier = "record".toByteArray()
+
     @Test
-    fun integrationSpringContextLoads() {}
+    fun integrationSpringContextLoads() {
+    }
+
+    @Test
+    fun testWeCanEmptyHBase() {
+        emptyHbaseTable()
+    }
+
+    @Test
+    fun testWeCanEmptyMetadataStore() {
+        emptyMetadataStoreTable()
+    }
 
     @Ignore
     fun givenNoRecordsInMetadataStoreAndHbaseWhenStartingReconciliationThenNoRecordsAreReconciled() {
@@ -70,7 +76,7 @@ class ReconciliationIntegrationTest {
         assert(recordsInHbase == 0)
     }
 
-    @Test
+    @Ignore
     fun givenRecordsToBeReconciledInMetadataStoreWhenRecordsExistInHbaseThenTheRecordsAreReconciled() {
 
         createMetadataStoreTable()
@@ -144,11 +150,23 @@ class ReconciliationIntegrationTest {
         }
     }
 
-    private fun createHbaseTable() {
+    private fun emptyMetadataStoreTable() {
+        logger.info("Start emptyMetadataStoreTable")
+        metadataStoreConfiguration.metadataStoreConnection().use { connection ->
+            with(connection.createStatement()) {
+                this.execute(
+                    """DELETE FROM ${metadataStoreConfiguration.table};"""
+                )
+            }
+        }
+        logger.info("End emptyMetadataStoreTable")
+    }
 
+    private fun createHbaseTable() {
+        logger.info("Start createHbaseTable")
         val admin = HBaseAdmin(hbaseConfiguration.hbaseConfiguration())
 
-        val table = HTableDescriptor(TableName.valueOf("test_table"))
+        val table = HTableDescriptor(hbaseTableObject)
 
         val family = HColumnDescriptor(toBytes("cf"))
 
@@ -158,16 +176,21 @@ class ReconciliationIntegrationTest {
         table.addFamily(qualifier)
 
         admin.createTable(table)
+        logger.info("End createHbaseTable")
+    }
+
+    private fun emptyHbaseTable() {
+        logger.info("Start emptyHbaseTable")
+        val admin = HBaseAdmin(hbaseConfiguration.hbaseConfiguration())
+        admin.truncateTable(hbaseTableObject, true)
+        logger.info("End emptyHbaseTable")
     }
 
     private fun setupHbaseData(entries: Int) {
-
+        logger.info("Start Setup hbase data entries for integration test", "entries" to entries)
         hbaseConfiguration.hbaseConnection().use { connection ->
 
-            val columnFamily = "cf".toByteArray()
-            val columnQualifier = "record".toByteArray()
-
-            with(connection.getTable(TableName.valueOf("test_table"))) {
+            with(connection.getTable(hbaseTableObject)) {
 
                 val body = wellFormedValidPayload()
 
@@ -177,12 +200,13 @@ class ReconciliationIntegrationTest {
                         addColumn(columnFamily, columnQualifier, 1544799662000, body)
                     })
                 }
-                logger.info("Setup hbase data entries for integration test", "entries" to entries)
             }
         }
+        logger.info("Done Setup hbase data entries for integration test", "entries" to entries)
     }
 
     private fun setupMetadataStoreData(entries: Int) {
+        logger.info("Start Setup metadata store data entries for integration test", "entries" to entries)
         metadataStoreConfiguration.metadataStoreConnection().use { connection ->
             for (i in 0..entries) {
                 val key = i.toString()
@@ -194,8 +218,8 @@ class ReconciliationIntegrationTest {
                 """.trimIndent()
                 )
             }
-            logger.info("Setup metadata store data entries for integration test", "entries" to entries)
         }
+        logger.info("End Setup metadata store data entries for integration test", "entries" to entries)
     }
 
     private fun verifyRecordsInMetadataAreReconciled(shouldBeReconciledCount: Int): Boolean {
@@ -217,10 +241,7 @@ class ReconciliationIntegrationTest {
         metadataStoreConfiguration.metadataStoreConnection().use { connection ->
             with(connection.createStatement()) {
                 val rs = this.executeQuery(
-                    """
-                        SELECT COUNT(*)
-                        FROM ${metadataStoreConfiguration.table}
-                    """.trimIndent()
+                    """SELECT COUNT(*) FROM ${metadataStoreConfiguration.table} """.trimIndent()
                 )
                 rs.next()
                 return rs.getInt(1)
@@ -232,10 +253,7 @@ class ReconciliationIntegrationTest {
         val connection = metadataStoreConfiguration.metadataStoreConnection()
         val statement = connection.createStatement()
         val rs = statement.executeQuery(
-            """
-                SELECT COUNT(*)
-                FROM ${metadataStoreConfiguration.table}
-            """.trimIndent()
+            """SELECT COUNT(*) FROM ${metadataStoreConfiguration.table} """.trimIndent()
         )
         rs.next()
         return rs.getInt(1)
