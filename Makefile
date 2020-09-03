@@ -36,10 +36,10 @@ local-test: ## Run the unit tests with gradle
 
 local-all: local-build local-test local-dist ## Build and test with gradle
 
-mysql_root: ## Get a client session on the metadatastore database.
+mysql-root: ## Get a root client session on the metadatastore database.
 	docker exec -it metadatastore mysql --host=127.0.0.1 --user=root --password=password metadatastore
 
-mysql_writer: ## Get a client session on the metadatastore database.
+mysql-writer: ## Get a writer client session on the metadatastore database.
 	docker exec -it metadatastore mysql --host=127.0.0.1 --user=reconciliationwriter --password=password metadatastore
 
 hbase-shell: ## Open an Hbase shell onto the running Hbase container
