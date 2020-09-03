@@ -92,94 +92,94 @@ class ReconciliationIntegrationTest {
         recordsInHBase()
     }
 
-    @Ignore
-    fun givenNoRecordsInMetadataStoreAndHBaseWhenStartingReconciliationThenNoRecordsAreReconciled() {
+//    @Ignore
+//    fun givenNoRecordsInMetadataStoreAndHBaseWhenStartingReconciliationThenNoRecordsAreReconciled() {
+//
+//        val recordsInMetadataStore = recordsInMetadataStore()
+//        val recordsInHBase = recordsInHBase()
+//
+//        assert(recordsInMetadataStore == 0)
+//        assert(recordsInHBase == 0)
+//
+//        service.startReconciliation()
+//
+//        assert(recordsInMetadataStore == 0)
+//        assert(recordsInHBase == 0)
+//    }
 
-        val recordsInMetadataStore = recordsInMetadataStore()
-        val recordsInHBase = recordsInHBase()
+//    @Ignore
+//    fun givenRecordsToBeReconciledInMetadataStoreWhenRecordsExistInHBaseThenTheRecordsAreReconciled() {
+//
+//        createMetadataStoreTable()
+//        createHBaseTable()
+//
+//        setupHBaseData(5)
+//        setupMetadataStoreData(5)
+//
+//        service.startReconciliation()
+//
+//        val haveBeenReconciled = verifyRecordsInMetadataAreReconciled(5)
+//
+//        assert(haveBeenReconciled)
+//    }
 
-        assert(recordsInMetadataStore == 0)
-        assert(recordsInHBase == 0)
+//    @Ignore
+//    fun givenRecordsToBeReconciledInMetadataStoreWhenRecordsExistInHBasePlusExtraThenTheRecordsAreReconciledThatOnlyExistInMetadataStore() {
+//
+//        createMetadataStoreTable()
+//
+//        setupHBaseData(10)
+//        setupMetadataStoreData(5)
+//
+//        service.startReconciliation()
+//
+//        val haveBeenReconciled = verifyRecordsInMetadataAreReconciled(5)
+//
+//        assert(haveBeenReconciled)
+//    }
 
-        service.startReconciliation()
+//    @Ignore
+//    fun givenFiveRecordsToBeReconciledInMetadataStoreAndTwoInHBaseWhenRequestingToReconcileThenOnlyTwoAreReconciled() {
+//
+//        createMetadataStoreTable()
+//        createHBaseTable()
+//
+//        setupHBaseData(2)
+//        setupMetadataStoreData(5)
+//
+//        service.startReconciliation()
+//
+//        val haveBeenReconciled = verifyRecordsInMetadataAreReconciled(2)
+//
+//        assert(haveBeenReconciled)
+//    }
 
-        assert(recordsInMetadataStore == 0)
-        assert(recordsInHBase == 0)
-    }
-
-    @Ignore
-    fun givenRecordsToBeReconciledInMetadataStoreWhenRecordsExistInHBaseThenTheRecordsAreReconciled() {
-
-        createMetadataStoreTable()
-        createHBaseTable()
-
-        setupHBaseData(5)
-        setupMetadataStoreData(5)
-
-        service.startReconciliation()
-
-        val haveBeenReconciled = verifyRecordsInMetadataAreReconciled(5)
-
-        assert(haveBeenReconciled)
-    }
-
-    @Ignore
-    fun givenRecordsToBeReconciledInMetadataStoreWhenRecordsExistInHBasePlusExtraThenTheRecordsAreReconciledThatOnlyExistInMetadataStore() {
-
-        createMetadataStoreTable()
-
-        setupHBaseData(10)
-        setupMetadataStoreData(5)
-
-        service.startReconciliation()
-
-        val haveBeenReconciled = verifyRecordsInMetadataAreReconciled(5)
-
-        assert(haveBeenReconciled)
-    }
-
-    @Ignore
-    fun givenFiveRecordsToBeReconciledInMetadataStoreAndTwoInHBaseWhenRequestingToReconcileThenOnlyTwoAreReconciled() {
-
-        createMetadataStoreTable()
-        createHBaseTable()
-
-        setupHBaseData(2)
-        setupMetadataStoreData(5)
-
-        service.startReconciliation()
-
-        val haveBeenReconciled = verifyRecordsInMetadataAreReconciled(2)
-
-        assert(haveBeenReconciled)
-    }
-
-    private fun createMetadataStoreTable() {
-        metadataStoreConfiguration.metadataStoreConnection().use { connection ->
-            with(connection.createStatement()) {
-                this.execute(
-                    """
-                     CREATE TABLE IF NOT EXISTS `ucfs` (
-                    `id` INT NOT NULL AUTO_INCREMENT,
-                    `hbase_id` VARCHAR(2048) NULL,
-                    `hbase_timestamp` DATETIME NULL,
-                    `write_timestamp` DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    `correlation_id` VARCHAR(1024) NULL,
-                    `topic_name` VARCHAR(1024) NULL,
-                    `kafka_partition` INT NULL,
-                    `kafka_offset` INT NULL,
-                    `reconciled_result` TINYINT(1) NOT NULL DEFAULT 0,
-                    `reconciled_timestamp` DATETIME NULL,
-                    PRIMARY KEY (`id`),
-                    INDEX (hbase_id,hbase_timestamp),
-                    INDEX (write_timestamp),
-                    INDEX (reconciled_result)
-                );
-                """
-                )
-            }
-        }
-    }
+//    private fun createMetadataStoreTable() {
+//        metadataStoreConfiguration.metadataStoreConnection().use { connection ->
+//            with(connection.createStatement()) {
+//                this.execute(
+//                    """
+//                     CREATE TABLE IF NOT EXISTS `${metadataStoreConfiguration.table}` (
+//                    `id` INT NOT NULL AUTO_INCREMENT,
+//                    `hbase_id` VARCHAR(2048) NULL,
+//                    `hbase_timestamp` DATETIME NULL,
+//                    `write_timestamp` DATETIME DEFAULT CURRENT_TIMESTAMP,
+//                    `correlation_id` VARCHAR(1024) NULL,
+//                    `topic_name` VARCHAR(1024) NULL,
+//                    `kafka_partition` INT NULL,
+//                    `kafka_offset` INT NULL,
+//                    `reconciled_result` TINYINT(1) NOT NULL DEFAULT 0,
+//                    `reconciled_timestamp` DATETIME NULL,
+//                    PRIMARY KEY (`id`),
+//                    INDEX (hbase_id,hbase_timestamp),
+//                    INDEX (write_timestamp),
+//                    INDEX (reconciled_result)
+//                );
+//                """
+//                )
+//            }
+//        }
+//    }
 
     private fun emptyMetadataStoreTable() {
         logger.info("Start emptyMetadataStoreTable")
@@ -193,24 +193,41 @@ class ReconciliationIntegrationTest {
         logger.info("End emptyMetadataStoreTable")
     }
 
-    private fun createHBaseTable() {
-        logger.info("Start createHBaseTable")
-        val table = HTableDescriptor(hbaseTableObject)
-        val family = HColumnDescriptor(toBytes("cf"))
-        val qualifier = HColumnDescriptor(toBytes("record"))
-        table.addFamily(family)
-        table.addFamily(qualifier)
-        val hbaseAdmin = HBaseConfiguration.hbaseConnection().admin
-        hbaseAdmin.createTable(table)
-        logger.info("End createHBaseTable")
-    }
+//    private fun createHBaseTable() {
+//        logger.info("Start createHBaseTable")
+//        val table = HTableDescriptor(hbaseTableObject)
+//        val family = HColumnDescriptor(toBytes("cf"))
+//        val qualifier = HColumnDescriptor(toBytes("record"))
+//        table.addFamily(family)
+//        table.addFamily(qualifier)
+//        val hbaseAdmin = HBaseConfiguration.hbaseConnection().admin
+//        hbaseAdmin.createTable(table)
+//        logger.info("End createHBaseTable")
+//    }
 
     private fun emptyHBaseTable() {
         logger.info("Start emptyHBaseTable")
         val hbaseAdmin = HBaseConfiguration.hbaseConnection().admin
-        hbaseAdmin.disableTable(hbaseTableObject)
-        hbaseAdmin.truncateTable(hbaseTableObject, true)
-        hbaseAdmin.enableTable(hbaseTableObject)
+
+        if (hbaseAdmin.isTableEnabled(hbaseTableObject)) {
+            hbaseAdmin.disableTableAsync(hbaseTableObject)
+        }
+        do {
+            logger.info("emptyHBaseTable: waiting for table to be disabled")
+            Thread.sleep(1000)
+        } while (hbaseAdmin.isTableEnabled(hbaseTableObject))
+
+        logger.info("emptyHBaseTable: truncating table")
+        hbaseAdmin.truncateTable(hbaseTableObject, false)
+
+        if (hbaseAdmin.isTableDisabled(hbaseTableObject)) {
+            hbaseAdmin.enableTableAsync(hbaseTableObject)
+        }
+        do {
+            logger.info("emptyHBaseTable: waiting for table to be enabled")
+            Thread.sleep(1000)
+        } while (hbaseAdmin.isTableDisabled(hbaseTableObject))
+
         logger.info("End emptyHBaseTable")
     }
 
