@@ -70,7 +70,7 @@ class ReconciliationIntegrationTest {
         assert(recordsInHbase == 0)
     }
 
-    @Test
+    @Ignore
     fun givenRecordsToBeReconciledInMetadataStoreWhenRecordsExistInHbaseThenTheRecordsAreReconciled() {
 
         createMetadataStoreTable()
