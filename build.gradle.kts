@@ -73,34 +73,10 @@ tasks.register<Test>("integration-test") {
 		includeTestsMatching("ReconciliationIntegrationTest*")
 	}
 
-	environment("CONTAINER_VERSION", "latest")
-	environment("ENVIRONMENT", "local-dev")
-	environment("APPLICATION_NAME", "reconciliation")
-	environment("APP_VERSION", "test")
-	environment("LOG_LEVEL", "DEBUG")
-	environment("SECRETS_REGION", "eu-west-2")
-	environment("SECRETS_METADATA_STORE_PASSWORD_SECRET", "metastore_password")
-	environment("HBASE_TABLE_PATTERN", "([-\\w]+)\\.([-\\w]+)")
-	environment("HBASE_ZOOKEEPER_PARENT", "/hbase")
-	environment("HBASE_ZOOKEEPER_PORT", "2181")
-	environment("HBASE_ZOOKEEPER_QUORUM", "hbase")
-	environment("HBASE_RPC_TIMEOUT_MILLISECONDS", "1200")
-	environment("HBASE_CLIENT_TIMEOUT_MS", "1200")
-	environment("HBASE_CLIENT_SCANNER_TIMEOUT_PERIOD_MS", "12000")
-	environment("HBASE_OPERATION_TIMEOUT_MILLISECONDS", "1800")
-	environment("HBASE_PAUSE_MILLISECONDS", "50")
-	environment("HBASE_RETRIES", "3")
-	environment("METADATASTORE_USER", "reconciliationwriter")
-	environment("METADATASTORE_PASSWORD_SECRET_NAME", "metastore_password")
-	environment("METADATASTORE_DUMMY_PASSWORD", "my-password")
-	environment("METADATASTORE_DATABASE_NAME", "metadatastore")
-	environment("METADATASTORE_ENDPOINT", "metadatastore")
-	environment("METADATASTORE_PORT", "3306")
-	environment("METADATASTORE_TABLE", "ucfs")
-	environment("METADATASTORE_CA_CERT_PATH", "/certs/AmazonRootCA1.pem")
-	environment("METADATASTORE_QUERY_LIMIT", "20")
-	environment("METADATASTORE_USE_AWS_SECRETS", "false")
-	environment("SPRING_PROFILES_ACTIVE", "DUMMY_SECRETS")
+	//copy all env vars from unix/your integration container into the test
+	setEnvironment(System.getenv())
+    //to copy individual ones do this
+	//environment("ABC", System.getEnv("ABC"))
 
 	useJUnitPlatform { }
 	testLogging {
@@ -114,6 +90,11 @@ tasks.register<Test>("unit") {
 	group = "verification"
 	testClassesDirs = sourceSets["unit"].output.classesDirs
 	classpath = sourceSets["unit"].runtimeClasspath
+
+	//copy all env vars from unix/your test container into the test
+	setEnvironment(System.getenv())
+	//to copy individual ones do this
+	//environment("ABC", System.getEnv("ABC"))
 
 	testLogging {
 		outputs.upToDateWhen {false}
