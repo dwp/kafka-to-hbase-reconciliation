@@ -48,7 +48,7 @@ jobs:
         with:
           java-version: 1.8
       - name: gradle build
-        run: gradle clean build
+        run: make local-all
       - name: Upload app
         uses: actions/upload-artifact@v2
         with:
