@@ -30,9 +30,15 @@ make integration-all
 
 You can do this for both the application, and the integration tests.
 
-1. Make a local run configuration in i.e. Intellij.
+1. Make a local run configuration in i.e. Intellij from the gradle menu (see images below).
 1. Edit it. 
 1. Copy in all the same environment variables that are used for the local docker stack.
-1. Change the addresses of all hosts to `localhost` or `127.0.0.1`
-1. Change the ports to match those exposed by the containers
+1. Change the addresses of all hosts to `localhost` or `127.0.0.1`.
+  1. `HBASE_ZOOKEEPER_QUORUM=localhost`
+  1. `METADATASTORE_ENDPOINT=localhost`
+1. The ports exposed by the containers should already match.
 1. Run the application/test target you just made, it should start and connect up.
+
+For the app: <img src="docs/run-ide-application.png" alt="run app" width="200"/>
+
+For the integration tests: <img src="docs/run-ide-integration-tests" alt="run tests" width="200"/>
