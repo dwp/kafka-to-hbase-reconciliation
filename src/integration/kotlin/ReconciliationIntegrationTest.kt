@@ -3,6 +3,7 @@ import org.apache.hadoop.hbase.HTableDescriptor
 import org.apache.hadoop.hbase.TableName
 import org.apache.hadoop.hbase.client.HBaseAdmin
 import org.apache.hadoop.hbase.client.Put
+import org.apache.hadoop.hbase.client.Scan
 import org.apache.hadoop.hbase.util.Bytes.toBytes
 import org.junit.Ignore
 import org.junit.jupiter.api.Test
@@ -40,14 +41,17 @@ class ReconciliationIntegrationTest {
     @Autowired
     lateinit var service: ReconciliationService
 
-    val hbaseNamespace = "claimant_advances"
-    val hbaseTable = "advanceDetails"
-    val hbaseNamespaceAndTable = "$hbaseNamespace:$hbaseTable"
-    val hbaseTableObject = TableName.valueOf(hbaseNamespaceAndTable)
-    val hbaseAdmin = HBaseConfiguration.hbaseConnection().admin
+    final val hbaseNamespace = "claimant_advances"
+    final val hbaseTable = "advanceDetails"
+    final val hbaseNamespaceAndTable = "$hbaseNamespace:$hbaseTable"
+    final val hbaseTableObject = TableName.valueOf(hbaseNamespaceAndTable)
 
-    val columnFamily = "cf".toByteArray()
-    val columnQualifier = "record".toByteArray()
+    final val columnFamily = "cf".toByteArray()
+    final val columnQualifier = "record".toByteArray()
+
+    final val kafkaDb = "claimant-advances"
+    final val kafkaCollection = "advanceDetails"
+    final val kafkaTopic = "$kafkaDb.$kafkaCollection"
 
     @Test
     fun integrationSpringContextLoads() {
@@ -61,6 +65,16 @@ class ReconciliationIntegrationTest {
     @Test
     fun testWeCanEmptyMetadataStore() {
         emptyMetadataStoreTable()
+    }
+
+    @Ignore
+    fun testWeCanFillHBase() {
+        setupHBaseData(1)
+    }
+
+    @Ignore
+    fun testWeCanFillMetastore() {
+        setupMetadataStoreData(1)
     }
 
     @Ignore
@@ -171,12 +185,14 @@ class ReconciliationIntegrationTest {
         val qualifier = HColumnDescriptor(toBytes("record"))
         table.addFamily(family)
         table.addFamily(qualifier)
+        val hbaseAdmin = HBaseConfiguration.hbaseConnection().admin
         hbaseAdmin.createTable(table)
         logger.info("End createHBaseTable")
     }
 
     private fun emptyHBaseTable() {
         logger.info("Start emptyHBaseTable")
+        val hbaseAdmin = HBaseConfiguration.hbaseConnection().admin
         hbaseAdmin.disableTable(hbaseTableObject)
         hbaseAdmin.truncateTable(hbaseTableObject, true)
         hbaseAdmin.enableTable(hbaseTableObject)
@@ -185,12 +201,13 @@ class ReconciliationIntegrationTest {
 
     private fun setupHBaseData(entries: Int) {
         logger.info("Start Setup hbase data entries for integration test", "entries" to entries)
+        val hbaseAdmin = HBaseConfiguration.hbaseConnection().admin
         hbaseAdmin.enableTable(hbaseTableObject)
         HBaseConfiguration.hbaseConnection().use { connection ->
 
             with(connection.getTable(hbaseTableObject)) {
 
-                val body = wellFormedValidPayload()
+                val body = wellFormedValidPayload(hbaseNamespace, hbaseTable)
 
                 for (i in 0..entries) {
                     val key = i.toString().toByteArray()
@@ -203,6 +220,39 @@ class ReconciliationIntegrationTest {
         logger.info("Done Setup hbase data entries for integration test", "entries" to entries)
     }
 
+    private fun recordsInHBase(): Int {
+        logger.info("Start recordsInHBase")
+        var found = 0
+        HBaseConfiguration.hbaseConnection().use { connection ->
+            with(connection.getTable(hbaseTableObject)) {
+                val scanner = getScanner(Scan())
+
+                do {
+                    val result = scanner.next()
+                    if (result != null) {
+                        found++
+                        val latestId = result.row.toString()
+                        logger.info("Found hbase row", "row_index" to "$found", "row_key" to "$latestId")
+                    }
+                } while (result != null)
+
+            }
+        }
+        logger.info("End recordsInHBase", "records_found" to found)
+        return found
+    }
+
+    fun printableKey(key: ByteArray) =
+        if (key.size > 4) {
+            val hash = key.slice(IntRange(0, 3))
+            val hex = hash.map { String.format("\\x%02X", it) }.joinToString("")
+            val renderable = key.slice(IntRange(4, key.size - 1)).map { it.toChar() }.joinToString("")
+            "${hex}${renderable}"
+        }
+        else {
+            String(key)
+        }
+
     private fun setupMetadataStoreData(entries: Int) {
         logger.info("Start Setup metadata store data entries for integration test", "entries" to entries)
         metadataStoreConfiguration.metadataStoreConnection().use { connection ->
@@ -212,9 +262,10 @@ class ReconciliationIntegrationTest {
                 statement.executeQuery(
                     """
                     INSERT INTO ${metadataStoreConfiguration.table} (hbase_id, hbase_timestamp, topic_name, write_timestamp, reconciled_result)
-                    VALUES ($key, 1544799662000, topic_name, CURRENT_DATE - INTERVAL 7 DAY, false)
+                    VALUES ($key, 1544799662000, $kafkaTopic, CURRENT_DATE - INTERVAL 7 DAY, false)
                 """.trimIndent()
                 )
+                logger.info("Added metadata store data entries for integration test", "hbase_id" to key, "topic_name" to $kafkaTopic)
             }
         }
         logger.info("End Setup metadata store data entries for integration test", "entries" to entries)
@@ -246,8 +297,4 @@ class ReconciliationIntegrationTest {
         }
     }
 
-    private fun recordsInHBase(): Int {
-        ///do table scan of hbase and count, see HTME integration tests
-        throw UnsupportedOperationException("TODO")
-    }
 }

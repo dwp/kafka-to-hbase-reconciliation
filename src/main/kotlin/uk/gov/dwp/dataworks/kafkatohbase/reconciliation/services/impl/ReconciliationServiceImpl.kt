@@ -41,7 +41,7 @@ class ReconciliationServiceImpl(
             logger.info(
                     "Finished reconciliation for metadata store",
                     "records_to_reconcile" to recordsToReconcile.size.toString(),
-                    "total_topics_reconciled" to totalRecordsReconciled.toString()
+                    "total_records_reconciled" to totalRecordsReconciled.toString()
             )
         } else {
             logger.info("There are no records to be reconciled")
