@@ -32,6 +32,7 @@ services:
       HBASE_RETRIES": "3"
       METADATASTORE_USER: "reconciliationwriter"
       METADATASTORE_PASSWORD_SECRET_NAME: "metastore_password"
+      METADATASTORE_DUMMY_PASSWORD: "my-password"
       METADATASTORE_DATABASE_NAME: "metadatastore"
       METADATASTORE_ENDPOINT: "metadatastore"
       METADATASTORE_PORT: "3306"
@@ -77,7 +78,7 @@ services:
       MYSQL_ROOT_PASSWORD: "password"
       MYSQL_DATABASE: "metadatastore"
       MYSQL_USER: "reconciliationwriter"
-      MYSQL_PASSWORD: "password"
+      MYSQL_PASSWORD: "my-password"
 
   integration-test:
     image: reconciliation-integration:latest
@@ -108,6 +109,7 @@ services:
       HBASE_RETRIES": "3"
       METADATASTORE_USER: "reconciliationwriter"
       METADATASTORE_PASSWORD_SECRET_NAME: "metastore_password"
+      METADATASTORE_DUMMY_PASSWORD: "my-password"
       METADATASTORE_DATABASE_NAME: "metadatastore"
       METADATASTORE_ENDPOINT: "metadatastore"
       METADATASTORE_PORT: "3306"

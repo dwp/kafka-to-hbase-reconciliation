@@ -36,6 +36,7 @@ data class MetadataStoreConfiguration(
 
         return Properties().apply {
             put("user", user)
+            put("useAwsSecrets", useAwsSecrets)
 
             if (isUsingAWS) {
                 put("ssl_ca_path", caCertPath)
