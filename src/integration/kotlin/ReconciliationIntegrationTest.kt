@@ -73,8 +73,23 @@ class ReconciliationIntegrationTest {
     }
 
     @Ignore
+    fun testWeCanCheckHBase() {
+        recordsInHBase()
+    }
+
+    @Ignore
     fun testWeCanFillMetastore() {
         setupMetadataStoreData(1)
+    }
+
+    @Ignore
+    fun testWeCanCheckMetastoreForReconciled() {
+        verifyRecordsInMetadataAreReconciled(1)
+    }
+
+    @Ignore
+    fun testWeCanCheckMetastore() {
+        recordsInHBase()
     }
 
     @Ignore
@@ -256,8 +271,8 @@ class ReconciliationIntegrationTest {
     private fun setupMetadataStoreData(entries: Int) {
         logger.info("Start Setup metadata store data entries for integration test", "entries" to entries)
         metadataStoreConfiguration.metadataStoreConnection().use { connection ->
-            for (i in 0..entries) {
-                val key = i.toString()
+            for (index in 0..entries) {
+                val key = index.toString() //check symmetry with hbase key -> val key = i.toString().toByteArray()
                 val statement = connection.createStatement()
                 statement.executeQuery(
                     """
@@ -265,7 +280,8 @@ class ReconciliationIntegrationTest {
                     VALUES ($key, 1544799662000, $kafkaTopic, CURRENT_DATE - INTERVAL 7 DAY, false)
                 """.trimIndent()
                 )
-                logger.info("Added metadata store data entries for integration test", "hbase_id" to key, "topic_name" to $kafkaTopic)
+                logger.info("Added metadata store data entries for integration test",
+                    "index" to "$index", "hbase_id" to key, "topic_name" to kafkaTopic)
             }
         }
         logger.info("End Setup metadata store data entries for integration test", "entries" to entries)
