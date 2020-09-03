@@ -55,7 +55,6 @@ jobs:
           name: built-app
           path: build
 
-
   publish-docker:
     runs-on: ubuntu-latest
     needs: [get-publish-version, build-app]
