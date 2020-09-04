@@ -18,7 +18,7 @@ services:
       APPLICATION_NAME: "reconciliation"
       APP_VERSION: "test"
       LOG_LEVEL: DEBUG
-      RECONCILER_FIXED_DELAY_MILLIS: "1000"
+      RECONCILER_FIXED_DELAY_MILLIS: "25000"
       SECRETS_REGION: "eu-west-2"
       SECRETS_METADATA_STORE_PASSWORD_SECRET: "metastore_password"
       HBASE_TABLE_PATTERN: ([-\w]+)\.([-\w]+)

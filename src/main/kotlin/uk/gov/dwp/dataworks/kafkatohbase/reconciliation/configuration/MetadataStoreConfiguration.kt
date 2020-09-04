@@ -28,7 +28,7 @@ data class MetadataStoreConfiguration(
     companion object {
         val logger = DataworksLogger.getLogger(MetadataStoreConfiguration::class.toString())
     }
-    private val isUsingAWS = useAwsSecrets!!.toLowerCase() == "true"
+    private val isUsingAWS by lazy { this.useAwsSecrets!!.toLowerCase() == "true" }
 
     fun databaseUrl() = "jdbc:mysql://$endpoint:$port/$databaseName"
 
