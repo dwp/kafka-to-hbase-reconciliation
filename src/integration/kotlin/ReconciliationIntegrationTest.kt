@@ -1,12 +1,9 @@
-import org.apache.hadoop.hbase.HColumnDescriptor
-import org.apache.hadoop.hbase.HTableDescriptor
 import org.apache.hadoop.hbase.TableName
-import org.apache.hadoop.hbase.client.HBaseAdmin
 import org.apache.hadoop.hbase.client.Put
 import org.apache.hadoop.hbase.client.Scan
-import org.apache.hadoop.hbase.util.Bytes.toBytes
 import org.junit.Ignore
-import org.junit.jupiter.api.Test
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.Test
 import org.junit.runner.RunWith
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -17,8 +14,6 @@ import org.springframework.test.context.junit4.SpringRunner
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.ReconciliationApplication
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.HBaseConfiguration
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.MetadataStoreConfiguration
-import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationService
-import java.lang.UnsupportedOperationException
 
 
 @RunWith(SpringRunner::class)
@@ -37,9 +32,6 @@ class ReconciliationIntegrationTest {
 
     @Autowired
     lateinit var HBaseConfiguration: HBaseConfiguration
-
-//    @Autowired
-//    lateinit var service: ReconciliationService
 
     final val hbaseNamespace = "claimant_advances"
     final val hbaseTable = "advanceDetails"
@@ -84,102 +76,43 @@ class ReconciliationIntegrationTest {
 
     @Ignore
     fun testWeCanCheckMetastoreForReconciled() {
-        verifyRecordsInMetadataAreReconciled(1)
+        verifyRecordsInMetadataAreReconciled()
     }
 
     @Ignore
     fun testWeCanCheckMetastore() {
-        recordsInHBase()
+        recordsInMetadataStore()
     }
 
-//    @Ignore
-//    fun givenNoRecordsInMetadataStoreAndHBaseWhenStartingReconciliationThenNoRecordsAreReconciled() {
-//
-//        val recordsInMetadataStore = recordsInMetadataStore()
-//        val recordsInHBase = recordsInHBase()
-//
-//        assert(recordsInMetadataStore == 0)
-//        assert(recordsInHBase == 0)
-//
-//        service.startReconciliation()
-//
-//        assert(recordsInMetadataStore == 0)
-//        assert(recordsInHBase == 0)
-//    }
+    @Ignore
+    fun givenMatchingRecordsInMetadataStoreAndHBaseWhenStartingReconciliationThenAllRecordsAreReconciled() {
 
-//    @Ignore
-//    fun givenRecordsToBeReconciledInMetadataStoreWhenRecordsExistInHBaseThenTheRecordsAreReconciled() {
-//
-//        createMetadataStoreTable()
-//        createHBaseTable()
-//
-//        setupHBaseData(5)
-//        setupMetadataStoreData(5)
-//
-//        service.startReconciliation()
-//
-//        val haveBeenReconciled = verifyRecordsInMetadataAreReconciled(5)
-//
-//        assert(haveBeenReconciled)
-//    }
+        //given
+        emptyHBaseTable()
+        emptyMetadataStoreTable()
 
-//    @Ignore
-//    fun givenRecordsToBeReconciledInMetadataStoreWhenRecordsExistInHBasePlusExtraThenTheRecordsAreReconciledThatOnlyExistInMetadataStore() {
-//
-//        createMetadataStoreTable()
-//
-//        setupHBaseData(10)
-//        setupMetadataStoreData(5)
-//
-//        service.startReconciliation()
-//
-//        val haveBeenReconciled = verifyRecordsInMetadataAreReconciled(5)
-//
-//        assert(haveBeenReconciled)
-//    }
+        val recordsInMetadataStore = recordsInMetadataStore()
+        val recordsInHBase = recordsInHBase()
 
-//    @Ignore
-//    fun givenFiveRecordsToBeReconciledInMetadataStoreAndTwoInHBaseWhenRequestingToReconcileThenOnlyTwoAreReconciled() {
-//
-//        createMetadataStoreTable()
-//        createHBaseTable()
-//
-//        setupHBaseData(2)
-//        setupMetadataStoreData(5)
-//
-//        service.startReconciliation()
-//
-//        val haveBeenReconciled = verifyRecordsInMetadataAreReconciled(2)
-//
-//        assert(haveBeenReconciled)
-//    }
+        assertThat(recordsInMetadataStore).isEqualTo(0)
+        assertThat(recordsInHBase).isEqualTo(0)
 
-//    private fun createMetadataStoreTable() {
-//        metadataStoreConfiguration.metadataStoreConnection().use { connection ->
-//            with(connection.createStatement()) {
-//                this.execute(
-//                    """
-//                     CREATE TABLE IF NOT EXISTS `${metadataStoreConfiguration.table}` (
-//                    `id` INT NOT NULL AUTO_INCREMENT,
-//                    `hbase_id` VARCHAR(2048) NULL,
-//                    `hbase_timestamp` DATETIME NULL,
-//                    `write_timestamp` DATETIME DEFAULT CURRENT_TIMESTAMP,
-//                    `correlation_id` VARCHAR(1024) NULL,
-//                    `topic_name` VARCHAR(1024) NULL,
-//                    `kafka_partition` INT NULL,
-//                    `kafka_offset` INT NULL,
-//                    `reconciled_result` TINYINT(1) NOT NULL DEFAULT 0,
-//                    `reconciled_timestamp` DATETIME NULL,
-//                    PRIMARY KEY (`id`),
-//                    INDEX (hbase_id,hbase_timestamp),
-//                    INDEX (write_timestamp),
-//                    INDEX (reconciled_result)
-//                );
-//                """
-//                )
-//            }
-//        }
-//    }
+        //when
+        val recordsUnderTest = 2
+        setupHBaseData(recordsUnderTest)
+        setupMetadataStoreData(recordsUnderTest)
+
+        //wait for that to be processed
+        do{
+            logger.info("Waiting for verified records count to change")
+            Thread.sleep(1000)
+        } while (verifyRecordsInMetadataAreReconciled() != recordsUnderTest)
+
+        //then
+        assertThat(verifyRecordsInMetadataAreReconciled()).isEqualTo(recordsUnderTest)
+        assertThat(recordsInMetadataStore()).isEqualTo(recordsUnderTest)
+        assertThat(recordsInHBase()).isEqualTo(recordsUnderTest)
+    }
 
     private fun emptyMetadataStoreTable() {
         logger.info("Start emptyMetadataStoreTable")
@@ -192,18 +125,6 @@ class ReconciliationIntegrationTest {
         }
         logger.info("End emptyMetadataStoreTable")
     }
-
-//    private fun createHBaseTable() {
-//        logger.info("Start createHBaseTable")
-//        val table = HTableDescriptor(hbaseTableObject)
-//        val family = HColumnDescriptor(toBytes("cf"))
-//        val qualifier = HColumnDescriptor(toBytes("record"))
-//        table.addFamily(family)
-//        table.addFamily(qualifier)
-//        val hbaseAdmin = HBaseConfiguration.hbaseConnection().admin
-//        hbaseAdmin.createTable(table)
-//        logger.info("End createHBaseTable")
-//    }
 
     private fun emptyHBaseTable() {
         logger.info("Start emptyHBaseTable")
@@ -258,7 +179,6 @@ class ReconciliationIntegrationTest {
         HBaseConfiguration.hbaseConnection().use { connection ->
             with(connection.getTable(hbaseTableObject)) {
                 val scanner = getScanner(Scan())
-
                 do {
                     val result = scanner.next()
                     if (result != null) {
@@ -267,7 +187,6 @@ class ReconciliationIntegrationTest {
                         logger.info("Found hbase row", "row_index" to "$found", "row_key" to "$latestId")
                     }
                 } while (result != null)
-
             }
         }
         logger.info("End recordsInHBase", "records_found" to found)
@@ -280,8 +199,7 @@ class ReconciliationIntegrationTest {
             val hex = hash.map { String.format("\\x%02X", it) }.joinToString("")
             val renderable = key.slice(IntRange(4, key.size - 1)).map { it.toChar() }.joinToString("")
             "${hex}${renderable}"
-        }
-        else {
+        } else {
             String(key)
         }
 
@@ -297,23 +215,25 @@ class ReconciliationIntegrationTest {
                     VALUES ($key, 1544799662000, $kafkaTopic, CURRENT_DATE - INTERVAL 7 DAY, false)
                 """.trimIndent()
                 )
-                logger.info("Added metadata store data entries for integration test",
-                    "index" to "$index", "hbase_id" to key, "topic_name" to kafkaTopic)
+                logger.info(
+                    "Added metadata store data entries for integration test",
+                    "index" to "$index", "hbase_id" to key, "topic_name" to kafkaTopic
+                )
             }
         }
         logger.info("End Setup metadata store data entries for integration test", "entries" to entries)
     }
 
-    private fun verifyRecordsInMetadataAreReconciled(shouldBeReconciledCount: Int): Boolean {
+    private fun verifyRecordsInMetadataAreReconciled(): Int {
         metadataStoreConfiguration.metadataStoreConnection().use { connection ->
             with(connection.createStatement()) {
-                return this.execute(
+                val rs = this.executeQuery(
                     """
-                SELECT CASE WHEN COUNT(*) = $shouldBeReconciledCount THEN TRUE ELSE FALSE END;
-                FROM ${metadataStoreConfiguration.table}
-                WHERE reconciled_result=true
+                SELECT COUNT(*) FROM ${metadataStoreConfiguration.table} WHERE reconciled_result=true
             """.trimIndent()
                 )
+                rs.next()
+                return rs.getInt(1)
             }
         }
     }
