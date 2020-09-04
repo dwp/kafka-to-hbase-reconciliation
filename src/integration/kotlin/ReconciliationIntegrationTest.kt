@@ -4,12 +4,10 @@ import org.apache.hadoop.hbase.client.Put
 import org.apache.hadoop.hbase.client.Scan
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Ignore
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.runner.RunWith
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
@@ -26,15 +24,13 @@ class ReconciliationIntegrationTest {
 
     companion object {
         val logger: Logger = LoggerFactory.getLogger(ReconciliationIntegrationTest::class.toString())
-        var hbaseConnection: org.apache.hadoop.hbase.client.Connection? = null
-        var metadataStoreConnection: java.sql.Connection? = null
     }
 
-    @Autowired
-    lateinit var metadataStoreConfiguration: MetadataStoreConfiguration
-
-    @Autowired
-    lateinit var hbaseConfiguration: HBaseConfiguration
+    var metadataStoreConfiguration: MetadataStoreConfiguration? = null
+    var metadataStoreConnection: java.sql.Connection? = null
+    var metadataTable = "NOT_SET"
+    var hbaseConnection: org.apache.hadoop.hbase.client.Connection? = null
+    var hbaseConfiguration: HBaseConfiguration? = null
 
     final val hbaseNamespace = "claimant_advances"
     final val hbaseTable = "advanceDetails"
@@ -48,17 +44,20 @@ class ReconciliationIntegrationTest {
     final val kafkaCollection = "advanceDetails"
     final val kafkaTopic = "$kafkaDb.$kafkaCollection"
 
-    @BeforeEach
+    //@BeforeEach
     fun setup() {
-        if (metadataStoreConnection == null) {
+        if (metadataStoreConfiguration == null || metadataStoreConnection == null) {
             logger.info("Setup metadataStoreConnection")
-            metadataStoreConnection = metadataStoreConfiguration.metadataStoreConnection()
+            metadataStoreConfiguration = MetadataStoreConfiguration()
+            metadataStoreConnection = metadataStoreConfiguration!!.metadataStoreConnection()
+            metadataTable = metadataStoreConfiguration!!.table!!
         } else {
             logger.info("Already done metadataStoreConnection")
         }
-        if (hbaseConnection == null) {
+        if (hbaseConfiguration == null || hbaseConnection == null) {
             logger.info("Setup hbaseConnection")
-            hbaseConnection = hbaseConfiguration.hbaseConnection()
+            hbaseConfiguration = HBaseConfiguration()
+            hbaseConnection = hbaseConfiguration!!.hbaseConnection()
         } else {
             logger.info("Already done hbaseConnection")
         }
@@ -71,6 +70,7 @@ class ReconciliationIntegrationTest {
     @Test
     fun testWeCanEmptyHBase() {
         try {
+            setup()
             emptyHBaseTable()
         } catch (ex: Exception) {
             logger.error("Exception in testWeCanEmptyHBase", ex)
@@ -78,9 +78,10 @@ class ReconciliationIntegrationTest {
         }
     }
 
-    @Test
+    @Ignore
     fun testWeCanCheckHBase() {
         try {
+            setup()
             recordsInHBase()
         } catch (ex: Exception) {
             logger.error("Exception in testWeCanCheckHBase", ex)
@@ -91,6 +92,7 @@ class ReconciliationIntegrationTest {
     @Test
     fun testWeCanEmptyMetadataStore() {
         try {
+            setup()
             emptyMetadataStoreTable()
         } catch (ex: Exception) {
             logger.error("Exception in testWeCanEmptyMetadataStore", ex)
@@ -98,9 +100,10 @@ class ReconciliationIntegrationTest {
         }
     }
 
-    @Test
+    @Ignore
     fun testWeCanFillHBase() {
         try {
+            setup()
             setupHBaseData(1)
         } catch (ex: Exception) {
             logger.error("Exception in testWeCanFillHBase", ex)
@@ -108,9 +111,10 @@ class ReconciliationIntegrationTest {
         }
     }
 
-    @Test
+    @Ignore
     fun testWeCanFillMetastore() {
         try {
+            setup()
             setupMetadataStoreData(1)
         } catch (ex: Exception) {
             logger.error("Exception in testWeCanFillMetastore", ex)
@@ -118,9 +122,10 @@ class ReconciliationIntegrationTest {
         }
     }
 
-    @Test
+    @Ignore
     fun testWeCanCheckMetastoreForReconciled() {
         try {
+            setup()
             verifyRecordsInMetadataAreReconciled()
         } catch (ex: Exception) {
             logger.error("Exception in testWeCanCheckMetastoreForReconciled", ex)
@@ -128,9 +133,10 @@ class ReconciliationIntegrationTest {
         }
     }
 
-    @Test
+    @Ignore
     fun testWeCanCheckMetastore() {
         try {
+            setup()
             recordsInMetadataStore()
         } catch (ex: Exception) {
             logger.error("Exception in testWeCanCheckMetastore", ex)
@@ -142,6 +148,7 @@ class ReconciliationIntegrationTest {
     fun givenMatchingRecordsInMetadataStoreAndHBaseWhenStartingReconciliationThenAllRecordsAreReconciled() {
         try {
             //given
+            setup()
             emptyHBaseTable()
             emptyMetadataStoreTable()
 
@@ -177,7 +184,7 @@ class ReconciliationIntegrationTest {
         metadataStoreConnection!!.use { connection ->
             val statement = connection.createStatement()
             statement.execute(
-                """DELETE FROM ${metadataStoreConfiguration.table};"""
+                """DELETE FROM ${metadataStoreConfiguration!!.table};"""
             )
         }
         logger.info("End emptyMetadataStoreTable")
@@ -280,7 +287,7 @@ class ReconciliationIntegrationTest {
                 val statement = connection.createStatement()
                 val result = statement.executeQuery(
                     """
-                    INSERT INTO ${metadataStoreConfiguration.table} (hbase_id, hbase_timestamp, topic_name, write_timestamp, reconciled_result)
+                    INSERT INTO $metadataTable (hbase_id, hbase_timestamp, topic_name, write_timestamp, reconciled_result)
                     VALUES ($key, 1544799662000, $kafkaTopic, CURRENT_DATE - INTERVAL 7 DAY, false)
                 """.trimIndent()
                 )
@@ -299,7 +306,7 @@ class ReconciliationIntegrationTest {
             with(connection.createStatement()) {
                 val rs = this.executeQuery(
                     """
-                SELECT COUNT(*) FROM ${metadataStoreConfiguration.table} WHERE reconciled_result=true
+                SELECT COUNT(*) FROM $metadataTable WHERE reconciled_result=true
             """.trimIndent()
                 )
                 rs.next()
@@ -312,7 +319,7 @@ class ReconciliationIntegrationTest {
         metadataStoreConnection!!.use { connection ->
             with(connection.createStatement()) {
                 val rs = this.executeQuery(
-                    """SELECT COUNT(*) FROM ${metadataStoreConfiguration.table} """.trimIndent()
+                    """SELECT COUNT(*) FROM $metadataTable """.trimIndent()
                 )
                 rs.next()
                 return rs.getInt(1)
