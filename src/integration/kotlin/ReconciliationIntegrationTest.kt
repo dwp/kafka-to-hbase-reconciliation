@@ -1,4 +1,5 @@
 import org.apache.hadoop.hbase.TableName
+import org.apache.hadoop.hbase.client.Admin
 import org.apache.hadoop.hbase.client.Put
 import org.apache.hadoop.hbase.client.Scan
 import org.assertj.core.api.Assertions.assertThat
@@ -186,17 +187,18 @@ class ReconciliationIntegrationTest {
         logger.info("Start emptyHBaseTable")
         val hbaseAdmin = hbaseConnection!!.admin
 
-        if (hbaseAdmin.isTableEnabled(hbaseTableObject)) {
-            hbaseAdmin.disableTableAsync(hbaseTableObject)
-        }
-        do {
-            logger.info("emptyHBaseTable: waiting for table to be disabled")
-            Thread.sleep(1000)
-        } while (hbaseAdmin.isTableEnabled(hbaseTableObject))
+        disableHBaseTable(hbaseAdmin)
 
         logger.info("emptyHBaseTable: truncating table")
         hbaseAdmin.truncateTable(hbaseTableObject, false)
 
+        enableHBaseTable(hbaseAdmin)
+
+        logger.info("End emptyHBaseTable")
+    }
+
+    private fun enableHBaseTable(hbaseAdmin: Admin) {
+        logger.info("Start enableHBaseTable")
         if (hbaseAdmin.isTableDisabled(hbaseTableObject)) {
             hbaseAdmin.enableTableAsync(hbaseTableObject)
         }
@@ -204,16 +206,26 @@ class ReconciliationIntegrationTest {
             logger.info("emptyHBaseTable: waiting for table to be enabled")
             Thread.sleep(1000)
         } while (hbaseAdmin.isTableDisabled(hbaseTableObject))
-
-        logger.info("End emptyHBaseTable")
+        logger.info("End enableHBaseTable")
     }
+
+    private fun disableHBaseTable(hbaseAdmin: Admin) {
+        logger.info("Start disableHBaseTable")
+        if (hbaseAdmin.isTableEnabled(hbaseTableObject)) {
+            hbaseAdmin.disableTableAsync(hbaseTableObject)
+        }
+        do {
+            logger.info("emptyHBaseTable: waiting for table to be disabled")
+            Thread.sleep(1000)
+        } while (hbaseAdmin.isTableEnabled(hbaseTableObject))
+        logger.info("End disableHBaseTable")
+    }
+
 
     private fun setupHBaseData(entries: Int) {
         logger.info("Start Setup hbase data entries for integration test", "entries" to entries)
-        val hbaseAdmin = hbaseConnection!!.admin
-        hbaseAdmin.enableTable(hbaseTableObject)
-        hbaseConnection.use { connection ->
-
+        enableHBaseTable(hbaseConnection!!.admin)
+        hbaseConnection!!.use { connection ->
             with(connection.getTable(hbaseTableObject)) {
 
                 val body = wellFormedValidPayload(hbaseNamespace, hbaseTable)
@@ -231,6 +243,7 @@ class ReconciliationIntegrationTest {
 
     private fun recordsInHBase(): Int {
         logger.info("Start recordsInHBase")
+        enableHBaseTable(hbaseConnection!!.admin)
         var found = 0
         hbaseConnection!!.use { connection ->
             with(connection.getTable(hbaseTableObject)) {
@@ -249,15 +262,15 @@ class ReconciliationIntegrationTest {
         return found
     }
 
-    fun printableKey(key: ByteArray) =
-        if (key.size > 4) {
-            val hash = key.slice(IntRange(0, 3))
-            val hex = hash.map { String.format("\\x%02X", it) }.joinToString("")
-            val renderable = key.slice(IntRange(4, key.size - 1)).map { it.toChar() }.joinToString("")
-            "${hex}${renderable}"
-        } else {
-            String(key)
-        }
+//    fun printableKey(key: ByteArray) =
+//        if (key.size > 4) {
+//            val hash = key.slice(IntRange(0, 3))
+//            val hex = hash.map { String.format("\\x%02X", it) }.joinToString("")
+//            val renderable = key.slice(IntRange(4, key.size - 1)).map { it.toChar() }.joinToString("")
+//            "${hex}${renderable}"
+//        } else {
+//            String(key)
+//        }
 
     private fun setupMetadataStoreData(entries: Int) {
         logger.info("Start Setup metadata store data entries for integration test", "entries" to entries)
