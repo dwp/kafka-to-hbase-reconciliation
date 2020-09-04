@@ -8,7 +8,9 @@ import org.junit.jupiter.api.Test
 import org.junit.runner.RunWith
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.ReconciliationApplication
@@ -20,17 +22,22 @@ import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.MetadataSt
     classes = [ReconciliationApplication::class]
 )
 @ActiveProfiles("DUMMY_SECRETS")
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class ReconciliationIntegrationTest {
 
     companion object {
         val logger: Logger = LoggerFactory.getLogger(ReconciliationIntegrationTest::class.toString())
     }
 
-    var metadataStoreConfiguration: MetadataStoreConfiguration? = null
+    @Autowired
+    lateinit var metadataStoreConfiguration: MetadataStoreConfiguration
+
+    @Autowired
+    lateinit var hbaseConfiguration: HBaseConfiguration
+
     var metadataStoreConnection: java.sql.Connection? = null
     var metadataTable = "NOT_SET"
     var hbaseConnection: org.apache.hadoop.hbase.client.Connection? = null
-    var hbaseConfiguration: HBaseConfiguration? = null
 
     final val hbaseNamespace = "claimant_advances"
     final val hbaseTable = "advanceDetails"
@@ -46,17 +53,17 @@ class ReconciliationIntegrationTest {
 
     //@BeforeEach
     fun setup() {
-        if (metadataStoreConfiguration == null || metadataStoreConnection == null) {
+        if (metadataStoreConnection == null) {
             logger.info("Setup metadataStoreConnection")
-            metadataStoreConfiguration = MetadataStoreConfiguration()
+            //metadataStoreConfiguration = MetadataStoreConfiguration()
             metadataStoreConnection = metadataStoreConfiguration!!.metadataStoreConnection()
             metadataTable = metadataStoreConfiguration!!.table!!
         } else {
             logger.info("Already done metadataStoreConnection")
         }
-        if (hbaseConfiguration == null || hbaseConnection == null) {
+        if (hbaseConnection == null) {
             logger.info("Setup hbaseConnection")
-            hbaseConfiguration = HBaseConfiguration()
+            //hbaseConfiguration = HBaseConfiguration()
             hbaseConnection = hbaseConfiguration!!.hbaseConnection()
         } else {
             logger.info("Already done hbaseConnection")
@@ -184,7 +191,7 @@ class ReconciliationIntegrationTest {
         metadataStoreConnection!!.use { connection ->
             val statement = connection.createStatement()
             statement.execute(
-                """DELETE FROM ${metadataStoreConfiguration!!.table};"""
+                """DELETE FROM $metadataTable;"""
             )
         }
         logger.info("End emptyMetadataStoreTable")
