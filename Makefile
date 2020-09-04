@@ -26,7 +26,7 @@ git-hooks: ## Set up hooks in .git/hooks
 	}
 
 local-build: ## Build Kafka2HBase with gradle
-	gradle :unit build -x test
+	gradle :unit build -x test -x unit -x integration-test
 
 local-dist: ## Assemble distribution files in build/dist with gradle
 	gradle distTar
@@ -118,12 +118,12 @@ build-base: ## build the base images which certain images extend.
 		popd; \
 	}
 
-push-local-to-ecr: #Push a temp version of k2hb to AWS DEV ECR
+push-local-to-ecr: #Push a temp version of reconciliation to AWS DEV ECR
 	@{ \
 		export AWS_DEV_ACCOUNT=$(aws_dev_account); \
 		export TEMP_IMAGE_NAME=$(temp_image_name); \
 		export AWS_DEFAULT_REGION=$(aws_default_region); \
 		aws ecr get-login-password --region ${AWS_DEFAULT_REGION} --profile dataworks-development | docker login --username AWS --password-stdin ${AWS_DEV_ACCOUNT}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com; \
-		docker tag kafka2hbase ${AWS_DEV_ACCOUNT}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${TEMP_IMAGE_NAME}; \
+		docker tag reconciliation ${AWS_DEV_ACCOUNT}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${TEMP_IMAGE_NAME}; \
 		docker push ${AWS_DEV_ACCOUNT}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${TEMP_IMAGE_NAME}; \
 	}
