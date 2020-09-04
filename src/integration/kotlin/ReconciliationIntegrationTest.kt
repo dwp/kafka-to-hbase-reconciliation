@@ -1,8 +1,8 @@
 import org.apache.hadoop.hbase.TableName
 import org.apache.hadoop.hbase.client.Put
 import org.apache.hadoop.hbase.client.Scan
-import org.junit.Ignore
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.Ignore
 import org.junit.jupiter.api.Test
 import org.junit.runner.RunWith
 import org.slf4j.Logger
@@ -51,37 +51,72 @@ class ReconciliationIntegrationTest {
 
     @Test
     fun testWeCanEmptyHBase() {
-        emptyHBaseTable()
+        try {
+            emptyHBaseTable()
+        } catch (ex: Exception) {
+            logger.error("Exception in testWeCanEmptyHBase", ex)
+            throw ex
+        }
     }
 
     @Test
+    fun testWeCanCheckHBase() {
+        try {
+            recordsInHBase()
+        } catch (ex: Exception) {
+            logger.error("Exception in testWeCanCheckHBase", ex)
+            throw ex
+        }
+    }
+
+    @Ignore
     fun testWeCanEmptyMetadataStore() {
-        emptyMetadataStoreTable()
+        try {
+            emptyMetadataStoreTable()
+        } catch (ex: Exception) {
+            logger.error("Exception in testWeCanEmptyMetadataStore", ex)
+            throw ex
+        }
     }
 
     @Ignore
     fun testWeCanFillHBase() {
-        setupHBaseData(1)
-    }
-
-    @Ignore
-    fun testWeCanCheckHBase() {
-        recordsInHBase()
+        try {
+            setupHBaseData(1)
+        } catch (ex: Exception) {
+            logger.error("Exception in testWeCanFillHBase", ex)
+            throw ex
+        }
     }
 
     @Ignore
     fun testWeCanFillMetastore() {
-        setupMetadataStoreData(1)
+        try {
+            setupMetadataStoreData(1)
+        } catch (ex: Exception) {
+            logger.error("Exception in testWeCanFillMetastore", ex)
+            throw ex
+        }
     }
 
     @Ignore
     fun testWeCanCheckMetastoreForReconciled() {
-        verifyRecordsInMetadataAreReconciled()
+        try {
+            verifyRecordsInMetadataAreReconciled()
+        } catch (ex: Exception) {
+            logger.error("Exception in testWeCanCheckMetastoreForReconciled", ex)
+            throw ex
+        }
     }
 
     @Ignore
     fun testWeCanCheckMetastore() {
-        recordsInMetadataStore()
+        try {
+            recordsInMetadataStore()
+        } catch (ex: Exception) {
+            logger.error("Exception in testWeCanCheckMetastore", ex)
+            throw ex
+        }
     }
 
     @Ignore
@@ -103,7 +138,7 @@ class ReconciliationIntegrationTest {
         setupMetadataStoreData(recordsUnderTest)
 
         //wait for that to be processed
-        do{
+        do {
             logger.info("Waiting for verified records count to change")
             Thread.sleep(1000)
         } while (verifyRecordsInMetadataAreReconciled() != recordsUnderTest)
@@ -117,11 +152,10 @@ class ReconciliationIntegrationTest {
     private fun emptyMetadataStoreTable() {
         logger.info("Start emptyMetadataStoreTable")
         metadataStoreConfiguration.metadataStoreConnection().use { connection ->
-            with(connection.createStatement()) {
-                this.execute(
-                    """DELETE FROM ${metadataStoreConfiguration.table};"""
-                )
-            }
+            val statement = connection.createStatement()
+            statement.execute(
+                """DELETE FROM ${metadataStoreConfiguration.table};"""
+            )
         }
         logger.info("End emptyMetadataStoreTable")
     }
@@ -209,7 +243,7 @@ class ReconciliationIntegrationTest {
             for (index in 0..entries) {
                 val key = index.toString() //check symmetry with hbase key -> val key = i.toString().toByteArray()
                 val statement = connection.createStatement()
-                statement.executeQuery(
+                val result = statement.executeQuery(
                     """
                     INSERT INTO ${metadataStoreConfiguration.table} (hbase_id, hbase_timestamp, topic_name, write_timestamp, reconciled_result)
                     VALUES ($key, 1544799662000, $kafkaTopic, CURRENT_DATE - INTERVAL 7 DAY, false)
@@ -217,6 +251,7 @@ class ReconciliationIntegrationTest {
                 )
                 logger.info(
                     "Added metadata store data entries for integration test",
+                    "result_row_inserted" to "${result.rowInserted()}",
                     "index" to "$index", "hbase_id" to key, "topic_name" to kafkaTopic
                 )
             }

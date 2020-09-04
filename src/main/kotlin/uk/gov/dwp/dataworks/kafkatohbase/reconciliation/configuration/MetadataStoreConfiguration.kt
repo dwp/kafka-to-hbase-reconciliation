@@ -72,6 +72,7 @@ data class MetadataStoreConfiguration(
         logger.info("Adding Metastore shutdown hook")
         Runtime.getRuntime().addShutdownHook(object : Thread() {
             override fun run() {
+                logger.info("Metastore shutdown hook running - closing connection")
                 connection.close()
             }
         })
