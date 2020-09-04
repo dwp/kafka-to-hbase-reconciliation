@@ -3,6 +3,7 @@ import org.apache.hadoop.hbase.client.Put
 import org.apache.hadoop.hbase.client.Scan
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Ignore
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.runner.RunWith
 import org.slf4j.Logger
@@ -15,7 +16,6 @@ import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.ReconciliationApplicatio
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.HBaseConfiguration
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.MetadataStoreConfiguration
 
-
 @RunWith(SpringRunner::class)
 @SpringBootTest(
     classes = [ReconciliationApplication::class]
@@ -25,13 +25,15 @@ class ReconciliationIntegrationTest {
 
     companion object {
         val logger: Logger = LoggerFactory.getLogger(ReconciliationIntegrationTest::class.toString())
+        var hbaseConnection: org.apache.hadoop.hbase.client.Connection? = null
+        var metadataStoreConnection: java.sql.Connection? = null
     }
 
     @Autowired
     lateinit var metadataStoreConfiguration: MetadataStoreConfiguration
 
     @Autowired
-    lateinit var HBaseConfiguration: HBaseConfiguration
+    lateinit var hbaseConfiguration: HBaseConfiguration
 
     final val hbaseNamespace = "claimant_advances"
     final val hbaseTable = "advanceDetails"
@@ -44,6 +46,22 @@ class ReconciliationIntegrationTest {
     final val kafkaDb = "claimant-advances"
     final val kafkaCollection = "advanceDetails"
     final val kafkaTopic = "$kafkaDb.$kafkaCollection"
+
+    @BeforeEach
+    fun setup() {
+        if (metadataStoreConnection == null) {
+            logger.info("Setup metadataStoreConnection")
+            metadataStoreConnection = metadataStoreConfiguration.metadataStoreConnection()
+        } else {
+            logger.info("Already done metadataStoreConnection")
+        }
+        if (hbaseConnection == null) {
+            logger.info("Setup hbaseConnection")
+            hbaseConnection = hbaseConfiguration.hbaseConnection()
+        } else {
+            logger.info("Already done hbaseConnection")
+        }
+    }
 
     @Test
     fun integrationSpringContextLoads() {
@@ -69,7 +87,7 @@ class ReconciliationIntegrationTest {
         }
     }
 
-    @Ignore
+    @Test
     fun testWeCanEmptyMetadataStore() {
         try {
             emptyMetadataStoreTable()
@@ -79,7 +97,7 @@ class ReconciliationIntegrationTest {
         }
     }
 
-    @Ignore
+    @Test
     fun testWeCanFillHBase() {
         try {
             setupHBaseData(1)
@@ -89,7 +107,7 @@ class ReconciliationIntegrationTest {
         }
     }
 
-    @Ignore
+    @Test
     fun testWeCanFillMetastore() {
         try {
             setupMetadataStoreData(1)
@@ -99,7 +117,7 @@ class ReconciliationIntegrationTest {
         }
     }
 
-    @Ignore
+    @Test
     fun testWeCanCheckMetastoreForReconciled() {
         try {
             verifyRecordsInMetadataAreReconciled()
@@ -109,7 +127,7 @@ class ReconciliationIntegrationTest {
         }
     }
 
-    @Ignore
+    @Test
     fun testWeCanCheckMetastore() {
         try {
             recordsInMetadataStore()
@@ -121,37 +139,41 @@ class ReconciliationIntegrationTest {
 
     @Ignore
     fun givenMatchingRecordsInMetadataStoreAndHBaseWhenStartingReconciliationThenAllRecordsAreReconciled() {
+        try {
+            //given
+            emptyHBaseTable()
+            emptyMetadataStoreTable()
 
-        //given
-        emptyHBaseTable()
-        emptyMetadataStoreTable()
+            val recordsInMetadataStore = recordsInMetadataStore()
+            val recordsInHBase = recordsInHBase()
 
-        val recordsInMetadataStore = recordsInMetadataStore()
-        val recordsInHBase = recordsInHBase()
+            assertThat(recordsInMetadataStore).isEqualTo(0)
+            assertThat(recordsInHBase).isEqualTo(0)
 
-        assertThat(recordsInMetadataStore).isEqualTo(0)
-        assertThat(recordsInHBase).isEqualTo(0)
+            //when
+            val recordsUnderTest = 2
+            setupHBaseData(recordsUnderTest)
+            setupMetadataStoreData(recordsUnderTest)
 
-        //when
-        val recordsUnderTest = 2
-        setupHBaseData(recordsUnderTest)
-        setupMetadataStoreData(recordsUnderTest)
+            //wait for that to be processed
+            do {
+                logger.info("Waiting for verified records count to change")
+                Thread.sleep(1000)
+            } while (verifyRecordsInMetadataAreReconciled() != recordsUnderTest)
 
-        //wait for that to be processed
-        do {
-            logger.info("Waiting for verified records count to change")
-            Thread.sleep(1000)
-        } while (verifyRecordsInMetadataAreReconciled() != recordsUnderTest)
-
-        //then
-        assertThat(verifyRecordsInMetadataAreReconciled()).isEqualTo(recordsUnderTest)
-        assertThat(recordsInMetadataStore()).isEqualTo(recordsUnderTest)
-        assertThat(recordsInHBase()).isEqualTo(recordsUnderTest)
+            //then
+            assertThat(verifyRecordsInMetadataAreReconciled()).isEqualTo(recordsUnderTest)
+            assertThat(recordsInMetadataStore()).isEqualTo(recordsUnderTest)
+            assertThat(recordsInHBase()).isEqualTo(recordsUnderTest)
+        } catch (ex: Exception) {
+            logger.error("Exception in test", ex)
+            throw ex
+        }
     }
 
     private fun emptyMetadataStoreTable() {
         logger.info("Start emptyMetadataStoreTable")
-        metadataStoreConfiguration.metadataStoreConnection().use { connection ->
+        metadataStoreConnection!!.use { connection ->
             val statement = connection.createStatement()
             statement.execute(
                 """DELETE FROM ${metadataStoreConfiguration.table};"""
@@ -162,7 +184,7 @@ class ReconciliationIntegrationTest {
 
     private fun emptyHBaseTable() {
         logger.info("Start emptyHBaseTable")
-        val hbaseAdmin = HBaseConfiguration.hbaseConnection().admin
+        val hbaseAdmin = hbaseConnection!!.admin
 
         if (hbaseAdmin.isTableEnabled(hbaseTableObject)) {
             hbaseAdmin.disableTableAsync(hbaseTableObject)
@@ -188,9 +210,9 @@ class ReconciliationIntegrationTest {
 
     private fun setupHBaseData(entries: Int) {
         logger.info("Start Setup hbase data entries for integration test", "entries" to entries)
-        val hbaseAdmin = HBaseConfiguration.hbaseConnection().admin
+        val hbaseAdmin = hbaseConnection!!.admin
         hbaseAdmin.enableTable(hbaseTableObject)
-        HBaseConfiguration.hbaseConnection().use { connection ->
+        hbaseConnection.use { connection ->
 
             with(connection.getTable(hbaseTableObject)) {
 
@@ -210,7 +232,7 @@ class ReconciliationIntegrationTest {
     private fun recordsInHBase(): Int {
         logger.info("Start recordsInHBase")
         var found = 0
-        HBaseConfiguration.hbaseConnection().use { connection ->
+        hbaseConnection!!.use { connection ->
             with(connection.getTable(hbaseTableObject)) {
                 val scanner = getScanner(Scan())
                 do {
@@ -218,7 +240,7 @@ class ReconciliationIntegrationTest {
                     if (result != null) {
                         found++
                         val latestId = result.row.toString()
-                        logger.info("Found hbase row", "row_index" to "$found", "row_key" to "$latestId")
+                        logger.info("Found hbase row", "row_index" to "$found", "row_key" to latestId)
                     }
                 } while (result != null)
             }
@@ -239,7 +261,7 @@ class ReconciliationIntegrationTest {
 
     private fun setupMetadataStoreData(entries: Int) {
         logger.info("Start Setup metadata store data entries for integration test", "entries" to entries)
-        metadataStoreConfiguration.metadataStoreConnection().use { connection ->
+        metadataStoreConnection!!.use { connection ->
             for (index in 0..entries) {
                 val key = index.toString() //check symmetry with hbase key -> val key = i.toString().toByteArray()
                 val statement = connection.createStatement()
@@ -260,7 +282,7 @@ class ReconciliationIntegrationTest {
     }
 
     private fun verifyRecordsInMetadataAreReconciled(): Int {
-        metadataStoreConfiguration.metadataStoreConnection().use { connection ->
+        metadataStoreConnection!!.use { connection ->
             with(connection.createStatement()) {
                 val rs = this.executeQuery(
                     """
@@ -274,7 +296,7 @@ class ReconciliationIntegrationTest {
     }
 
     private fun recordsInMetadataStore(): Int {
-        metadataStoreConfiguration.metadataStoreConnection().use { connection ->
+        metadataStoreConnection!!.use { connection ->
             with(connection.createStatement()) {
                 val rs = this.executeQuery(
                     """SELECT COUNT(*) FROM ${metadataStoreConfiguration.table} """.trimIndent()
