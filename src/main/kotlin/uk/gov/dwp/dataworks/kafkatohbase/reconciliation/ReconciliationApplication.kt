@@ -1,7 +1,5 @@
 package uk.gov.dwp.dataworks.kafkatohbase.reconciliation
 
-//import org.springframework.boot.CommandLineRunner
-//import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationService
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan
 import org.springframework.boot.runApplication
@@ -14,11 +12,6 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler
 @SpringBootApplication
 @EnableScheduling
 class ReconciliationApplication
-//    (private val reconciliationService: ReconciliationService) : CommandLineRunner {
-//    override fun run(vararg args: String?) {
-//        reconciliationService.startReconciliation()
-//    }
-//}
 
 fun main(args: Array<String>) {
     //exitProcess(SpringApplication.exit(runApplication<ReconciliationApplication>(*args)))

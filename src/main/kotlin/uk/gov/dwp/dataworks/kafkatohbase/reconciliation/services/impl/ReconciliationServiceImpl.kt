@@ -18,13 +18,9 @@ class ReconciliationServiceImpl(
         val logger = DataworksLogger.getLogger(ReconciliationService::class.toString())
     }
 
-    //@Value("#{ReconcilerConfiguration.fixedDelayMillis")
-    //lateinit var reconciliationDelayString: String
-
     //Executes each X millis after the last execution
-    //@Scheduled(fixedDelayString="${reconciler.fixed.delay.millis}")
-    //@Scheduled(fixedDelayString="#{ReconcilerConfiguration.fixedDelayMillis")
-    @Scheduled(fixedDelayString="5000")
+    @Scheduled(fixedDelayString="#{\${reconciler.fixed.delay.millis}}")
+    //@Scheduled(fixedDelayString="5000")
     override fun startReconciliationOnTimer() {
         startReconciliation()
     }
