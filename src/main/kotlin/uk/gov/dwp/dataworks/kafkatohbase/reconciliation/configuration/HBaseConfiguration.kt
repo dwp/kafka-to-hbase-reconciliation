@@ -61,7 +61,7 @@ data class HBaseConfiguration(
         logger.info("Adding HBase shutdown hook")
         Runtime.getRuntime().addShutdownHook(object : Thread() {
             override fun run() {
-                MetadataStoreConfiguration.logger.info("HBase shutdown hook running - closing connection")
+                logger.info("HBase shutdown hook running - closing connection")
                 connection.close()
             }
         })

@@ -36,8 +36,6 @@ class ReconciliationIntegrationTest {
     @Autowired
     lateinit var hbaseConfiguration: HBaseConfiguration
 
-    var metadataStoreConnection: java.sql.Connection? = null
-    var metadataTable = "NOT_SET"
     var hbaseConnection: org.apache.hadoop.hbase.client.Connection? = null
 
     final val hbaseNamespace = "claimant_advances"
@@ -54,96 +52,91 @@ class ReconciliationIntegrationTest {
 
     @BeforeEach
     fun setup() {
-        if (metadataStoreConnection == null) {
-            logger.info("Setup metadataStoreConnection")
-            //metadataStoreConfiguration = MetadataStoreConfiguration()
-            metadataStoreConnection = metadataStoreConfiguration!!.metadataStoreConnection()
-            metadataTable = metadataStoreConfiguration!!.table!!
-        } else {
-            logger.info("Already done metadataStoreConnection")
-        }
         if (hbaseConnection == null) {
             logger.info("Setup hbaseConnection")
-            //hbaseConfiguration = HBaseConfiguration()
-            hbaseConnection = hbaseConfiguration!!.hbaseConnection()
+            hbaseConnection = hbaseConfiguration.hbaseConnection()
         } else {
             logger.info("Already done hbaseConnection")
         }
     }
 
+    fun metadataConnection() = metadataStoreConfiguration.metadataStoreConnection()
+
+    fun metadataTable() = metadataStoreConfiguration.table!!
+
     @Test
     fun testThatIntegrationSpringContextLoads() {
     }
 
-    @Test
-    fun testWeCanEmptyHBase() {
-        try {
-            emptyHBaseTable()
-        } catch (ex: Exception) {
-            logger.error("Exception in testWeCanEmptyHBase", ex)
-            throw ex
-        }
-    }
-
-    @Test
-    fun testWeCanCheckHBase() {
-        try {
-            recordsInHBase()
-        } catch (ex: Exception) {
-            logger.error("Exception in testWeCanCheckHBase", ex)
-            throw ex
-        }
-    }
-
-    @Test
-    fun testWeCanEmptyMetadataStore() {
-        try {
-            emptyMetadataStoreTable()
-        } catch (ex: Exception) {
-            logger.error("Exception in testWeCanEmptyMetadataStore", ex)
-            throw ex
-        }
-    }
-
-    @Test
-    fun testWeCanFillHBase() {
-        try {
-            setupHBaseData(0, 0)
-        } catch (ex: Exception) {
-            logger.error("Exception in testWeCanFillHBase", ex)
-            throw ex
-        }
-    }
-
-    @Ignore
-    fun testWeCanFillMetastore() {
-        try {
-            setupMetadataStoreData(0, 0)
-        } catch (ex: Exception) {
-            logger.error("Exception in testWeCanFillMetastore", ex)
-            throw ex
-        }
-    }
-
-    @Test
-    fun testWeCanCheckMetastoreForReconciled() {
-        try {
-            reconciledRecordsInMetadataStore()
-        } catch (ex: Exception) {
-            logger.error("Exception in testWeCanCheckMetastoreForReconciled", ex)
-            throw ex
-        }
-    }
-
-    @Test
-    fun testWeCanCheckMetastore() {
-        try {
-            allRecordsInMetadataStore()
-        } catch (ex: Exception) {
-            logger.error("Exception in testWeCanCheckMetastore", ex)
-            throw ex
-        }
-    }
+//    @Test
+//    fun testWeCanEmptyHBase() {
+//        try {
+//            emptyHBaseTable()
+//        } catch (ex: Exception) {
+//            logger.error("Exception in testWeCanEmptyHBase", ex)
+//            throw ex
+//        }
+//    }
+//
+//    @Test
+//    fun testWeCanCheckHBase() {
+//        try {
+//            recordsInHBase()
+//        } catch (ex: Exception) {
+//            logger.error("Exception in testWeCanCheckHBase", ex)
+//            throw ex
+//        }
+//    }
+//
+//    @Test
+//    fun testWeCanEmptyMetadataStore() {
+//        try {
+//            emptyMetadataStoreTable()
+//        } catch (ex: Exception) {
+//            logger.error("Exception in testWeCanEmptyMetadataStore", ex)
+//            throw ex
+//        }
+//    }
+//
+//    @Test
+//    fun testWeCanFillHBase() {
+//        try {
+//            setupHBaseData(0, 0)
+//        } catch (ex: Exception) {
+//            logger.error("Exception in testWeCanFillHBase", ex)
+//            throw ex
+//        }
+//    }
+//
+//    @Ignore
+//    fun testWeCanFillMetastore() {
+//        try {
+//            setupMetadataStoreData(0, 0)
+//        } catch (ex: Exception) {
+//            logger.error("Exception in testWeCanFillMetastore", ex)
+//            throw ex
+//        }
+//    }
+//
+//    @Test
+//    fun testWeCanCheckMetastoreForReconciled() {
+//        try {
+//            reconciledRecordsInMetadataStore()
+//        } catch (ex: Exception) {
+//            logger.error("Exception in testWeCanCheckMetastoreForReconciled", ex)
+//            throw ex
+//        }
+//    }
+//
+//    @Test
+//    fun testWeCanCheckMetastore() {
+//        try {
+//            allRecordsInMetadataStore()
+//        } catch (ex: Exception) {
+//            logger.error("Exception in testWeCanCheckMetastore", ex)
+//            throw ex
+//        }
+//    }
 
     @Test
     fun testThatMatchingRecordsAreReconciledAndMismatchesAreNot() {
@@ -180,10 +173,10 @@ class ReconciliationIntegrationTest {
 
     private fun emptyMetadataStoreTable() {
         logger.info("Start emptyMetadataStoreTable")
-        metadataStoreConnection!!.use { connection ->
+        metadataConnection().use { connection ->
             val statement = connection.createStatement()
             statement.execute(
-                """DELETE FROM $metadataTable;"""
+                """DELETE FROM ${metadataTable()};"""
             )
         }
         logger.info("End emptyMetadataStoreTable")
@@ -226,7 +219,6 @@ class ReconciliationIntegrationTest {
         } while (hbaseAdmin.isTableEnabled(hbaseTableObject))
         logger.info("End disableHBaseTable")
     }
-
 
     private fun setupHBaseData(startIndex: Int, endIndex: Int) {
         logger.info("Start Setup hbase data entries for integration test", "startIndex" to "$startIndex", "endIndex" to "$endIndex")
@@ -284,13 +276,13 @@ class ReconciliationIntegrationTest {
 
     private fun setupMetadataStoreData(startIndex: Int, endIndex: Int) {
         logger.info("Start Setup metadata store data entries for integration test", "startIndex" to "$startIndex", "endIndex" to "$endIndex")
-        metadataStoreConnection!!.use { connection ->
+        metadataConnection().use { connection ->
             for (index in startIndex..endIndex) {
                 val key = index.toString()
                 val statement = connection.createStatement()
                 val result = statement.executeQuery(
                     """
-                    INSERT INTO $metadataTable (hbase_id, hbase_timestamp, topic_name, write_timestamp, reconciled_result)
+                    INSERT INTO ${metadataTable()} (hbase_id, hbase_timestamp, topic_name, write_timestamp, reconciled_result)
                     VALUES ($key, 1544799662000, $kafkaTopic, CURRENT_DATE - INTERVAL 7 DAY, false)
                 """.trimIndent()
                 )
@@ -305,11 +297,11 @@ class ReconciliationIntegrationTest {
     }
 
     private fun reconciledRecordsInMetadataStore(): Int {
-        metadataStoreConnection!!.use { connection ->
+        metadataConnection().use { connection ->
             with(connection.createStatement()) {
                 val rs = this.executeQuery(
                     """
-                SELECT COUNT(*) FROM $metadataTable WHERE reconciled_result=true
+                SELECT COUNT(*) FROM ${metadataTable()} WHERE reconciled_result=true
             """.trimIndent()
                 )
                 rs.next()
@@ -319,10 +311,10 @@ class ReconciliationIntegrationTest {
     }
 
     private fun allRecordsInMetadataStore(): Int {
-        metadataStoreConnection!!.use { connection ->
+        metadataConnection().use { connection ->
             with(connection.createStatement()) {
                 val rs = this.executeQuery(
-                    """SELECT COUNT(*) FROM $metadataTable """.trimIndent()
+                    """SELECT COUNT(*) FROM ${metadataTable()} """.trimIndent()
                 )
                 rs.next()
                 return rs.getInt(1)
