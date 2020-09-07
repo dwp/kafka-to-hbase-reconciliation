@@ -78,7 +78,6 @@ class ReconciliationIntegrationTest {
     @Test
     fun testWeCanEmptyHBase() {
         try {
-            //setup()
             emptyHBaseTable()
         } catch (ex: Exception) {
             logger.error("Exception in testWeCanEmptyHBase", ex)
@@ -89,7 +88,6 @@ class ReconciliationIntegrationTest {
     @Ignore
     fun testWeCanCheckHBase() {
         try {
-            //setup()
             recordsInHBase()
         } catch (ex: Exception) {
             logger.error("Exception in testWeCanCheckHBase", ex)
@@ -100,7 +98,6 @@ class ReconciliationIntegrationTest {
     @Test
     fun testWeCanEmptyMetadataStore() {
         try {
-            //setup()
             emptyMetadataStoreTable()
         } catch (ex: Exception) {
             logger.error("Exception in testWeCanEmptyMetadataStore", ex)
@@ -111,8 +108,7 @@ class ReconciliationIntegrationTest {
     @Ignore
     fun testWeCanFillHBase() {
         try {
-            //setup()
-            setupHBaseData(1)
+            setupHBaseData(0, 0)
         } catch (ex: Exception) {
             logger.error("Exception in testWeCanFillHBase", ex)
             throw ex
@@ -122,8 +118,7 @@ class ReconciliationIntegrationTest {
     @Ignore
     fun testWeCanFillMetastore() {
         try {
-            //setup()
-            setupMetadataStoreData(1)
+            setupMetadataStoreData(0, 0)
         } catch (ex: Exception) {
             logger.error("Exception in testWeCanFillMetastore", ex)
             throw ex
@@ -133,7 +128,6 @@ class ReconciliationIntegrationTest {
     @Ignore
     fun testWeCanCheckMetastoreForReconciled() {
         try {
-            //setup()
             reconciledRecordsInMetadataStore()
         } catch (ex: Exception) {
             logger.error("Exception in testWeCanCheckMetastoreForReconciled", ex)
@@ -144,7 +138,6 @@ class ReconciliationIntegrationTest {
     @Ignore
     fun testWeCanCheckMetastore() {
         try {
-            //setup()
             allRecordsInMetadataStore()
         } catch (ex: Exception) {
             logger.error("Exception in testWeCanCheckMetastore", ex)
@@ -153,8 +146,7 @@ class ReconciliationIntegrationTest {
     }
 
     @Ignore
-    fun givenMatchingRecordsInMetadataStoreAndHBaseWhenStartingReconciliationThenAllRecordsAreReconciled() {
-        //setup()
+    fun testThatMatchingRecordsAreReconciledAndMismatchesAreNot() {
         try {
             //given
             emptyHBaseTable()
@@ -166,21 +158,20 @@ class ReconciliationIntegrationTest {
             assertThat(recordsInMetadataStore).isEqualTo(0)
             assertThat(recordsInHBase).isEqualTo(0)
 
-            //when
-            val recordsUnderTest = 2
-            setupHBaseData(recordsUnderTest)
-            setupMetadataStoreData(recordsUnderTest)
+            //when record 1 is hbase only, 2,3,4 in both, 5 metastore only
+            setupHBaseData(1, 4)
+            setupMetadataStoreData(2, 5)
 
             //wait for that to be processed
             do {
                 logger.info("Waiting for verified records count to change")
                 Thread.sleep(1000)
-            } while (reconciledRecordsInMetadataStore() != recordsUnderTest)
+            } while (reconciledRecordsInMetadataStore() < 3)
 
             //then
-            assertThat(reconciledRecordsInMetadataStore()).isEqualTo(recordsUnderTest)
-            assertThat(allRecordsInMetadataStore()).isEqualTo(recordsUnderTest)
-            assertThat(recordsInHBase()).isEqualTo(recordsUnderTest)
+            assertThat(reconciledRecordsInMetadataStore()).isEqualTo(3)
+            assertThat(allRecordsInMetadataStore()).isEqualTo(4)
+            assertThat(recordsInHBase()).isEqualTo(4)
         } catch (ex: Exception) {
             logger.error("Exception in test", ex)
             throw ex
@@ -237,23 +228,27 @@ class ReconciliationIntegrationTest {
     }
 
 
-    private fun setupHBaseData(entries: Int) {
-        logger.info("Start Setup hbase data entries for integration test", "entries" to entries)
+    private fun setupHBaseData(startIndex: Int, endIndex: Int) {
+        logger.info("Start Setup hbase data entries for integration test", "startIndex" to "$startIndex", "endIndex" to "$endIndex")
         enableHBaseTable(hbaseConnection!!.admin)
         hbaseConnection!!.use { connection ->
             with(connection.getTable(hbaseTableObject)) {
 
                 val body = wellFormedValidPayload(hbaseNamespace, hbaseTable)
 
-                for (i in 0..entries) {
-                    val key = i.toString().toByteArray()
+                for (index in startIndex..endIndex) {
+                    val key = index.toString().toByteArray()
                     this.put(Put(key).apply {
                         addColumn(columnFamily, columnQualifier, 1544799662000, body)
                     })
+                    logger.info(
+                        "Added hbase entries for integration test", "index" to "$index", "key" to "$key",
+                        "hbase_id" to key, "topic_name" to kafkaTopic
+                    )
                 }
             }
         }
-        logger.info("Done Setup hbase data entries for integration test", "entries" to entries)
+        logger.info("Done Setup hbase data entries for integration test", "startIndex" to "$startIndex", "endIndex" to "$endIndex")
     }
 
     private fun recordsInHBase(): Int {
@@ -287,11 +282,11 @@ class ReconciliationIntegrationTest {
 //            String(key)
 //        }
 
-    private fun setupMetadataStoreData(entries: Int) {
-        logger.info("Start Setup metadata store data entries for integration test", "entries" to entries)
+    private fun setupMetadataStoreData(startIndex: Int, endIndex: Int) {
+        logger.info("Start Setup metadata store data entries for integration test", "startIndex" to "$startIndex", "endIndex" to "$endIndex")
         metadataStoreConnection!!.use { connection ->
-            for (index in 0..entries) {
-                val key = index.toString() //check symmetry with hbase key -> val key = i.toString().toByteArray()
+            for (index in startIndex..endIndex) {
+                val key = index.toString()
                 val statement = connection.createStatement()
                 val result = statement.executeQuery(
                     """
@@ -306,7 +301,7 @@ class ReconciliationIntegrationTest {
                 )
             }
         }
-        logger.info("End Setup metadata store data entries for integration test", "entries" to entries)
+        logger.info("End Setup metadata store data entries for integration test", "startIndex" to "$startIndex", "endIndex" to "$endIndex")
     }
 
     private fun reconciledRecordsInMetadataStore(): Int {
