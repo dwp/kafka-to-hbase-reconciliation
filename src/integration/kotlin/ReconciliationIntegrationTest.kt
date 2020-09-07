@@ -75,7 +75,7 @@ class ReconciliationIntegrationTest {
     fun testThatIntegrationSpringContextLoads() {
     }
 
-    c
+    @Test
     fun testWeCanEmptyHBase() {
         try {
             emptyHBaseTable()
@@ -85,7 +85,7 @@ class ReconciliationIntegrationTest {
         }
     }
 
-    c
+    @Test
     fun testWeCanCheckHBase() {
         try {
             recordsInHBase()
