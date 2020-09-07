@@ -75,7 +75,7 @@ class ReconciliationIntegrationTest {
     fun testThatIntegrationSpringContextLoads() {
     }
 
-    @Test
+    c
     fun testWeCanEmptyHBase() {
         try {
             emptyHBaseTable()
@@ -85,7 +85,7 @@ class ReconciliationIntegrationTest {
         }
     }
 
-    @Ignore
+    c
     fun testWeCanCheckHBase() {
         try {
             recordsInHBase()
@@ -105,7 +105,7 @@ class ReconciliationIntegrationTest {
         }
     }
 
-    @Ignore
+    @Test
     fun testWeCanFillHBase() {
         try {
             setupHBaseData(0, 0)
@@ -125,7 +125,7 @@ class ReconciliationIntegrationTest {
         }
     }
 
-    @Ignore
+    @Test
     fun testWeCanCheckMetastoreForReconciled() {
         try {
             reconciledRecordsInMetadataStore()
@@ -135,7 +135,7 @@ class ReconciliationIntegrationTest {
         }
     }
 
-    @Ignore
+    @Test
     fun testWeCanCheckMetastore() {
         try {
             allRecordsInMetadataStore()
@@ -145,7 +145,7 @@ class ReconciliationIntegrationTest {
         }
     }
 
-    @Ignore
+    @Test
     fun testThatMatchingRecordsAreReconciledAndMismatchesAreNot() {
         try {
             //given
