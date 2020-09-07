@@ -18,7 +18,7 @@ data class MetadataStoreConfiguration(
     var user: String? = "NOT_SET",
     var passwordSecretName: String? = "NOT_SET",
     var dummyPassword: String? = "NOT_SET",
-    var table: String? = "NOT_SET",
+    var table: String = "NOT_SET",
     var databaseName: String? = "NOT_SET",
     var caCertPath: String? = "NOT_SET",
     var queryLimit: String? = "NOT_SET",
@@ -67,6 +67,9 @@ data class MetadataStoreConfiguration(
         addShutdownHook(connection)
         return connection
     }
+
+    @Bean
+    fun metadatastoreTableName() = table
 
     private fun addShutdownHook(connection: Connection) {
         logger.info("Adding Metastore shutdown hook")

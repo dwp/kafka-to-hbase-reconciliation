@@ -46,7 +46,7 @@ mysql-root: ## Get a root client session on the metadatastore database.
 	docker exec -it metadatastore mysql --host=127.0.0.1 --user=root --password=password metadatastore
 
 mysql-writer: ## Get a writer client session on the metadatastore database.
-	docker exec -it metadatastore mysql --host=127.0.0.1 --user=reconciliationwriter --password=password metadatastore
+	docker exec -it metadatastore mysql --host=127.0.0.1 --user=reconciliationwriter --password=my-password metadatastore
 
 hbase-shell: ## Open an HBase shell onto the running HBase container
 	docker-compose run --rm hbase shell

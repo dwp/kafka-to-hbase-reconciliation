@@ -75,9 +75,10 @@ class MetadataStoreRepositoryTest {
 
         whenever(metadataStoreConfiguration.table).thenReturn("ucfs")
 
-        metadataStoreRepository.reconcileRecord(topicName)
-
-        verify(metadataStoreConnection, times(1)).createStatement()
-        verify(statement, times(1)).executeUpdate(any())
+        TODO("NOT IMPLEMENTED")
+//        metadataStoreRepository.reconcileRecord(topicName, hbaseId, hbaseTimestamp.time)
+//
+//        verify(metadataStoreConnection, times(1)).createStatement()
+//        verify(statement, times(1)).executeUpdate(any())
     }
 }
