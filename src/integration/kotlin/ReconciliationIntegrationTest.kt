@@ -36,8 +36,6 @@ class ReconciliationIntegrationTest {
     @Autowired
     lateinit var hbaseConfiguration: HBaseConfiguration
 
-    var hbaseConnection: org.apache.hadoop.hbase.client.Connection? = null
-
     final val hbaseNamespace = "claimant_advances"
     final val hbaseTable = "advanceDetails"
     final val hbaseNamespaceAndTable = "$hbaseNamespace:$hbaseTable"
@@ -52,17 +50,13 @@ class ReconciliationIntegrationTest {
 
     @BeforeEach
     fun setup() {
-        if (hbaseConnection == null) {
-            logger.info("Setup hbaseConnection")
-            hbaseConnection = hbaseConfiguration.hbaseConnection()
-        } else {
-            logger.info("Already done hbaseConnection")
-        }
     }
 
     fun metadataConnection() = metadataStoreConfiguration.metadataStoreConnection()
 
     fun metadataTable() = metadataStoreConfiguration.table!!
+
+    fun hbaseConn() = hbaseConfiguration.hbaseConnection()
 
     @Test
     fun testThatIntegrationSpringContextLoads() {
@@ -108,7 +102,7 @@ class ReconciliationIntegrationTest {
 //        }
 //    }
 //
-//    @Ignore
+//    @Test
 //    fun testWeCanFillMetastore() {
 //        try {
 //            setupMetadataStoreData(0, 0)
@@ -184,7 +178,7 @@ class ReconciliationIntegrationTest {
 
     private fun emptyHBaseTable() {
         logger.info("Start emptyHBaseTable")
-        val hbaseAdmin = hbaseConnection!!.admin
+        val hbaseAdmin = hbaseConn().admin
 
         disableHBaseTable(hbaseAdmin)
 
@@ -222,8 +216,8 @@ class ReconciliationIntegrationTest {
 
     private fun setupHBaseData(startIndex: Int, endIndex: Int) {
         logger.info("Start Setup hbase data entries for integration test", "startIndex" to "$startIndex", "endIndex" to "$endIndex")
-        enableHBaseTable(hbaseConnection!!.admin)
-        hbaseConnection!!.use { connection ->
+        enableHBaseTable(hbaseConn().admin)
+        hbaseConn().let {connection ->
             with(connection.getTable(hbaseTableObject)) {
 
                 val body = wellFormedValidPayload(hbaseNamespace, hbaseTable)
@@ -245,9 +239,9 @@ class ReconciliationIntegrationTest {
 
     private fun recordsInHBase(): Int {
         logger.info("Start recordsInHBase")
-        enableHBaseTable(hbaseConnection!!.admin)
+        enableHBaseTable(hbaseConn().admin)
         var found = 0
-        hbaseConnection!!.use { connection ->
+        hbaseConn().let { connection ->
             with(connection.getTable(hbaseTableObject)) {
                 val scanner = getScanner(Scan())
                 do {
@@ -276,7 +270,7 @@ class ReconciliationIntegrationTest {
 
     private fun setupMetadataStoreData(startIndex: Int, endIndex: Int) {
         logger.info("Start Setup metadata store data entries for integration test", "startIndex" to "$startIndex", "endIndex" to "$endIndex")
-        metadataConnection().use { connection ->
+        metadataConnection().let { connection ->
             for (index in startIndex..endIndex) {
                 val key = index.toString()
                 val statement = connection.createStatement()
@@ -297,7 +291,7 @@ class ReconciliationIntegrationTest {
     }
 
     private fun reconciledRecordsInMetadataStore(): Int {
-        metadataConnection().use { connection ->
+        metadataConnection().let { connection ->
             with(connection.createStatement()) {
                 val rs = this.executeQuery(
                     """
@@ -311,7 +305,7 @@ class ReconciliationIntegrationTest {
     }
 
     private fun allRecordsInMetadataStore(): Int {
-        metadataConnection().use { connection ->
+        metadataConnection().let { connection ->
             with(connection.createStatement()) {
                 val rs = this.executeQuery(
                     """SELECT COUNT(*) FROM ${metadataTable()} """.trimIndent()
