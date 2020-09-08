@@ -78,10 +78,10 @@ hbase-up: ## Bring up and provision mysql
 	}
 
 hbase-populate: hbase-up
-	echo "Creating namespace 'claimant_advances'..." ; \
+	echo "Creating table 'claimant_advances:advanceDetails'..." ; \
 	docker exec -i hbase hbase shell <<< "create_namespace 'claimant_advances'"; \
-	echo "Created namespace 'claimant_advances'..." ; \
-	docker-compose up hbase-populate; \
+	docker exec -i hbase hbase shell <<< "create 'claimant_advances:advanceDetails', { NAME => 'cf', VERSIONS => '1000'}"; \
+	echo "Created table 'claimant_advances:advanceDetails'..." ; \
 
 services: hbase-up rdbms-up hbase-populate ## Bring up supporting services in docker
 

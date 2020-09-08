@@ -3,6 +3,7 @@ package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.impl
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.domain.ReconciledRecord
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.HBaseRepository
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.MetadataStoreRepository
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationService
@@ -59,6 +60,15 @@ class ReconciliationServiceImpl(
 
     override fun reconcileRecords(records: List<Map<String, Any>>): Int {
         var totalRecordsReconciled = 0
+
+        val reconciledRecords = records.map {
+            ReconciledRecord(it["topic_name"] as String, it["hbase_id"] as String, (it["hbase_timestamp"] as Timestamp).time)
+        }
+
+        val wtf = reconciledRecords.groupBy {
+            it.topicName
+        }
+
 
         records.forEach { record ->
             val topicName = record["topic_name"] as String

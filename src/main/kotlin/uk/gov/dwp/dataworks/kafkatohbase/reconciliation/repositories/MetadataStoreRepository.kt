@@ -16,6 +16,12 @@ class MetadataStoreRepository(private val connection: Connection,
         val logger = DataworksLogger.getLogger(ReconciliationService::class.toString())
     }
 
+    fun fetchGroupedUnreconciledRecords(): List<Map<String, Any>> {
+        logger.debug("Fetching unreconciled records from metadata store")
+        val unreconciledRecords = getUnreconciledRecordsQuery()
+        return mapResultSet(unreconciledRecords)
+    }
+
     fun fetchUnreconciledRecords(): List<Map<String, Any>> {
         logger.debug("Fetching unreconciled records from metadata store")
         val unreconciledRecords = getUnreconciledRecordsQuery()
@@ -34,9 +40,18 @@ class MetadataStoreRepository(private val connection: Connection,
                 SELECT * FROM $table
                 WHERE write_timestamp > CURRENT_DATE - INTERVAL 14 DAY AND 
                 reconciled_result = false 
-                LIMIT 14
+                order by topic_name
             """.trimIndent()
         )
+    }
+
+    private val unreconciledRecordsStatement: PreparedStatement by lazy {
+        connection.prepareStatement("""
+                SELECT * FROM $table
+                WHERE write_timestamp > CURRENT_DATE - INTERVAL 14 DAY 
+                AND reconciled_result = false
+                AND topic_name = ?
+            """.trimIndent())
     }
 
     private fun markRecordAsReconciled(topicName: String, hbaseId: String, hbaseVersion: Long) =

@@ -17,19 +17,10 @@ repositories {
 	maven(url = "https://jitpack.io")
 }
 
-//application {
-//	mainClassName = "uk.gov.dwp.dataworks.kafkatohbase.reconciliation.ReconciliationApplication"
-//}
-
-//tasks.getByName<BootRun>("bootRun") {
-//	main = "uk.gov.dwp.dataworks.kafkatohbase.reconciliation.ReconciliationApplication"
-//	systemProperties = properties
-//}
-
 dependencies {
 	annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
-
 	implementation("org.springframework.boot:spring-boot-starter")
+//	implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 	implementation("org.jetbrains.kotlinx", "kotlinx-coroutines-core", "1.3.9")
@@ -84,7 +75,7 @@ tasks.register<Test>("integration-test") {
 	testClassesDirs = sourceSets["integration"].output.classesDirs
 	classpath = sourceSets["integration"].runtimeClasspath
 	filter {
-		includeTestsMatching("ReconciliationIntegrationKoTest*")
+		includeTestsMatching("ReconciliationIntegrationTest*")
 	}
 
 	//copy all env vars from unix/your integration container into the test
