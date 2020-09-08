@@ -52,6 +52,16 @@ class MetadataStoreRepository(
             executeUpdate()
         }
 
+    private val markRecordAsReconciledStatement: PreparedStatement by lazy {
+        connection.prepareStatement(
+            """
+                UPDATE $table
+                SET reconciled_result=true, reconciled_timestamp=CURRENT_TIMESTAMP
+                WHERE topic_name= ? AND hbase_id = ? and hbase_timestamp = ?
+            """.trimIndent()
+        )
+    }
+
     private fun mapResultSet(resultSet: ResultSet?): MutableList<Map<String, Any>> {
 
         val result = listOf<Map<String, Any>>().toMutableList()
@@ -82,16 +92,6 @@ class MetadataStoreRepository(
         return result
     }
 
-    private val markRecordAsReconciledStatement: PreparedStatement by lazy {
-        connection.prepareStatement(
-            """
-                UPDATE $table
-                SET reconciled_result=true, reconciled_timestamp=CURRENT_TIMESTAMP
-                WHERE topic_name= ? AND hbase_id = ? and hbase_timestamp = ?
-            """.trimIndent()
-        )
-    }
-
     fun deleteRecordsOlderThanPeriod(): Int {
 
         logger.info(
@@ -100,7 +100,15 @@ class MetadataStoreRepository(
             "unit" to trimRecordsUnit
         )
 
-        val deletedCount = deleteReconciledRecords()
+        val statement = connection.createStatement()
+
+        val deletedCount = statement.executeUpdate(
+            """
+                DELETE FROM $table
+                WHERE reconciled_result = TRUE
+                AND reconciled_timestamp > $trimRecordsScale $trimRecordsUnit
+            """.trimIndent()
+        )
 
         logger.info(
             "Deleted records in Metadata Store by scale and unit",
@@ -110,20 +118,5 @@ class MetadataStoreRepository(
         )
 
         return deletedCount
-    }
-
-    private fun deleteReconciledRecords() =
-        with(deleteRecordsStatement) {
-            executeUpdate()
-        }
-
-    private val deleteRecordsStatement: PreparedStatement by lazy {
-        connection.prepareStatement(
-            """
-                DELETE FROM $table
-                WHERE reconciled_result = TRUE
-                AND reconciled_timestamp > $trimRecordsScale $trimRecordsUnit
-            """.trimIndent()
-        )
     }
 }

@@ -13,7 +13,7 @@ import java.sql.Timestamp
 @Service
 @Profile("RECONCILIATION")
 class ReconciliationServiceImpl(
-    private val repository: HBaseRepository,
+    private val hbaseRepository: HBaseRepository,
     private val metadataStoreRepository: MetadataStoreRepository) : ReconciliationService {
 
     companion object {
@@ -67,7 +67,7 @@ class ReconciliationServiceImpl(
             val hbaseId = record["hbase_id"] as String
             val hbaseTimestamp = record["hbase_timestamp"] as Timestamp
 
-            if (repository.recordExistsInHBase(topicName, hbaseId, hbaseTimestamp.time)) {
+            if (hbaseRepository.recordExistsInHBase(topicName, hbaseId, hbaseTimestamp.time)) {
                 logger.info("Reconcilling record",
                         "topic_name" to topicName,
                         "hbase_id" to hbaseId,

@@ -24,7 +24,7 @@ class MetadataStoreRepositoryTest {
             on { createStatement() } doReturn statement
         }
 
-        val metadataStoreRepository = MetadataStoreRepository(metadataStoreConnection, "ucfs")
+        val metadataStoreRepository = MetadataStoreRepository(metadataStoreConnection, "ucfs", "14", "1", "WEEK")
 
         metadataStoreRepository.fetchUnreconciledRecords()
 
@@ -50,7 +50,7 @@ class MetadataStoreRepositoryTest {
             on { prepareStatement(any()) } doReturn statement
         }
 
-        val metadataStoreRepository = MetadataStoreRepository(metadataStoreConnection, "ucfs")
+        val metadataStoreRepository = MetadataStoreRepository(metadataStoreConnection, "ucfs", "14", "1", "WEEK")
 
         val hbaseId = "hbase-id"
         val hbaseTimestamp = 100L
@@ -75,7 +75,7 @@ class MetadataStoreRepositoryTest {
             on { createStatement() } doReturn statement
         }
 
-        val metadataStoreRepository = MetadataStoreRepository(metadataStoreConnection, "ucfs")
+        val metadataStoreRepository = MetadataStoreRepository(metadataStoreConnection, "ucfs", "14", "1", "WEEK")
 
         metadataStoreRepository.deleteRecordsOlderThanPeriod()
 
