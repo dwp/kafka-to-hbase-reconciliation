@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
 	id("org.springframework.boot") version "2.3.3.RELEASE"
 	id("io.spring.dependency-management") version "1.0.10.RELEASE"
-	kotlin("jvm") version "1.3.72"
+	kotlin("jvm") version "1.4.0"
 	kotlin("plugin.spring") version "1.3.72"
 	application
 }
@@ -39,15 +39,15 @@ dependencies {
 	implementation("commons-codec:commons-codec:1.14")
 	implementation("com.github.dwp:dataworks-common-logging:0.0.5")
 	implementation("org.apache.commons:commons-text:1.8")
+	testImplementation("io.kotest:kotest-runner-junit5-jvm:4.2.0")
+	testImplementation("io.kotest:kotest-assertions-core-jvm:4.2.0")
+	testImplementation("io.kotest:kotest-property-jvm:4.2.0")
 	testImplementation("com.beust:klaxon:4.0.2")
 	testImplementation("com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0")
 	testImplementation("org.springframework.boot:spring-boot-starter-test") {
 		exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
 	}
-	testImplementation("io.kotlintest:kotlintest-runner-junit5:3.3.2")
 	testImplementation("org.apache.hbase:hbase-client:1.4.13")
-//	testImplementation("com.google.protobuf:protobuf-java:2.5.0")
-	//testImplementation("mysql:mysql-connector-java")
 }
 
 configurations.all {
@@ -84,7 +84,7 @@ tasks.register<Test>("integration-test") {
 	testClassesDirs = sourceSets["integration"].output.classesDirs
 	classpath = sourceSets["integration"].runtimeClasspath
 	filter {
-		includeTestsMatching("ReconciliationIntegrationTest*")
+		includeTestsMatching("ReconciliationIntegrationKoTest*")
 	}
 
 	//copy all env vars from unix/your integration container into the test

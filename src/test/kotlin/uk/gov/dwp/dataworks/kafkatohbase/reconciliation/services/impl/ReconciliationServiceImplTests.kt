@@ -12,6 +12,7 @@ import org.springframework.test.context.junit4.SpringRunner
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.HBaseRepository
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.MetadataStoreRepository
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationService
+import java.sql.Timestamp
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(classes = [ReconciliationServiceImpl::class])
@@ -39,8 +40,8 @@ class ReconciliationServiceImplTests {
 	fun updatesMetadataStoreOnlyWhenFoundInHBase() {
 
         val result = listOf(
-                mapOf("topic_name" to "incorrect", "hbase_id" to "banana", "hbase_timestamp" to 66L),
-                mapOf("topic_name" to "table", "hbase_id" to "1", "hbase_timestamp" to 1L)
+                mapOf("topic_name" to "incorrect", "hbase_id" to "banana", "hbase_timestamp" to Timestamp(66L)),
+                mapOf("topic_name" to "table", "hbase_id" to "1", "hbase_timestamp" to Timestamp(1L))
         )
 
         given(metadataStoreRepository.fetchUnreconciledRecords()).willReturn(result)
