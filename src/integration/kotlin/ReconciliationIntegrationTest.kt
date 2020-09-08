@@ -21,7 +21,7 @@ import java.util.*
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(classes = [ReconciliationApplication::class])
-@ActiveProfiles("DUMMY_SECRETS")
+@ActiveProfiles("DUMMY_SECRETS", "test")
 class ReconciliationIntegrationTest {
 
     companion object {

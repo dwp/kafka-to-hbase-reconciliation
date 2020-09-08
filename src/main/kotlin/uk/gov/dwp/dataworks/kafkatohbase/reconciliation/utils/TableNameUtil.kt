@@ -11,6 +11,7 @@ class TableNameUtil(private val coalescedNameUtil: CoalescedNameUtil) {
     lateinit var qualifiedTablePattern: String
 
     fun getTableNameFromTopic(topic: String): String? {
+        println("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX=> '$qualifiedTablePattern'")
         val matcher = topicNameTableMatcher(topic)
         if (matcher != null) {
             val namespace = matcher.groupValues[1]

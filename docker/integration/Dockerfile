@@ -7,4 +7,5 @@ COPY src/ ./src
 COPY build/ ./build
 COPY .gradle/ ./gradle
 
-RUN gradle :unit build integrationClasses -x test -x unit -x integration-test
+#RUN gradle :unit build integrationClasses -x test -x unit -x integration-test
+RUN gradle compileKotlin build integrationClasses -x test -x unit -x integration-test
