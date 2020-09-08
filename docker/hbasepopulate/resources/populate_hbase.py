@@ -49,7 +49,7 @@ def main():
                     table_name = f"{db_name}:{collection_name}".replace("-", "_")
 
                     if table_name not in tables:
-                        print(f"Created table '{table_name}'.")
+                        print(f"Creating table '{table_name}'....")
                         connection.create_table(table_name,
                                                 {'cf': dict(max_versions=1000000)})
                         tables.append(table_name)
