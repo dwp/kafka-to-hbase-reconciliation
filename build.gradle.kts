@@ -84,7 +84,7 @@ tasks.register<Test>("integration-test") {
 	testClassesDirs = sourceSets["integration"].output.classesDirs
 	classpath = sourceSets["integration"].runtimeClasspath
 	filter {
-		includeTestsMatching("ReconciliationIntegrationKoTest*")
+		includeTestsMatching("ReconciliationIntegrationTest*")
 	}
 
 	//copy all env vars from unix/your integration container into the test
