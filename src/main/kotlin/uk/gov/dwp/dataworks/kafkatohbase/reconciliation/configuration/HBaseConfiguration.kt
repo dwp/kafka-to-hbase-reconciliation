@@ -11,7 +11,7 @@ import uk.gov.dwp.dataworks.logging.DataworksLogger
 
 @Configuration
 @ConfigurationProperties(prefix = "hbase")
-data class HbaseConfiguration(
+data class HBaseConfiguration(
     var zookeeperParent: String? = "NOT_SET",
     var zookeeperQuorum: String? = "NOT_SET",
     var zookeeperPort: String? = "NOT_SET",
@@ -22,7 +22,7 @@ data class HbaseConfiguration(
 ) {
 
     companion object {
-        val logger = DataworksLogger.getLogger(HbaseConfiguration::class.toString())
+        val logger = DataworksLogger.getLogger(HBaseConfiguration::class.toString())
     }
 
     fun hbaseConfiguration(): org.apache.hadoop.conf.Configuration {
@@ -49,10 +49,10 @@ data class HbaseConfiguration(
 
     @Bean
     fun hbaseConnection(): Connection {
-        logger.info("Establishing connection with Hbase")
+        logger.info("Establishing connection with HBase")
         val connection = ConnectionFactory.createConnection(HBaseConfiguration.create(hbaseConfiguration()))
         addShutdownHook(connection)
-        logger.info("Established connection with Hbase")
+        logger.info("Established connection with HBase")
 
         return connection
     }
@@ -61,6 +61,7 @@ data class HbaseConfiguration(
         logger.info("Adding HBase shutdown hook")
         Runtime.getRuntime().addShutdownHook(object : Thread() {
             override fun run() {
+                logger.info("HBase shutdown hook running - closing connection")
                 connection.close()
             }
         })

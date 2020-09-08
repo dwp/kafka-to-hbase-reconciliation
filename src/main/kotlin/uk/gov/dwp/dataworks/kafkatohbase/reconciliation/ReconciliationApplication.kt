@@ -1,19 +1,26 @@
 package uk.gov.dwp.dataworks.kafkatohbase.reconciliation
 
-import org.springframework.boot.CommandLineRunner
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan
 import org.springframework.boot.runApplication
-import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationService
+import org.springframework.context.annotation.Bean
+import org.springframework.scheduling.annotation.EnableScheduling
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler
+
 
 @ConfigurationPropertiesScan
 @SpringBootApplication
-class ReconciliationApplication(private val reconciliationService: ReconciliationService) : CommandLineRunner {
-    override fun run(vararg args: String?) {
-        reconciliationService.startReconciliation()
-    }
-}
+@EnableScheduling
+class ReconciliationApplication
 
 fun main(args: Array<String>) {
+    //exitProcess(SpringApplication.exit(runApplication<ReconciliationApplication>(*args)))
     runApplication<ReconciliationApplication>(*args)
+}
+
+// This makes sure any scheduled tasks complete before shutting down
+@Bean
+fun setSchedulerToWait(threadPoolTaskScheduler: ThreadPoolTaskScheduler): ThreadPoolTaskScheduler? {
+    threadPoolTaskScheduler.setWaitForTasksToCompleteOnShutdown(true)
+    return threadPoolTaskScheduler
 }

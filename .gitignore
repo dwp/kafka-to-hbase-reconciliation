@@ -34,3 +34,5 @@ out/
 .vscode/
 lib/
 /gradle/
+gradlew
+gradlew.bat

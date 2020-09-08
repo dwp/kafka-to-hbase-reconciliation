@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
 	id("org.springframework.boot") version "2.3.3.RELEASE"
 	id("io.spring.dependency-management") version "1.0.10.RELEASE"
-	kotlin("jvm") version "1.3.72"
+	kotlin("jvm") version "1.4.0"
 	kotlin("plugin.spring") version "1.3.72"
 	application
 }
@@ -18,22 +18,36 @@ repositories {
 	maven(url = "https://jitpack.io")
 }
 
+//application {
+//	mainClassName = "uk.gov.dwp.dataworks.kafkatohbase.reconciliation.ReconciliationApplication"
+//}
+
+//tasks.getByName<BootRun>("bootRun") {
+//	main = "uk.gov.dwp.dataworks.kafkatohbase.reconciliation.ReconciliationApplication"
+//	systemProperties = properties
+//}
+
 dependencies {
 	annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
+
 	implementation("org.springframework.boot:spring-boot-starter")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-	implementation("com.amazonaws", "aws-java-sdk-secretsmanager", "1.11.819")
-	implementation("mysql:mysql-connector-java")
+	implementation("com.amazonaws:aws-java-sdk-secretsmanager:1.11.819")
+	implementation("mysql:mysql-connector-java:6.0.6")
 	implementation("org.apache.hbase:hbase-client:1.4.13")
 	implementation("commons-codec:commons-codec:1.14")
 	implementation("com.github.dwp:dataworks-common-logging:0.0.5")
-	implementation("org.apache.commons", "commons-text", "1.8")
-	testImplementation("com.nhaarman.mockitokotlin2", "mockito-kotlin", "2.2.0")
+	implementation("org.apache.commons:commons-text:1.8")
+	testImplementation("io.kotest:kotest-runner-junit5-jvm:4.2.0")
+	testImplementation("io.kotest:kotest-assertions-core-jvm:4.2.0")
+	testImplementation("io.kotest:kotest-property-jvm:4.2.0")
+	testImplementation("com.beust:klaxon:4.0.2")
+	testImplementation("com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0")
 	testImplementation("org.springframework.boot:spring-boot-starter-test") {
 		exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
 	}
-	testImplementation("io.kotlintest:kotlintest-runner-junit5:3.3.2")
+	testImplementation("org.apache.hbase:hbase-client:1.4.13")
 }
 
 configurations.all {

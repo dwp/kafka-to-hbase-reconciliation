@@ -1,11 +1,11 @@
 package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.utils
 
 import com.nhaarman.mockitokotlin2.*
+import io.kotest.assertions.throwables.shouldThrow
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.fail
 import org.junit.runner.RunWith
-import io.kotlintest.shouldThrow
 import org.mockito.Mockito.verifyNoInteractions
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -55,7 +55,7 @@ class TableNameUtilTest {
             fail("Exception not thrown when one should be for invalid topic")
         }
 
-        assertThat(exception.message).isEqualTo("Could not derive table name from topic: ucfs.data")
+        assertThat(exception.message).isEqualTo("Could not derive table name from topic: '$topic', pattern: '${tableNameUtil.qualifiedTablePattern}'")
 
         verifyNoInteractions(coalescedNameUtil)
     }
