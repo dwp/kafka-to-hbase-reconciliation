@@ -2,11 +2,9 @@
 import com.beust.klaxon.JsonObject
 import com.beust.klaxon.Parser
 import io.kotest.core.spec.style.StringSpec
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.hbase.HBaseConfiguration
-import org.apache.hadoop.hbase.HConstants
-import org.apache.hadoop.hbase.TableName
+import org.apache.hadoop.hbase.*
 import org.apache.hadoop.hbase.client.Admin
 import org.apache.hadoop.hbase.client.ConnectionFactory
 import org.apache.hadoop.hbase.client.Put
@@ -51,18 +49,24 @@ class ReconciliationIntegrationTest : StringSpec() {
 //            }
 //        }
 
-        "Dump loads of records into metadata store" {
-            dumpLoadsOfRecordsIntoMetadatastore()
+        "Dump loads of records into metadata store and hbase" {
+            dumpLoadsOfRecordsIntoMetadatastoreAndHbase()
         }
 
     }
 
-    private fun dumpLoadsOfRecordsIntoMetadatastore() {
+    private suspend fun dumpLoadsOfRecordsIntoMetadatastoreAndHbase() = coroutineScope {
+        launch { dumpLoadsOfRecordsIntoHbase() }
+        launch { dumpLoadsOfRecordsIntoMetadataStore() }
+    }
+
+    suspend private fun dumpLoadsOfRecordsIntoMetadataStore() = withContext(Dispatchers.IO) {
+        println("Putting lots of data into metadatastore")
         with(metadatastoreConnection) {
             val aWeekAgo = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -7) }
             with(insertMetadatastoreRecordStatement(this)) {
-                for (topicIndex in 1 .. 100) {
-                    for (recordIndex in 1 .. 200) {
+                for (topicIndex in 1..10) {
+                    for (recordIndex in 1..200) {
                         setString(1, printableVolubleHbaseKey(topicIndex, recordIndex))
                         setTimestamp(2, Timestamp(1544799662000))
                         setString(3, "db.database.collection$topicIndex")
@@ -74,6 +78,40 @@ class ReconciliationIntegrationTest : StringSpec() {
                 executeBatch()
             }
         }
+        println("Put lots of data into metadatastore")
+    }
+
+    private suspend fun dumpLoadsOfRecordsIntoHbase() = withContext(Dispatchers.IO) {
+        println("Putting lots of data into hbase")
+
+        with(hbaseConnection()) {
+            for (topicIndex in 1..10) {
+                val tablename = hbaseTableName("database:collection$topicIndex")
+
+                try {
+                    admin.createNamespace(NamespaceDescriptor.create(tablename.namespaceAsString).run { build() })
+                } catch (e: Exception) { }
+
+                try {
+                    admin.createTable(HTableDescriptor(tablename).apply {
+                        addFamily(HColumnDescriptor(columnFamily).apply {
+                            maxVersions = Int.MAX_VALUE
+                            minVersions = 1
+                        })
+                    })
+                } catch (e: Exception) { }
+
+
+                hbaseTable(this, "database:collection$topicIndex").use {
+                    it.put((1..200 step 2).map { recordIndex ->
+                        val body = wellFormedValidPayload("database", "collection$topicIndex")
+                        val key = volubleHbaseKey(topicIndex, recordIndex)
+                        Put(key).apply { addColumn(columnFamily, columnQualifier, 1544799662000, body) }
+                    })
+                }
+            }
+        }
+        println("Put lots of data into hbase")
     }
 
     companion object {

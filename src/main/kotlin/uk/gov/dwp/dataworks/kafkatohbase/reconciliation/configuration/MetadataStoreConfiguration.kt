@@ -9,7 +9,6 @@ import uk.gov.dwp.dataworks.logging.DataworksLogger
 import java.sql.Connection
 import java.sql.DriverManager
 import java.util.*
-import javax.sql.DataSource
 
 @Configuration
 @ConfigurationProperties(prefix = "metadatastore")
@@ -50,8 +49,6 @@ data class MetadataStoreConfiguration(
         return properties
     }
 
-    @Bean
-    fun dataSource(): DataSource
     @Bean
     fun metadataStoreConnection(): Connection {
         val metaStorePassword = if (isUsingAWS) {

@@ -1,6 +1,7 @@
 package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories
 
 import org.springframework.stereotype.Repository
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.domain.UnreconciledRecord
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationService
 import uk.gov.dwp.dataworks.logging.DataworksLogger
 import java.sql.Connection
@@ -16,10 +17,18 @@ class MetadataStoreRepository(private val connection: Connection,
         val logger = DataworksLogger.getLogger(ReconciliationService::class.toString())
     }
 
-    fun fetchGroupedUnreconciledRecords(): List<Map<String, Any>> {
-        logger.debug("Fetching unreconciled records from metadata store")
-        val unreconciledRecords = getUnreconciledRecordsQuery()
-        return mapResultSet(unreconciledRecords)
+    fun groupedUnreconciledRecords(): Map<String, List<UnreconciledRecord>> = unreconciledRecords().groupBy { it.topicName }
+
+    private fun unreconciledRecords(): MutableList<UnreconciledRecord> {
+        val list = mutableListOf<UnreconciledRecord>()
+        unreconciledRecordsStatement.executeQuery().use {
+            while (it.next()) {
+                list.add(UnreconciledRecord(it.getString("topic_name"),
+                                            it.getString("hbase_id"),
+                                            it.getTimestamp("hbase_timestamp").time))
+            }
+        }
+        return list
     }
 
     fun fetchUnreconciledRecords(): List<Map<String, Any>> {
@@ -40,17 +49,17 @@ class MetadataStoreRepository(private val connection: Connection,
                 SELECT * FROM $table
                 WHERE write_timestamp > CURRENT_DATE - INTERVAL 14 DAY AND 
                 reconciled_result = false 
-                order by topic_name
             """.trimIndent()
         )
     }
 
+
     private val unreconciledRecordsStatement: PreparedStatement by lazy {
         connection.prepareStatement("""
-                SELECT * FROM $table
+                SELECT id, hbase_id, hbase_timestamp, topic_name 
+                FROM $table
                 WHERE write_timestamp > CURRENT_DATE - INTERVAL 14 DAY 
                 AND reconciled_result = false
-                AND topic_name = ?
             """.trimIndent())
     }
 

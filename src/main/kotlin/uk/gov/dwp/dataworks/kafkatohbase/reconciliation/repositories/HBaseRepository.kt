@@ -4,7 +4,7 @@ import org.apache.hadoop.hbase.TableName
 import org.apache.hadoop.hbase.client.Connection
 import org.apache.hadoop.hbase.client.Get
 import org.springframework.stereotype.Repository
-import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.domain.ReconciledRecord
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.domain.UnreconciledRecord
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationService
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.utils.TableNameUtil
 import uk.gov.dwp.dataworks.logging.DataworksLogger
@@ -26,7 +26,7 @@ class HBaseRepository(private val connection: Connection, private val tableNameU
                 false
             }
 
-    fun recordsExistInHBase(topicName: String, records: List<ReconciledRecord>): List<Pair<ReconciledRecord, Boolean>> =
+    fun recordsExistInHBase(topicName: String, records: List<UnreconciledRecord>): List<Pair<UnreconciledRecord, Boolean>> =
             if (connection.admin.tableExists(table(topicName))) {
                 (connection.getTable(table(topicName))).use {
                     val extant = it.existsAll(records.map {get(it.hbaseId, it.version)})
