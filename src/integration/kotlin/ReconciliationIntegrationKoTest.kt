@@ -51,8 +51,7 @@ class ReconciliationIntegrationKoTest : StringSpec() {
     private val columnQualifier = "record".toByteArray()
     private val kafkaDb = "claimant-advances"
     private val kafkaCollection = "advanceDetails"
-    private val kafkaTopic = "db.$kafkaDb.$kafkaCollection"
-
+    private val kafkaTopic = "$kafkaDb.$kafkaCollection"
 
     private fun emptyMetadataStoreTable() {
         metadatastoreConnection().use {
@@ -100,10 +99,8 @@ class ReconciliationIntegrationKoTest : StringSpec() {
         }
     }
 
-
     private fun hbaseTableRecordCount(connection: HBaseConnection, tableName: String) =
             hbaseTable(connection, tableName).use { it.getScanner(Scan()).count() }
-
 
     private fun insertMetadataStoreData(startIndex: Int, endIndex: Int) {
         metadatastoreConnection().use {
@@ -157,7 +154,6 @@ class ReconciliationIntegrationKoTest : StringSpec() {
         Parser.default().parse(StringBuilder("""{ "message": { "_id": $index } }""")) as JsonObject
     )
 
-
     private fun hbaseTable(connection: org.apache.hadoop.hbase.client.Connection, name: String) =
         connection.getTable(hbaseTableName(name))
 
@@ -171,76 +167,4 @@ class ReconciliationIntegrationKoTest : StringSpec() {
         """.trimIndent()
         )
 
-
 }
-
-//    @Test
-//    fun testWeCanEmptyHBase() {
-//        try {
-//            emptyHBaseTable()
-//        } catch (ex: Exception) {
-//            logger.error("Exception in testWeCanEmptyHBase", ex)
-//            throw ex
-//        }
-//    }
-//
-//    @Test
-//    fun testWeCanCheckHBase() {
-//        try {
-//            recordsInHBase()
-//        } catch (ex: Exception) {
-//            logger.error("Exception in testWeCanCheckHBase", ex)
-//            throw ex
-//        }
-//    }
-//
-//    @Test
-//    fun testWeCanEmptyMetadataStore() {
-//        try {
-//            emptyMetadataStoreTable()
-//        } catch (ex: Exception) {
-//            logger.error("Exception in testWeCanEmptyMetadataStore", ex)
-//            throw ex
-//        }
-//    }
-//
-//    @Test
-//    fun testWeCanFillHBase() {
-//        try {
-//            setupHBaseData(0, 0)
-//        } catch (ex: Exception) {
-//            logger.error("Exception in testWeCanFillHBase", ex)
-//            throw ex
-//        }
-//    }
-//
-//    @Test
-//    fun testWeCanFillMetastore() {
-//        try {
-//            setupMetadataStoreData(0, 0)
-//        } catch (ex: Exception) {
-//            logger.error("Exception in testWeCanFillMetastore", ex)
-//            throw ex
-//        }
-//    }
-//
-//    @Test
-//    fun testWeCanCheckMetastoreForReconciled() {
-//        try {
-//            reconciledRecordsInMetadataStore()
-//        } catch (ex: Exception) {
-//            logger.error("Exception in testWeCanCheckMetastoreForReconciled", ex)
-//            throw ex
-//        }
-//    }
-//
-//    @Test
-//    fun testWeCanCheckMetastore() {
-//        try {
-//            allRecordsInMetadataStore()
-//        } catch (ex: Exception) {
-//            logger.error("Exception in testWeCanCheckMetastore", ex)
-//            throw ex
-//        }
-//    }
-
