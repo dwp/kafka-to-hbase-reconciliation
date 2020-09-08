@@ -46,7 +46,7 @@ open class MessageParser {
         }
     }
 
-    fun generateKey(json: JsonObject): ByteArray {
+    private fun generateKey(json: JsonObject): ByteArray {
         val jsonOrdered = converter.sortJsonByKey(json)
         val checksumBytes: ByteArray = converter.generateFourByteChecksum(jsonOrdered)
         return checksumBytes.plus(jsonOrdered.toByteArray())
@@ -54,7 +54,7 @@ open class MessageParser {
 
     fun printableKey(key: ByteArray): String {
         val hash = key.slice(IntRange(0, 3))
-        val hex = hash.map { String.format("\\x%02X", it) }.joinToString("")
+        val hex = hash.joinToString("") { String.format("\\x%02X", it) }
         val renderable = key.slice(IntRange(4, key.size - 1)).map{ it.toChar() }.joinToString("")
         return "${hex}${renderable}"
     }

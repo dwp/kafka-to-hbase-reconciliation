@@ -22,7 +22,7 @@ class MetadataStoreRepository(
     }
 
     fun fetchUnreconciledRecords(): List<Map<String, Any>> {
-        logger.info("Fetching unreconciled records from metadata store")
+        logger.debug("Fetching unreconciled records from metadata store")
         val unreconciledRecords = getUnreconciledRecordsQuery()
         return mapResultSet(unreconciledRecords)
     }
@@ -78,7 +78,7 @@ class MetadataStoreRepository(
             )
         }
 
-        logger.info("Fetched unreconciled records from metadata store", "number_of_records" to result.size.toString())
+        logger.debug("Fetched unreconciled records from metadata store", "number_of_records" to result.size.toString())
         return result
     }
 

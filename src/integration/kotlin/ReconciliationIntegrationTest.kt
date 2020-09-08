@@ -21,7 +21,7 @@ import java.util.*
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(classes = [ReconciliationApplication::class])
-@ActiveProfiles("DUMMY_SECRETS")
+@ActiveProfiles("DUMMY_SECRETS", "test")
 class ReconciliationIntegrationTest {
 
     companion object {
@@ -69,7 +69,6 @@ class ReconciliationIntegrationTest {
             assertThat(recordsInHBase(qualifiedHbaseTableName)).isEqualTo(4)
         } catch (ex: Exception) {
             ex.printStackTrace()
-//            logger.error("Exception in test", ex)
             throw ex
         }
     }
@@ -131,9 +130,7 @@ class ReconciliationIntegrationTest {
         }
     }
 
-
     private fun recordsInHBase(tableName: String)= hbaseTable(tableName).use {it.getScanner(Scan()).count()}
-
 
     private fun insertMetadataStoreData(startIndex: Int, endIndex: Int) {
         with (insertMetadatastoreRecord) {
@@ -185,74 +182,3 @@ class ReconciliationIntegrationTest {
     }
 
 }
-
-//    @Test
-//    fun testWeCanEmptyHBase() {
-//        try {
-//            emptyHBaseTable()
-//        } catch (ex: Exception) {
-//            logger.error("Exception in testWeCanEmptyHBase", ex)
-//            throw ex
-//        }
-//    }
-//
-//    @Test
-//    fun testWeCanCheckHBase() {
-//        try {
-//            recordsInHBase()
-//        } catch (ex: Exception) {
-//            logger.error("Exception in testWeCanCheckHBase", ex)
-//            throw ex
-//        }
-//    }
-//
-//    @Test
-//    fun testWeCanEmptyMetadataStore() {
-//        try {
-//            emptyMetadataStoreTable()
-//        } catch (ex: Exception) {
-//            logger.error("Exception in testWeCanEmptyMetadataStore", ex)
-//            throw ex
-//        }
-//    }
-//
-//    @Test
-//    fun testWeCanFillHBase() {
-//        try {
-//            setupHBaseData(0, 0)
-//        } catch (ex: Exception) {
-//            logger.error("Exception in testWeCanFillHBase", ex)
-//            throw ex
-//        }
-//    }
-//
-//    @Test
-//    fun testWeCanFillMetastore() {
-//        try {
-//            setupMetadataStoreData(0, 0)
-//        } catch (ex: Exception) {
-//            logger.error("Exception in testWeCanFillMetastore", ex)
-//            throw ex
-//        }
-//    }
-//
-//    @Test
-//    fun testWeCanCheckMetastoreForReconciled() {
-//        try {
-//            reconciledRecordsInMetadataStore()
-//        } catch (ex: Exception) {
-//            logger.error("Exception in testWeCanCheckMetastoreForReconciled", ex)
-//            throw ex
-//        }
-//    }
-//
-//    @Test
-//    fun testWeCanCheckMetastore() {
-//        try {
-//            allRecordsInMetadataStore()
-//        } catch (ex: Exception) {
-//            logger.error("Exception in testWeCanCheckMetastore", ex)
-//            throw ex
-//        }
-//    }
-

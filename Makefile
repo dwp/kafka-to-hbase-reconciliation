@@ -33,14 +33,14 @@ local-build: ## Build Kafka2HBase with gradle
 	gradle :unit build -x test -x unit -x integration-test
 
 local-dist: ## Assemble distribution files in build/dist with gradle
-	gradle distTar -x test -x unit -x integration-test
+	gradle assembleDist -x test -x unit -x integration-test
 
 local-test: ## Run the unit tests with gradle
 	gradle --rerun-tasks unit
 
 local-scrub-build: local-scrub local-build ## Scrub local artefacts and make new ones
 
-local-all: local-scrub-build local-test local-dist ## Build and test with gradle
+local-all: local-scrub-build local-test ## local-dist ## Build and test with gradle
 
 mysql-root: ## Get a root client session on the metadatastore database.
 	docker exec -it metadatastore mysql --host=127.0.0.1 --user=root --password=password metadatastore
