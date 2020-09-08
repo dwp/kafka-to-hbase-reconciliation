@@ -2,6 +2,8 @@ import com.beust.klaxon.JsonObject
 import com.beust.klaxon.Parser
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeout
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hbase.HBaseConfiguration
 import org.apache.hadoop.hbase.HConstants
@@ -16,8 +18,12 @@ import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.Timestamp
 import java.util.*
+import kotlin.time.ExperimentalTime
+import kotlin.time.minutes
+import kotlin.time.seconds
 import org.apache.hadoop.hbase.client.Connection as HBaseConnection
 
+@ExperimentalTime
 class ReconciliationIntegrationKoTest : StringSpec() {
     init {
         "Matching records are reconciled, mismatches are not" {
@@ -31,10 +37,13 @@ class ReconciliationIntegrationKoTest : StringSpec() {
                 recordsInHBase shouldBe 0
                 setupHBaseData(connection, hbaseTableName, 1, 4)
                 insertMetadataStoreData(2, 5)
-                do {
-                    logger.info("Waiting for verified records count to change")
-                    Thread.sleep(1000)
-                } while (reconciledRecordCount() < 3)
+
+                withTimeout(1.minutes) {
+                    while (reconciledRecordCount() < 3) {
+                        logger.info("Waiting for verified records count to change")
+                        delay(1.seconds)
+                    }
+                }
 
                 reconciledRecordCount() shouldBe 3
                 allRecordCount() shouldBe 4
@@ -51,11 +60,11 @@ class ReconciliationIntegrationKoTest : StringSpec() {
     private val columnQualifier = "record".toByteArray()
     private val kafkaDb = "claimant-advances"
     private val kafkaCollection = "advanceDetails"
-    private val kafkaTopic = "$kafkaDb.$kafkaCollection"
+    private val kafkaTopic = "db.$kafkaDb.$kafkaCollection"
 
     private fun emptyMetadataStoreTable() {
-        metadatastoreConnection().use {
-            it.createStatement().use {
+        with(metadatastoreConnection) {
+            createStatement().use {
                 it.execute("TRUNCATE ucfs")
             }
         }
@@ -103,9 +112,9 @@ class ReconciliationIntegrationKoTest : StringSpec() {
             hbaseTable(connection, tableName).use { it.getScanner(Scan()).count() }
 
     private fun insertMetadataStoreData(startIndex: Int, endIndex: Int) {
-        metadatastoreConnection().use {
+        with(metadatastoreConnection) {
             val aWeekAgo = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -7) }
-            with(insertMetadatastoreRecordStatement(it)) {
+            with(insertMetadatastoreRecordStatement(this)) {
                 for (index in startIndex..endIndex) {
                     setString(1, printableHbaseKey(index))
                     setTimestamp(2, Timestamp(1544799662000))
@@ -123,8 +132,8 @@ class ReconciliationIntegrationKoTest : StringSpec() {
     private fun allRecordCount(): Int = recordCount("SELECT COUNT(*) FROM ucfs")
 
     private fun recordCount(sql: String): Int =
-        metadatastoreConnection().use { connection ->
-            connection.createStatement().use { statement ->
+        with(metadatastoreConnection) {
+            createStatement().use { statement ->
                 statement.executeQuery(sql).use {
                     it.next()
                     it.getInt(1)
@@ -132,16 +141,18 @@ class ReconciliationIntegrationKoTest : StringSpec() {
             }
         }
 
-    private fun metadatastoreConnection(): Connection =
+    private val metadatastoreConnection: Connection by lazy {
         DriverManager.getConnection("jdbc:mysql://metadatastore:3306/metadatastore", Properties().apply {
             setProperty("user", "reconciliationwriter")
             setProperty("password", "my-password")
         })
+    }
 
     private fun hbaseConnection(): org.apache.hadoop.hbase.client.Connection {
+        val host = System.getenv("HBASE_ZOOKEEPER_QUORUM") ?: "localhost"
         val config = Configuration().apply {
             set(HConstants.ZOOKEEPER_ZNODE_PARENT, "/hbase")
-            set(HConstants.ZOOKEEPER_QUORUM, "localhost")
+            set(HConstants.ZOOKEEPER_QUORUM, host)
             setInt("hbase.zookeeper.port", 2181)
         }
         return ConnectionFactory.createConnection(HBaseConfiguration.create(config))
@@ -166,5 +177,4 @@ class ReconciliationIntegrationKoTest : StringSpec() {
             VALUES (?, ?, ?, ?, ?)
         """.trimIndent()
         )
-
 }

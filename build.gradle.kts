@@ -5,7 +5,6 @@ plugins {
 	id("io.spring.dependency-management") version "1.0.10.RELEASE"
 	kotlin("jvm") version "1.4.0"
 	kotlin("plugin.spring") version "1.3.72"
-	application
 }
 
 group = "uk.gov.dwp.dataworks.reconciliation"
@@ -33,6 +32,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+	implementation("org.jetbrains.kotlinx", "kotlinx-coroutines-core", "1.3.9")
 	implementation("com.amazonaws:aws-java-sdk-secretsmanager:1.11.819")
 	implementation("mysql:mysql-connector-java:6.0.6")
 	implementation("org.apache.hbase:hbase-client:1.4.13")
@@ -84,7 +84,7 @@ tasks.register<Test>("integration-test") {
 	testClassesDirs = sourceSets["integration"].output.classesDirs
 	classpath = sourceSets["integration"].runtimeClasspath
 	filter {
-		includeTestsMatching("ReconciliationIntegrationTest*")
+		includeTestsMatching("ReconciliationIntegrationKoTest*")
 	}
 
 	//copy all env vars from unix/your integration container into the test

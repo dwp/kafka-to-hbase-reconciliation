@@ -21,7 +21,7 @@ services:
       RECONCILER_FIXED_DELAY_MILLIS: "1000"
       SECRETS_REGION: "eu-west-2"
       SECRETS_METADATA_STORE_PASSWORD_SECRET: "metastore_password"
-      HBASE_TABLE_PATTERN: ([-\w]+)\.([-\w]+)
+      HBASE_TABLE_PATTERN: db\.([-\w]+)\.([-\w]+)
       HBASE_ZOOKEEPER_PARENT: "/hbase"
       HBASE_ZOOKEEPER_PORT: "2181"
       HBASE_ZOOKEEPER_QUORUM: "hbase"

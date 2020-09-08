@@ -21,7 +21,7 @@ import java.util.*
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(classes = [ReconciliationApplication::class])
-@ActiveProfiles("DUMMY_SECRETS")
+@ActiveProfiles("DUMMY_SECRETS", "test")
 class ReconciliationIntegrationTest {
 
     companion object {
@@ -38,7 +38,7 @@ class ReconciliationIntegrationTest {
     private val columnQualifier = "record".toByteArray()
     private val kafkaDb = "claimant-advances"
     private val kafkaCollection = "advanceDetails"
-    private val kafkaTopic = "$kafkaDb.$kafkaCollection"
+    private val kafkaTopic = "db.$kafkaDb.$kafkaCollection"
 
     @Test
     fun testThatMatchingRecordsAreReconciledAndMismatchesAreNot() {

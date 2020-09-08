@@ -11,7 +11,7 @@ import java.sql.Timestamp
 
 @Service
 class ReconciliationServiceImpl(
-    private val HBaseRepository: HBaseRepository,
+    private val repository: HBaseRepository,
     private val metadataStoreRepository: MetadataStoreRepository) : ReconciliationService {
 
     companion object {
@@ -42,13 +42,12 @@ class ReconciliationServiceImpl(
     override fun startReconciliation() {
         logger.info("Starting reconciliation of metadata store records")
         val recordsToReconcile = metadataStoreRepository.fetchUnreconciledRecords()
-        logger.info("Found records to reconcile",
-                "records_to_reconcile" to recordsToReconcile.size.toString())
-
         if (recordsToReconcile.isNotEmpty()) {
+            logger.info("Found records to reconcile",
+                "records_to_reconcile" to recordsToReconcile.size.toString())
             val totalRecordsReconciled = reconcileRecords(recordsToReconcile)
 
-            logger.info(
+            logger.debug(
                     "Finished reconciliation for metadata store",
                     "records_to_reconcile" to recordsToReconcile.size.toString(),
                     "total_records_reconciled" to totalRecordsReconciled.toString()
@@ -66,7 +65,7 @@ class ReconciliationServiceImpl(
             val hbaseId = record["hbase_id"] as String
             val hbaseTimestamp = record["hbase_timestamp"] as Timestamp
 
-            if (HBaseRepository.recordExistsInHBase(topicName, hbaseId, hbaseTimestamp.time)) {
+            if (repository.recordExistsInHBase(topicName, hbaseId, hbaseTimestamp.time)) {
                 logger.info("Reconcilling record",
                         "topic_name" to topicName,
                         "hbase_id" to hbaseId,
