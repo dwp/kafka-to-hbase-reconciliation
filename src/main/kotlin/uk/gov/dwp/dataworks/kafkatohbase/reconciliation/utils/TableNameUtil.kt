@@ -17,7 +17,7 @@ class TableNameUtil(private val coalescedNameUtil: CoalescedNameUtil) {
             val tableName = matcher.groupValues[2]
             return targetTable(namespace, tableName)
         } else {
-            throw Exception("Could not derive table name from topic: $topic")
+            throw Exception("Could not derive table name from topic: '$topic', pattern: '$qualifiedTablePattern'")
         }
     }
 

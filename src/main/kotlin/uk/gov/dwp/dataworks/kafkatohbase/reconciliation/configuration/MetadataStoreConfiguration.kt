@@ -18,7 +18,7 @@ data class MetadataStoreConfiguration(
     var user: String? = "NOT_SET",
     var passwordSecretName: String? = "NOT_SET",
     var dummyPassword: String? = "NOT_SET",
-    var table: String? = "NOT_SET",
+    var table: String = "NOT_SET",
     var databaseName: String? = "NOT_SET",
     var caCertPath: String? = "NOT_SET",
     var queryLimit: String? = "NOT_SET",
@@ -28,7 +28,7 @@ data class MetadataStoreConfiguration(
     companion object {
         val logger = DataworksLogger.getLogger(MetadataStoreConfiguration::class.toString())
     }
-    private val isUsingAWS = useAwsSecrets!!.toLowerCase() == "true"
+    private val isUsingAWS by lazy { this.useAwsSecrets!!.toLowerCase() == "true" }
 
     fun databaseUrl() = "jdbc:mysql://$endpoint:$port/$databaseName"
 
@@ -45,7 +45,7 @@ data class MetadataStoreConfiguration(
             }
         }
 
-        HbaseConfiguration.logger.info("Metastore Configuration loaded", "metastore_properties" to properties.toString())
+        HBaseConfiguration.logger.info("Metastore Configuration loaded", "metastore_properties" to properties.toString())
         return properties
     }
 
@@ -68,10 +68,14 @@ data class MetadataStoreConfiguration(
         return connection
     }
 
+    @Bean
+    fun metadatastoreTableName() = table
+
     private fun addShutdownHook(connection: Connection) {
         logger.info("Adding Metastore shutdown hook")
         Runtime.getRuntime().addShutdownHook(object : Thread() {
             override fun run() {
+                logger.info("Metastore shutdown hook running - closing connection")
                 connection.close()
             }
         })

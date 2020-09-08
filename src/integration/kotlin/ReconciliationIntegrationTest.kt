@@ -1,11 +1,10 @@
-import org.apache.hadoop.hbase.HColumnDescriptor
-import org.apache.hadoop.hbase.HTableDescriptor
+import com.beust.klaxon.JsonObject
+import com.beust.klaxon.Parser
 import org.apache.hadoop.hbase.TableName
-import org.apache.hadoop.hbase.client.HBaseAdmin
-import org.apache.hadoop.hbase.client.HTable
+import org.apache.hadoop.hbase.client.Admin
 import org.apache.hadoop.hbase.client.Put
-import org.apache.hadoop.hbase.util.Bytes.toBytes
-import org.junit.Ignore
+import org.apache.hadoop.hbase.client.Scan
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.runner.RunWith
 import org.slf4j.Logger
@@ -13,220 +12,247 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
-import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.junit4.SpringRunner
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.ReconciliationApplication
-import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.HbaseConfiguration
-import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.MetadataStoreConfiguration
-import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationService
-
+import utility.MessageParser
+import java.sql.Connection
+import java.sql.Timestamp
+import java.util.*
 
 @RunWith(SpringRunner::class)
-@SpringBootTest(
-    classes = [ReconciliationApplication::class]
-)
+@SpringBootTest(classes = [ReconciliationApplication::class])
 @ActiveProfiles("DUMMY_SECRETS")
 class ReconciliationIntegrationTest {
 
     companion object {
-        val logger: Logger = LoggerFactory.getLogger(ReconciliationIntegrationTest::class.toString())
+        val logger: Logger = LoggerFactory.getLogger(ReconciliationIntegrationTest::class.java)
     }
 
     @Autowired
-    lateinit var metadataStoreConfiguration: MetadataStoreConfiguration
+    lateinit var metadatastoreConnection: Connection
 
     @Autowired
-    lateinit var hbaseConfiguration: HbaseConfiguration
+    lateinit var hbaseConnection: org.apache.hadoop.hbase.client.Connection
 
-    @Autowired
-    lateinit var service: ReconciliationService
+    private val columnFamily = "cf".toByteArray()
+    private val columnQualifier = "record".toByteArray()
+    private val kafkaDb = "claimant-advances"
+    private val kafkaCollection = "advanceDetails"
+    private val kafkaTopic = "db.$kafkaDb.$kafkaCollection"
 
     @Test
-    fun integrationSpringContextLoads() {}
+    fun testThatMatchingRecordsAreReconciledAndMismatchesAreNot() {
+        try {
+            //given
+            emptyHBaseTable()
+            emptyMetadataStoreTable()
 
-    @Ignore
-    fun givenNoRecordsInMetadataStoreAndHbaseWhenStartingReconciliationThenNoRecordsAreReconciled() {
+            val recordsInMetadataStore = allRecordCount()
+            val recordsInHBase = recordsInHBase(qualifiedHbaseTableName)
 
-        val recordsInMetadataStore = recordsInMetadataStore()
-        val recordsInHbase = recordsInHbase()
+            assertThat(recordsInMetadataStore).isEqualTo(0)
+            assertThat(recordsInHBase).isEqualTo(0)
 
-        assert(recordsInMetadataStore == 0)
-        assert(recordsInHbase == 0)
+            //when record 1 is hbase only, 2,3,4 in both, 5 metastore only
+            setupHBaseData(1, 4)
+            insertMetadataStoreData(2, 5)
 
-        service.startReconciliation()
+            //wait for that to be processed
+            do {
+                logger.info("Waiting for verified records count to change")
+                Thread.sleep(1000)
+            } while (reconciledRecordCount() < 3)
 
-        assert(recordsInMetadataStore == 0)
-        assert(recordsInHbase == 0)
+            //then
+            assertThat(reconciledRecordCount()).isEqualTo(3)
+            assertThat(allRecordCount()).isEqualTo(4)
+            assertThat(recordsInHBase(qualifiedHbaseTableName)).isEqualTo(4)
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+//            logger.error("Exception in test", ex)
+            throw ex
+        }
     }
 
-    @Ignore
-    fun givenRecordsToBeReconciledInMetadataStoreWhenRecordsExistInHbaseThenTheRecordsAreReconciled() {
-
-        createMetadataStoreTable()
-        createHbaseTable()
-
-        setupHbaseData(5)
-        setupMetadataStoreData(5)
-
-        service.startReconciliation()
-
-        val haveBeenReconciled = verifyRecordsInMetadataAreReconciled(5)
-
-        assert(haveBeenReconciled)
+    private fun emptyMetadataStoreTable() {
+        logger.info("Start emptyMetadataStoreTable")
+        with(metadatastoreConnection) {
+            createStatement().use { it.execute("TRUNCATE ucfs") }
+        }
+        logger.info("End emptyMetadataStoreTable")
     }
 
-    @Ignore
-    fun givenRecordsToBeReconciledInMetadataStoreWhenRecordsExistInHbasePlusExtraThenTheRecordsAreReconciledThatOnlyExistInMetadataStore() {
+    private fun emptyHBaseTable() {
+        logger.info("Start emptyHBaseTable")
+        val hbaseAdmin = hbaseConnection.admin
+        disableHBaseTable(hbaseAdmin)
+        logger.info("emptyHBaseTable: truncating table")
+        hbaseAdmin.truncateTable(hbaseTableName(qualifiedHbaseTableName), false)
 
-        createMetadataStoreTable()
+        enableHBaseTable(hbaseAdmin)
 
-        setupHbaseData(10)
-        setupMetadataStoreData(5)
-
-        service.startReconciliation()
-
-        val haveBeenReconciled = verifyRecordsInMetadataAreReconciled(5)
-
-        assert(haveBeenReconciled)
+        logger.info("End emptyHBaseTable")
     }
 
-    @Ignore
-    fun givenFiveRecordsToBeReconciledInMetadataStoreAndTwoInHbaseWhenRequestingToReconcileThenOnlyTwoAreReconciled() {
-
-        createMetadataStoreTable()
-        createHbaseTable()
-
-        setupHbaseData(2)
-        setupMetadataStoreData(5)
-
-        service.startReconciliation()
-
-        val haveBeenReconciled = verifyRecordsInMetadataAreReconciled(2)
-
-        assert(haveBeenReconciled)
+    private fun enableHBaseTable(hbaseAdmin: Admin) {
+        logger.info("Start enableHBaseTable")
+        if (hbaseAdmin.isTableDisabled(hbaseTableName(qualifiedHbaseTableName))) {
+            hbaseAdmin.enableTable(hbaseTableName(qualifiedHbaseTableName))
+        }
+        do {
+            logger.info("emptyHBaseTable: waiting for table to be enabled")
+            Thread.sleep(1000)
+        } while (hbaseAdmin.isTableDisabled(hbaseTableName(qualifiedHbaseTableName)))
+        logger.info("End enableHBaseTable")
     }
 
-    private fun createMetadataStoreTable() {
-        metadataStoreConfiguration.metadataStoreConnection().use { connection ->
-            with(connection.createStatement()) {
-                this.execute(
-                    """
-                     CREATE TABLE IF NOT EXISTS `ucfs` (
-                    `id` INT NOT NULL AUTO_INCREMENT,
-                    `hbase_id` VARCHAR(2048) NULL,
-                    `hbase_timestamp` DATETIME NULL,
-                    `write_timestamp` DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    `correlation_id` VARCHAR(1024) NULL,
-                    `topic_name` VARCHAR(1024) NULL,
-                    `kafka_partition` INT NULL,
-                    `kafka_offset` INT NULL,
-                    `reconciled_result` TINYINT(1) NOT NULL DEFAULT 0,
-                    `reconciled_timestamp` DATETIME NULL,
-                    PRIMARY KEY (`id`),
-                    INDEX (hbase_id,hbase_timestamp),
-                    INDEX (write_timestamp),
-                    INDEX (reconciled_result)
-                );
-                """
-                )
+    private fun disableHBaseTable(hbaseAdmin: Admin) {
+        logger.info("Start disableHBaseTable")
+        if (hbaseAdmin.isTableEnabled(hbaseTableName(qualifiedHbaseTableName))) {
+            hbaseAdmin.disableTableAsync(hbaseTableName(qualifiedHbaseTableName))
+        }
+        do {
+            logger.info("emptyHBaseTable: waiting for table to be disabled")
+            Thread.sleep(1000)
+        } while (hbaseAdmin.isTableEnabled(hbaseTableName(qualifiedHbaseTableName)))
+        logger.info("End disableHBaseTable")
+    }
+
+    private fun setupHBaseData(startIndex: Int, endIndex: Int) {
+        enableHBaseTable(hbaseConnection.admin)
+        hbaseTable(qualifiedHbaseTableName).use {
+            val body = wellFormedValidPayload(hbaseNamespace, unqualifiedHbaseTableName)
+            for (index in startIndex..endIndex) {
+                val key = hbaseKey(index)
+                it.put(Put(key).apply {
+                    addColumn(columnFamily, columnQualifier, 1544799662000, body)
+                })
             }
         }
     }
 
-    private fun createHbaseTable() {
 
-        val admin = HBaseAdmin(hbaseConfiguration.hbaseConfiguration())
+    private fun recordsInHBase(tableName: String)= hbaseTable(tableName).use {it.getScanner(Scan()).count()}
 
-        val table = HTableDescriptor(TableName.valueOf("test_table"))
 
-        val family = HColumnDescriptor(toBytes("cf"))
-
-        val qualifier = HColumnDescriptor(toBytes("record"))
-
-        table.addFamily(family)
-        table.addFamily(qualifier)
-
-        admin.createTable(table)
+    private fun insertMetadataStoreData(startIndex: Int, endIndex: Int) {
+        with (insertMetadatastoreRecord) {
+            for (index in startIndex .. endIndex) {
+                val aWeekAgo = Calendar.getInstance().apply {add(Calendar.DAY_OF_YEAR, -7)}
+                setString(1, printableHbaseKey(index))
+                setTimestamp(2, Timestamp(1544799662000))
+                setString(3, kafkaTopic)
+                setTimestamp(4, Timestamp(aWeekAgo.timeInMillis))
+                setBoolean(5, false)
+                addBatch()
+            }
+            executeBatch()
+        }
     }
 
-    private fun setupHbaseData(entries: Int) {
+    private fun reconciledRecordCount(): Int = recordCount("SELECT COUNT(*) FROM ucfs WHERE reconciled_result=true")
+    private fun allRecordCount(): Int = recordCount("SELECT COUNT(*) FROM ucfs")
 
-        hbaseConfiguration.hbaseConnection().use { connection ->
-
-            val columnFamily = "cf".toByteArray()
-            val columnQualifier = "record".toByteArray()
-
-            with(connection.getTable(TableName.valueOf("test_table"))) {
-
-                val body = wellFormedValidPayload()
-
-                for (i in 0..entries) {
-                    val key = i.toString().toByteArray()
-                    this.put(Put(key).apply {
-                        addColumn(columnFamily, columnQualifier, 1544799662000, body)
-                    })
+    private fun recordCount(sql: String): Int =
+        metadatastoreConnection.let { connection ->
+            connection.createStatement().use { statement ->
+                statement.executeQuery(sql).use {
+                    it.next()
+                    it.getInt(1)
                 }
-                logger.info("Setup hbase data entries for integration test", "entries" to entries)
             }
         }
+
+    private fun printableHbaseKey(index: Int): String =
+        MessageParser().printableKey(hbaseKey(index))
+
+    private fun hbaseKey(index: Int)
+        = MessageParser().generateKeyFromRecordBody(Parser.default().parse(StringBuilder("""{ "message": { "_id": $index } }""")) as JsonObject)
+
+    private val hbaseNamespace = "claimant_advances"
+    private val unqualifiedHbaseTableName = "advanceDetails"
+    private val qualifiedHbaseTableName = "$hbaseNamespace:$unqualifiedHbaseTableName"
+
+    private fun hbaseTable(name: String) = hbaseConnection.getTable(hbaseTableName(name))
+    private fun hbaseTableName(name: String) = TableName.valueOf(name)
+
+    //hbase_id, hbase_timestamp, topic_name, write_timestamp, reconciled_result
+    private val insertMetadatastoreRecord by lazy {
+        metadatastoreConnection.prepareStatement("""
+            INSERT INTO ucfs (hbase_id, hbase_timestamp, topic_name, write_timestamp, reconciled_result)
+            VALUES (?, ?, ?, ?, ?)
+        """.trimIndent())
     }
 
-    private fun setupMetadataStoreData(entries: Int) {
-        metadataStoreConfiguration.metadataStoreConnection().use { connection ->
-            for (i in 0..entries) {
-                val key = i.toString()
-                val statement = connection.createStatement()
-                statement.executeQuery(
-                    """
-                    INSERT INTO ${metadataStoreConfiguration.table} (hbase_id, hbase_timestamp, topic_name, write_timestamp, reconciled_result)
-                    VALUES ($key, 1544799662000, topic_name, CURRENT_DATE - INTERVAL 7 DAY, false)
-                """.trimIndent()
-                )
-            }
-            logger.info("Setup metadata store data entries for integration test", "entries" to entries)
-        }
-    }
-
-    private fun verifyRecordsInMetadataAreReconciled(shouldBeReconciledCount: Int): Boolean {
-
-        metadataStoreConfiguration.metadataStoreConnection().use { connection ->
-            with(connection.createStatement()) {
-                return this.execute(
-                    """
-                SELECT CASE WHEN COUNT(*) = $shouldBeReconciledCount THEN TRUE ELSE FALSE END;
-                FROM ${metadataStoreConfiguration.table}
-                WHERE reconciled_result=true
-            """.trimIndent()
-                )
-            }
-        }
-    }
-
-    private fun recordsInMetadataStore(): Int {
-        metadataStoreConfiguration.metadataStoreConnection().use { connection ->
-            with(connection.createStatement()) {
-                val rs = this.executeQuery(
-                    """
-                        SELECT COUNT(*)
-                        FROM ${metadataStoreConfiguration.table}
-                    """.trimIndent()
-                )
-                rs.next()
-                return rs.getInt(1)
-            }
-        }
-    }
-
-    private fun recordsInHbase(): Int {
-        val connection = metadataStoreConfiguration.metadataStoreConnection()
-        val statement = connection.createStatement()
-        val rs = statement.executeQuery(
-            """
-                SELECT COUNT(*)
-                FROM ${metadataStoreConfiguration.table}
-            """.trimIndent()
-        )
-        rs.next()
-        return rs.getInt(1)
-    }
 }
+
+//    @Test
+//    fun testWeCanEmptyHBase() {
+//        try {
+//            emptyHBaseTable()
+//        } catch (ex: Exception) {
+//            logger.error("Exception in testWeCanEmptyHBase", ex)
+//            throw ex
+//        }
+//    }
+//
+//    @Test
+//    fun testWeCanCheckHBase() {
+//        try {
+//            recordsInHBase()
+//        } catch (ex: Exception) {
+//            logger.error("Exception in testWeCanCheckHBase", ex)
+//            throw ex
+//        }
+//    }
+//
+//    @Test
+//    fun testWeCanEmptyMetadataStore() {
+//        try {
+//            emptyMetadataStoreTable()
+//        } catch (ex: Exception) {
+//            logger.error("Exception in testWeCanEmptyMetadataStore", ex)
+//            throw ex
+//        }
+//    }
+//
+//    @Test
+//    fun testWeCanFillHBase() {
+//        try {
+//            setupHBaseData(0, 0)
+//        } catch (ex: Exception) {
+//            logger.error("Exception in testWeCanFillHBase", ex)
+//            throw ex
+//        }
+//    }
+//
+//    @Test
+//    fun testWeCanFillMetastore() {
+//        try {
+//            setupMetadataStoreData(0, 0)
+//        } catch (ex: Exception) {
+//            logger.error("Exception in testWeCanFillMetastore", ex)
+//            throw ex
+//        }
+//    }
+//
+//    @Test
+//    fun testWeCanCheckMetastoreForReconciled() {
+//        try {
+//            reconciledRecordsInMetadataStore()
+//        } catch (ex: Exception) {
+//            logger.error("Exception in testWeCanCheckMetastoreForReconciled", ex)
+//            throw ex
+//        }
+//    }
+//
+//    @Test
+//    fun testWeCanCheckMetastore() {
+//        try {
+//            allRecordsInMetadataStore()
+//        } catch (ex: Exception) {
+//            logger.error("Exception in testWeCanCheckMetastore", ex)
+//            throw ex
+//        }
+//    }
+

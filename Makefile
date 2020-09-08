@@ -25,24 +25,30 @@ git-hooks: ## Set up hooks in .git/hooks
 		done \
 	}
 
-local-build: ## Build Kafka2Hbase with gradle
-	gradle :unit build -x test
+local-scrub: ## Scrub local output folders
+	rm -rf .gradle build
+	gradle clean
+
+local-build: ## Build Kafka2HBase with gradle
+	gradle :unit build -x test -x unit -x integration-test
 
 local-dist: ## Assemble distribution files in build/dist with gradle
-	gradle distTar
+	gradle distTar -x test -x unit -x integration-test
 
 local-test: ## Run the unit tests with gradle
 	gradle --rerun-tasks unit
 
-local-all: local-build local-test local-dist ## Build and test with gradle
+local-scrub-build: local-scrub local-build ## Scrub local artefacts and make new ones
+
+local-all: local-scrub-build local-test local-dist ## Build and test with gradle
 
 mysql-root: ## Get a root client session on the metadatastore database.
 	docker exec -it metadatastore mysql --host=127.0.0.1 --user=root --password=password metadatastore
 
 mysql-writer: ## Get a writer client session on the metadatastore database.
-	docker exec -it metadatastore mysql --host=127.0.0.1 --user=reconciliationwriter --password=password metadatastore
+	docker exec -it metadatastore mysql --host=127.0.0.1 --user=reconciliationwriter --password=my-password metadatastore
 
-hbase-shell: ## Open an Hbase shell onto the running Hbase container
+hbase-shell: ## Open an HBase shell onto the running HBase container
 	docker-compose run --rm hbase shell
 
 rdbms-up: ## Bring up and provision mysql
@@ -72,9 +78,9 @@ hbase-up: ## Bring up and provision mysql
 	}
 
 hbase-populate: hbase-up
-	@echo "Creating namespace 'claimant_advances'..." ; \
+	echo "Creating namespace 'claimant_advances'..." ; \
 	docker exec -i hbase hbase shell <<< "create_namespace 'claimant_advances'"; \
-	@echo "Created namespace 'claimant_advances'..." ; \
+	echo "Created namespace 'claimant_advances'..." ; \
 	docker-compose up hbase-populate; \
 
 services: hbase-up rdbms-up hbase-populate ## Bring up supporting services in docker
@@ -82,15 +88,18 @@ services: hbase-up rdbms-up hbase-populate ## Bring up supporting services in do
 up: services ## Bring up Reconciliation in Docker with supporting services
 	docker-compose -f docker-compose.yaml up --build -d reconciliation
 
-restart: ## Restart Kafka2Hbase and all supporting services
+restart: ## Restart Kafka2HBase and all supporting services
 	docker-compose restart
 
-down: ## Bring down the Kafka2Hbase Docker container and support services
+down: ## Bring down the Kafka2HBase Docker container and support services
 	docker-compose down
 
-destroy: down ## Bring down the Kafka2Hbase Docker container and services then delete all volumes
+destroy: down ## Bring down the Kafka2HBase Docker container and services then delete all volumes
 	docker network prune -f
 	docker volume prune -f
+
+integration-test-rebuild: ## Build only integration-test
+	docker-compose build integration-test
 
 integration-test: ## Run the integration tests in a Docker container
 	@{ \
@@ -99,7 +108,9 @@ integration-test: ## Run the integration tests in a Docker container
 		docker rm integration-test ;\
  		set -e ;\
  	}
-	docker-compose -f docker-compose.yaml run --name integration-test integration-test gradle --no-daemon --rerun-tasks integration-test -x test
+	docker-compose -f docker-compose.yaml run --name integration-test integration-test gradle --no-daemon --rerun-tasks integration-test -x test -x unit
+
+integration-test-with-rebuild: integration-test-rebuild integration-test ## Rebuild and re-run only he integration-tests
 
 .PHONY: integration-all ## Build and Run all the tests in containers from a clean start
 integration-all: down destroy build up integration-test
@@ -118,12 +129,12 @@ build-base: ## build the base images which certain images extend.
 		popd; \
 	}
 
-push-local-to-ecr: #Push a temp version of k2hb to AWS DEV ECR
+push-local-to-ecr: #Push a temp version of reconciliation to AWS DEV ECR
 	@{ \
 		export AWS_DEV_ACCOUNT=$(aws_dev_account); \
 		export TEMP_IMAGE_NAME=$(temp_image_name); \
 		export AWS_DEFAULT_REGION=$(aws_default_region); \
 		aws ecr get-login-password --region ${AWS_DEFAULT_REGION} --profile dataworks-development | docker login --username AWS --password-stdin ${AWS_DEV_ACCOUNT}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com; \
-		docker tag kafka2hbase ${AWS_DEV_ACCOUNT}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${TEMP_IMAGE_NAME}; \
+		docker tag reconciliation ${AWS_DEV_ACCOUNT}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${TEMP_IMAGE_NAME}; \
 		docker push ${AWS_DEV_ACCOUNT}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/${TEMP_IMAGE_NAME}; \
 	}
