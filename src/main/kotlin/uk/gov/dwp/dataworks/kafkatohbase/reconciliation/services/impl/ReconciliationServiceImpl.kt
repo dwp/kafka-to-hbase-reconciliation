@@ -42,7 +42,6 @@ class ReconciliationServiceImpl(
     override fun startReconciliation() {
         logger.info("Starting reconciliation of metadata store records")
         val recordsToReconcile = metadataStoreRepository.fetchUnreconciledRecords()
-
         if (recordsToReconcile.isNotEmpty()) {
             logger.info("Found records to reconcile",
                 "records_to_reconcile" to recordsToReconcile.size.toString())

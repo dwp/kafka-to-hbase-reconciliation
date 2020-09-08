@@ -17,9 +17,9 @@ fun main(args: Array<String>) {
     runApplication<ReconciliationApplication>(*args)
 }
 
+// This makes sure any scheduled tasks complete before shutting down
 @Bean
 fun setSchedulerToWait(threadPoolTaskScheduler: ThreadPoolTaskScheduler): ThreadPoolTaskScheduler? {
     threadPoolTaskScheduler.setWaitForTasksToCompleteOnShutdown(true)
     return threadPoolTaskScheduler
 }
-
