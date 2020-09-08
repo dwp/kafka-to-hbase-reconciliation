@@ -18,15 +18,6 @@ repositories {
 	maven(url = "https://jitpack.io")
 }
 
-//application {
-//	mainClassName = "uk.gov.dwp.dataworks.kafkatohbase.reconciliation.ReconciliationApplication"
-//}
-
-//tasks.getByName<BootRun>("bootRun") {
-//	main = "uk.gov.dwp.dataworks.kafkatohbase.reconciliation.ReconciliationApplication"
-//	systemProperties = properties
-//}
-
 dependencies {
 	annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 

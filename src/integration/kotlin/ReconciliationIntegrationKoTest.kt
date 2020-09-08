@@ -51,7 +51,7 @@ class ReconciliationIntegrationKoTest : StringSpec() {
     private val columnQualifier = "record".toByteArray()
     private val kafkaDb = "claimant-advances"
     private val kafkaCollection = "advanceDetails"
-    private val kafkaTopic = "db.$kafkaDb.$kafkaCollection"
+    private val kafkaTopic = "$kafkaDb.$kafkaCollection"
 
 
     private fun emptyMetadataStoreTable() {
