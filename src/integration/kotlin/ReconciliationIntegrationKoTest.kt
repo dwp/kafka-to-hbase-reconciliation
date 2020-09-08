@@ -60,7 +60,7 @@ class ReconciliationIntegrationKoTest : StringSpec() {
     private val columnQualifier = "record".toByteArray()
     private val kafkaDb = "claimant-advances"
     private val kafkaCollection = "advanceDetails"
-    private val kafkaTopic = "$kafkaDb.$kafkaCollection"
+    private val kafkaTopic = "db.$kafkaDb.$kafkaCollection"
 
     private fun emptyMetadataStoreTable() {
         with(metadatastoreConnection) {
@@ -149,9 +149,10 @@ class ReconciliationIntegrationKoTest : StringSpec() {
     }
 
     private fun hbaseConnection(): org.apache.hadoop.hbase.client.Connection {
+        val host = System.getenv("HBASE_ZOOKEEPER_QUORUM") ?: "localhost"
         val config = Configuration().apply {
             set(HConstants.ZOOKEEPER_ZNODE_PARENT, "/hbase")
-            set(HConstants.ZOOKEEPER_QUORUM, "localhost")
+            set(HConstants.ZOOKEEPER_QUORUM, host)
             setInt("hbase.zookeeper.port", 2181)
         }
         return ConnectionFactory.createConnection(HBaseConfiguration.create(config))
