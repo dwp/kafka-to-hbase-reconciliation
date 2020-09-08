@@ -1,5 +1,6 @@
 package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.impl
 
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.HbaseRepository
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.MetadataStoreRepository
@@ -7,6 +8,7 @@ import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationS
 import uk.gov.dwp.dataworks.logging.DataworksLogger
 
 @Service
+@Profile("RECONCILIATION")
 class ReconciliationServiceImpl(
         private val hbaseRepository: HbaseRepository,
         private val metadataStoreRepository: MetadataStoreRepository) : ReconciliationService {

@@ -22,7 +22,9 @@ data class MetadataStoreConfiguration(
     var databaseName: String? = "NOT_SET",
     var caCertPath: String? = "NOT_SET",
     var queryLimit: String? = "NOT_SET",
-    var useAwsSecrets: String? = "NOT_SET"
+    var useAwsSecrets: String? = "NOT_SET",
+    var trimRecordsScale: String? = "NOT_SET",
+    var trimRecordsUnit: String? = "NOT_SET"
 ) {
 
     companion object {

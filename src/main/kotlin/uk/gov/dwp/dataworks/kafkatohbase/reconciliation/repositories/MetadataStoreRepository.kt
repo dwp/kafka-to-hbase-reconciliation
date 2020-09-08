@@ -79,4 +79,33 @@ class MetadataStoreRepository(private val configuration: MetadataStoreConfigurat
         logger.info("Fetched unreconciled records from metadata store", "number_of_records" to result.size.toString())
         return result
     }
+
+    fun deleteRecordsOlderThanPeriod(): Int {
+
+        logger.info(
+            "Deleting records in Metadata Store by scale and unit",
+            "scale" to configuration.trimRecordsScale!!,
+            "unit" to configuration.trimRecordsUnit!!
+        )
+
+        val connection = configuration.metadataStoreConnection()
+        val statement = connection.createStatement()
+
+        val deletedCount = statement.executeUpdate(
+            """
+                DELETE FROM ${configuration.table}
+                WHERE reconciled_result = TRUE
+                AND reconciled_timestamp > ${configuration.trimRecordsScale} ${configuration.trimRecordsUnit}
+            """.trimIndent()
+        )
+
+        logger.info(
+            "Deleted records in Metadata Store by scale and unit",
+            "scale" to configuration.trimRecordsScale!!,
+            "unit" to configuration.trimRecordsUnit!!,
+            "deleted_count" to deletedCount.toString()
+        )
+
+        return deletedCount
+    }
 }

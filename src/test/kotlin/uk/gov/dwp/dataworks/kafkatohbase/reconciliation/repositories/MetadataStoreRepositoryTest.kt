@@ -80,4 +80,28 @@ class MetadataStoreRepositoryTest {
         verify(metadataStoreConnection, times(1)).createStatement()
         verify(statement, times(1)).executeUpdate(any())
     }
+
+    @Test
+    fun givenRecordsOlderThanScaleAndUnitExistWhenRequestingToTrimRecordsThenRecordsAreDeleted() {
+
+        val rowsUpdated = 1
+
+        val statement = mock<Statement> {
+            on {
+                executeUpdate(any())
+            } doReturn rowsUpdated
+        }
+
+        val metadataStoreConnection = mock<Connection> {
+            on { createStatement() } doReturn statement
+        }
+
+        whenever(metadataStoreConfiguration.metadataStoreConnection()).thenReturn(metadataStoreConnection)
+
+        whenever(metadataStoreConfiguration.table).thenReturn("ucfs")
+        metadataStoreRepository.deleteRecordsOlderThanPeriod()
+
+        verify(metadataStoreConnection, times(1)).createStatement()
+        verify(statement, times(1)).executeUpdate(any())
+    }
 }

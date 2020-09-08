@@ -1,6 +1,5 @@
 package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration
 
-
 import org.apache.hadoop.hbase.HBaseConfiguration
 import org.apache.hadoop.hbase.HConstants
 import org.apache.hadoop.hbase.client.Connection
