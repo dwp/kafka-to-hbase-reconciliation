@@ -1,6 +1,8 @@
 package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.utils
 
-import com.nhaarman.mockitokotlin2.*
+import com.nhaarman.mockitokotlin2.times
+import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
 import io.kotest.assertions.throwables.shouldThrow
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -11,10 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.test.mock.mockito.SpyBean
-import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.junit4.SpringRunner
-import org.springframework.test.util.ReflectionTestUtils
-import java.lang.Exception
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(classes = [TableNameUtil::class])
