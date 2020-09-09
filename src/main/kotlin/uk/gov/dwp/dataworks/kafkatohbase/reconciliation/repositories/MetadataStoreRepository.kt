@@ -13,8 +13,8 @@ class MetadataStoreRepository(
     private val connection: Connection,
     private val table: String,
     private val queryLimit: String,
-    private val trimRecordsScale: String,
-    private val trimRecordsUnit: String
+    private val trimReconciledScale: String,
+    private val trimReconciledUnit: String
 ) {
 
     companion object {
@@ -96,8 +96,8 @@ class MetadataStoreRepository(
 
         logger.info(
             "Deleting records in Metadata Store by scale and unit",
-            "scale" to trimRecordsScale,
-            "unit" to trimRecordsUnit
+            "scale" to trimReconciledScale,
+            "unit" to trimReconciledUnit
         )
 
         val statement = connection.createStatement()
@@ -106,14 +106,14 @@ class MetadataStoreRepository(
             """
                 DELETE FROM $table
                 WHERE reconciled_result = TRUE
-                AND reconciled_timestamp > $trimRecordsScale $trimRecordsUnit
+                AND reconciled_timestamp > $trimReconciledScale $trimReconciledUnit
             """.trimIndent()
         )
 
         logger.info(
             "Deleted records in Metadata Store by scale and unit",
-            "scale" to trimRecordsScale,
-            "unit" to trimRecordsUnit,
+            "scale" to trimReconciledScale,
+            "unit" to trimReconciledUnit,
             "deleted_count" to deletedCount.toString()
         )
 

@@ -85,7 +85,7 @@ services:
     image: reconciliation-integration:latest
     container_name: reconciliation-integration-test
     build:
-      dockerfile: docker/integration/Dockerfile_Reconciliation
+      dockerfile: docker/integration/Dockerfile
       context: .
     depends_on:
       - reconciliation
@@ -122,10 +122,10 @@ services:
       SPRING_PROFILES_ACTIVE: DUMMY_SECRETS,RECONCILIATION
 
   trim-reconciled-integration-test:
-    image: reconciliation-integration:latest
+    image: trim-reconciled-integration:latest
     container_name: trim-reconciled-integration-test
     build:
-      dockerfile: docker/integration/Dockerfile_Trim_Reconciled
+      dockerfile: docker/integration/Dockerfile
       context: .
     depends_on:
       - reconciliation
@@ -159,6 +159,9 @@ services:
       METADATASTORE_CA_CERT_PATH: "/certs/AmazonRootCA1.pem"
       METADATASTORE_QUERY_LIMIT: "20"
       METADATASTORE_USE_AWS_SECRETS: "false"
+      RECONCILER_TRIM_RECONCILED_FIXED_DELAY_MILLIS: "5000"
+      RECONCILER_TRIM_RECONCILED_SCALE: "1"
+      RECONCILER_TRIM_RECONCILED_UNIT: "DAYS"
       SPRING_PROFILES_ACTIVE: DUMMY_SECRETS,TRIM_RECONCILED_RECORDS
 
 volumes:

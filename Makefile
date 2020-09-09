@@ -30,10 +30,10 @@ local-scrub: ## Scrub local output folders
 	gradle clean
 
 local-build: ## Build Kafka2HBase with gradle
-	gradle :unit build -x test -x unit -x reconciliation-integration-test
+	gradle :unit build -x test -x unit -x reconciliation-integration-test reconciliation-integration-test
 
 local-dist: ## Assemble distribution files in build/dist with gradle
-	gradle assembleDist -x test -x unit -x reconciliation-integration-test
+	gradle assembleDist -x test -x unit -x reconciliation-integration-test reconciliation-integration-test
 
 local-test: ## Run the unit tests with gradle
 	gradle --rerun-tasks unit

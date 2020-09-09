@@ -37,7 +37,7 @@ class TrimReconciledIntegrationKoTest : StringSpec() {
             insertReconciledMetadataStoreData(2, 5)
 
             withTimeout(1.minutes) {
-                while (reconciledRecordCount() < 3) {
+                while (reconciledRecordCount() < 4) {
                     logger.info("Waiting for verified records count to change")
                     delay(1.seconds)
                 }
