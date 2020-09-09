@@ -2,6 +2,7 @@ package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.impl
 
 import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.sql.*
 
@@ -14,22 +15,39 @@ class MetadataStoreRepositoryImplTest {
             on { getInt("id") } doReturnConsecutively  (1..100).toList()
             on { getString("topic_name") } doReturnConsecutively (1..100).map { "db.database.collection${it % 3}" }
             on { getString("hbase_id") } doReturnConsecutively (1..100).map { "hbase_id_$it" }
-            on { getTimestamp(("hbase_timestamp"))} doReturnConsecutively (1..100).map { Timestamp(it.toLong()) }
+            on { getTimestamp("hbase_timestamp") } doReturnConsecutively (1..100).map { Timestamp(it.toLong()) }
         }
 
         val statement = mock<PreparedStatement> {
             on { executeQuery() } doReturn resultSet
         }
 
-        val metadataStoreConnection = mock<Connection> {
+        val connection = mock<Connection> {
             on { prepareStatement(any()) } doReturn statement
         }
 
-        val metadataStoreRepository = MetadataStoreRepositoryImpl(metadataStoreConnection, "ucfs")
-        val grouped = metadataStoreRepository.groupedUnreconciledRecords()
+        val repository = MetadataStoreRepositoryImpl(connection, "ucfs")
+        val grouped = repository.groupedUnreconciledRecords()
+
         assertEquals(3, grouped.size)
         grouped.keys.sorted().forEachIndexed { index, key -> assertEquals("db.database.collection$index", key) }
         grouped.forEach { (_, records) -> assertEquals(33, records.size) }
+        val sqlCaptor = argumentCaptor<String>()
+        verify(connection, times(1)).prepareStatement(sqlCaptor.capture())
+        verifyNoMoreInteractions(connection)
+        assertTrue(sqlCaptor.firstValue.contains("reconciled_result = false"))
+        assertTrue(sqlCaptor.firstValue.contains("LIMIT"))
+
+        verify(statement, times(1)).executeQuery()
+        verifyNoMoreInteractions(statement)
+
+        verify(resultSet, times(100)).next()
+        verify(resultSet, times(99)).getInt("id")
+        verify(resultSet, times(99)).getString("topic_name")
+        verify(resultSet, times(99)).getString("hbase_id")
+        verify(resultSet, times(99)).getTimestamp("hbase_timestamp")
+        verify(resultSet, times(1)).close()
+        verifyNoMoreInteractions(resultSet)
     }
 
     @Test
