@@ -15,5 +15,5 @@ class BatchedReconciliationService(private val hbaseRepository: HBaseRepository,
     override fun startReconciliation()= metadataStoreRepository.reconcileRecords(unreconciledRecords())
 
     private fun unreconciledRecords(): List<UnreconciledRecord> =
-        metadataStoreRepository.groupedUnreconciledRecords().flatMap { hbaseRepository.recordsNotInHbase(it.key, it.value) }
+        metadataStoreRepository.groupedUnreconciledRecords().flatMap { hbaseRepository.recordsInHbase(it.key, it.value) }
 }
