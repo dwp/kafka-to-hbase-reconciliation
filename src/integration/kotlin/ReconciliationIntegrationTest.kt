@@ -6,7 +6,6 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.*
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hbase.*
-import org.apache.hadoop.hbase.client.Admin
 import org.apache.hadoop.hbase.client.ConnectionFactory
 import org.apache.hadoop.hbase.client.Put
 import org.apache.hadoop.hbase.client.Scan
@@ -112,79 +111,9 @@ class ReconciliationIntegrationTest : StringSpec() {
 
     private val columnFamily = "cf".toByteArray()
     private val columnQualifier = "record".toByteArray()
-    private val kafkaDb = "claimant-advances"
-    private val kafkaCollection = "advanceDetails"
-    private val kafkaTopic = "db.$kafkaDb.$kafkaCollection"
-
-    private fun emptyMetadataStoreTable() {
-        logger.info("Emptying metadatastore table")
-        with(metadatastoreConnection) {
-            createStatement().use {
-                it.execute("TRUNCATE ucfs")
-            }
-        }
-        logger.info("Emptied metadatastore table")
-    }
-
-    private suspend fun emptyHBaseTable(connection: HBaseConnection,  tableName: String) {
-        logger.info("Emptying hbase table")
-        disableHBaseTable(connection.admin, tableName)
-        connection.admin.truncateTable(hbaseTableName(tableName), false)
-        enableHBaseTable(connection.admin, tableName)
-        logger.info("Emptied hbase table")
-    }
-
-    private suspend fun enableHBaseTable(hbaseAdmin: Admin, tableName: String) {
-        if (hbaseAdmin.isTableDisabled(hbaseTableName(tableName))) {
-            hbaseAdmin.enableTable(hbaseTableName(tableName))
-        }
-        while (hbaseAdmin.isTableDisabled(hbaseTableName(tableName))) {
-            delay(1.seconds)
-        }
-    }
-
-    private suspend fun disableHBaseTable(hbaseAdmin: Admin, tableName: String) {
-        if (hbaseAdmin.isTableEnabled(hbaseTableName(tableName))) {
-            hbaseAdmin.disableTableAsync(hbaseTableName(tableName))
-        }
-        while (hbaseAdmin.isTableEnabled(hbaseTableName(tableName))) {
-            delay(1.seconds)
-        }
-    }
-
-    private suspend fun setupHBaseData(connection: HBaseConnection, tableName: String, startIndex: Int, endIndex: Int) {
-        enableHBaseTable(connection.admin, tableName)
-        hbaseTable(connection, tableName).use {
-            val (namespace, unqualifiedName) = tableName.split(":")
-            val body = wellFormedValidPayload(namespace, unqualifiedName)
-            for (index in startIndex..endIndex) {
-                val key = hbaseKey(index)
-                it.put(Put(key).apply {
-                    addColumn(columnFamily, columnQualifier, 1544799662000, body)
-                })
-            }
-        }
-    }
 
     private fun hbaseTableRecordCount(connection: HBaseConnection, tableName: String) =
             hbaseTable(connection, tableName).use { it.getScanner(Scan()).count() }
-
-    private fun insertMetadataStoreData(startIndex: Int, endIndex: Int) {
-        with(metadatastoreConnection) {
-            val aWeekAgo = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -7) }
-            with(insertMetadatastoreRecordStatement(this)) {
-                for (index in startIndex..endIndex) {
-                    setString(1, printableHbaseKey(index))
-                    setTimestamp(2, Timestamp(1544799662000))
-                    setString(3, kafkaTopic)
-                    setTimestamp(4, Timestamp(aWeekAgo.timeInMillis))
-                    setBoolean(5, false)
-                    addBatch()
-                }
-                executeBatch()
-            }
-        }
-    }
 
     private fun reconciledRecordCount(): Int = recordCount("SELECT COUNT(*) FROM ucfs WHERE reconciled_result=true")
     private fun allRecordCount(): Int = recordCount("SELECT COUNT(*) FROM ucfs")
@@ -215,13 +144,6 @@ class ReconciliationIntegrationTest : StringSpec() {
         }
         return ConnectionFactory.createConnection(HBaseConfiguration.create(config))
     }
-
-    private fun printableHbaseKey(index: Int): String =
-        MessageParser().printableKey(hbaseKey(index))
-
-    private fun hbaseKey(index: Int) = MessageParser().generateKeyFromRecordBody(
-        Parser.default().parse(StringBuilder("""{ "message": { "_id": $index } }""")) as JsonObject
-    )
 
     private fun printableVolubleHbaseKey(topicIndex: Int, recordIndex: Int): String =
         MessageParser().printableKey(volubleHbaseKey(topicIndex, recordIndex))

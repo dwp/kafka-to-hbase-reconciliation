@@ -41,7 +41,7 @@ class NonBatchedReconciliationService(private val repository: HBaseRepository,
             val hbaseTimestamp = record["hbase_timestamp"] as Timestamp
 
             if (repository.recordExistsInHBase(topicName, hbaseId, hbaseTimestamp.time)) {
-                logger.info("Reconcilling record",
+                logger.info("Reconciling record",
                         "topic_name" to topicName,
                         "hbase_id" to hbaseId,
                         "hbase_timestamp" to hbaseTimestamp.toString())

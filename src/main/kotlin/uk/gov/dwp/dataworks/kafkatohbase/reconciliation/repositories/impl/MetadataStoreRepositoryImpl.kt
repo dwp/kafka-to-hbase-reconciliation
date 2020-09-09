@@ -23,15 +23,17 @@ class MetadataStoreRepositoryImpl(private val connection: Connection,
     }
 
     override fun reconcileRecords(unreconciled: List<UnreconciledRecord>) {
-        logger.debug("Reconciling records", "record_count" to "${unreconciled.size}")
-        with (reconcileRecordStatement) {
-            unreconciled.forEach {
-                setInt(1, it.id)
-                addBatch()
+        if (unreconciled.isNotEmpty()) {
+            logger.info("Reconciling records", "record_count" to "${unreconciled.size}")
+            with (reconcileRecordStatement) {
+                unreconciled.forEach {
+                    setInt(1, it.id)
+                    addBatch()
+                }
+                executeBatch()
             }
-            executeBatch()
+            logger.info("Reconciled records", "record_count" to "${unreconciled.size}")
         }
-        logger.debug("Reconciled records", "record_count" to "${unreconciled.size}")
     }
 
     override fun fetchUnreconciledRecords(): List<Map<String, Any>> {
