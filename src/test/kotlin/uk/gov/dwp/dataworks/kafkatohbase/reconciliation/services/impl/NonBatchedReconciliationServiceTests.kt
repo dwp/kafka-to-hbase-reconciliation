@@ -11,7 +11,7 @@ import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.junit4.SpringRunner
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.impl.HBaseRepositoryImpl
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.impl.MetadataStoreRepositoryImpl
-import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationService
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ScheduledReconciliationService
 import java.sql.Timestamp
 
 @RunWith(SpringRunner::class)
@@ -19,7 +19,7 @@ import java.sql.Timestamp
 class NonBatchedReconciliationServiceTests {
 
 	@Autowired
-	private lateinit var reconciliationService: ReconciliationService
+	private lateinit var reconciliationService: ScheduledReconciliationService
 
 	@MockBean
 	private lateinit var metadataStoreRepository: MetadataStoreRepositoryImpl

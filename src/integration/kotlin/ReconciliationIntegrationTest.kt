@@ -2,6 +2,7 @@
 import com.beust.klaxon.JsonObject
 import com.beust.klaxon.Parser
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.*
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hbase.*
@@ -16,57 +17,44 @@ import java.sql.DriverManager
 import java.sql.Timestamp
 import java.util.*
 import kotlin.time.ExperimentalTime
+import kotlin.time.minutes
 import kotlin.time.seconds
 import org.apache.hadoop.hbase.client.Connection as HBaseConnection
 
 @ExperimentalTime
 class ReconciliationIntegrationTest : StringSpec() {
     init {
-//        "Matching records are reconciled, mismatches are not" {
-//            hbaseConnection().use {connection ->
-//                val hbaseTableName = "claimant_advances:advanceDetails"
-//                coroutineScope {
-//                    launch { emptyHBaseTable(connection, hbaseTableName) }
-//                    emptyMetadataStoreTable()
-//                }
-//                val recordsInMetadataStore = allRecordCount()
-//                val recordsInHBase = hbaseTableRecordCount(connection, hbaseTableName)
-//                recordsInMetadataStore shouldBe 0
-//                recordsInHBase shouldBe 0
-//                setupHBaseData(connection, hbaseTableName, 1, 4)
-//                insertMetadataStoreData(2, 5)
-//
-//                withTimeout(1.minutes) {
-//                    while (reconciledRecordCount() < 3) {
-//                        logger.info("Waiting for verified records count to change")
-//                        delay(1.seconds)
-//                    }
-//                }
-//
-//                reconciledRecordCount() shouldBe 3
-//                allRecordCount() shouldBe 4
-//                hbaseTableRecordCount(connection, hbaseTableName) shouldBe 4
-//            }
-//        }
+        "Matching records are reconciled, mismatches are not" {
+            coroutineScope {
+                launch { populateHbase() }
+                launch { populateMetadataStore() }
+            }
 
-        "Dump loads of records into metadata store and hbase" {
-            dumpLoadsOfRecordsIntoMetadatastoreAndHbase()
+            withTimeout(2.minutes) {
+                while (reconciledRecordCount() < 1000) {
+                    logger.info("Waiting for records to be reconciled")
+                    delay(1.seconds)
+                }
+            }
+
+            reconciledRecordCount() shouldBe 1000
+            allRecordCount() shouldBe 2000
+
+            hbaseConnection().use { connection ->
+                for (topicIndex in 1..10) {
+                    hbaseTableRecordCount(connection, "database:collection$topicIndex") shouldBe 100
+                }
+            }
         }
-
-    }
-
-    private suspend fun dumpLoadsOfRecordsIntoMetadatastoreAndHbase() = coroutineScope {
-        launch { populateHbase() }
-        launch { populateMetadataStore() }
     }
 
     private suspend fun populateMetadataStore() = withContext(Dispatchers.IO) {
-        println("Putting lots of data into metadatastore")
+        logger.info("Putting lots of data into metadatastore")
         with(metadatastoreConnection) {
             val aWeekAgo = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -7) }
             with(insertMetadatastoreRecordStatement(this)) {
                 for (topicIndex in 1..10) {
-                    println("Adding records to metadatastore for topic 'db.database.collection$topicIndex'")
+                    logger.info("Adding records to metadatastore for topic 'db.database.collection$topicIndex'")
                     for (recordIndex in 1..200) {
                         setString(1, printableVolubleHbaseKey(topicIndex, recordIndex))
                         setTimestamp(2, Timestamp(1544799662000))
@@ -75,20 +63,20 @@ class ReconciliationIntegrationTest : StringSpec() {
                         setBoolean(5, false)
                         addBatch()
                     }
-                    println("Added records to metadatastore for topic 'db.database.collection$topicIndex'")
+                    logger.info("Added records to metadatastore for topic 'db.database.collection$topicIndex'")
                 }
                 executeBatch()
             }
         }
-        println("Put lots of data into metadatastore")
+        logger.info("Put lots of data into metadatastore")
     }
 
     private suspend fun populateHbase() = withContext(Dispatchers.IO) {
-        println("Putting lots of data into hbase")
+        logger.info("Putting lots of data into hbase")
 
         with(hbaseConnection()) {
             for (topicIndex in 1..10) {
-                println("Adding records to hbase for topic 'db.database.collection$topicIndex'")
+                logger.info("Adding records to hbase for topic 'db.database.collection$topicIndex'")
                 val tablename = hbaseTableName("database:collection$topicIndex")
                 createTable(tablename)
                 hbaseTable(this, "database:collection$topicIndex").use {
@@ -98,15 +86,16 @@ class ReconciliationIntegrationTest : StringSpec() {
                         Put(key).apply { addColumn(columnFamily, columnQualifier, 1544799662000, body) }
                     })
                 }
-                println("Added records to hbase for topic 'db.database.collection$topicIndex'")
+                logger.info("Added records to hbase for topic 'db.database.collection$topicIndex'")
             }
         }
-        println("Put lots of data into hbase")
+        logger.info("Put lots of data into hbase")
     }
 
     private fun HBaseConnection.createTable(tablename: TableName) {
         try {admin.createNamespace(NamespaceDescriptor.create(tablename.namespaceAsString).run { build() })}
         catch (e: Exception) {}
+
         try {
             admin.createTable(HTableDescriptor(tablename).apply {
                 addFamily(HColumnDescriptor(columnFamily).apply {
@@ -128,21 +117,21 @@ class ReconciliationIntegrationTest : StringSpec() {
     private val kafkaTopic = "db.$kafkaDb.$kafkaCollection"
 
     private fun emptyMetadataStoreTable() {
-        println("Emptying metadatastore table")
+        logger.info("Emptying metadatastore table")
         with(metadatastoreConnection) {
             createStatement().use {
                 it.execute("TRUNCATE ucfs")
             }
         }
-        println("Emptied metadatastore table")
+        logger.info("Emptied metadatastore table")
     }
 
     private suspend fun emptyHBaseTable(connection: HBaseConnection,  tableName: String) {
-        println("Emptying hbase table")
+        logger.info("Emptying hbase table")
         disableHBaseTable(connection.admin, tableName)
         connection.admin.truncateTable(hbaseTableName(tableName), false)
         enableHBaseTable(connection.admin, tableName)
-        println("Emptied hbase table")
+        logger.info("Emptied hbase table")
     }
 
     private suspend fun enableHBaseTable(hbaseAdmin: Admin, tableName: String) {

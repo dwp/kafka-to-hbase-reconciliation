@@ -3,7 +3,7 @@ package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.impl
 import org.springframework.stereotype.Repository
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.domain.UnreconciledRecord
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.MetadataStoreRepository
-import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationService
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ScheduledReconciliationService
 import uk.gov.dwp.dataworks.logging.DataworksLogger
 import java.sql.Connection
 import java.sql.PreparedStatement
@@ -14,19 +14,24 @@ import java.sql.Timestamp
 class MetadataStoreRepositoryImpl(private val connection: Connection,
                                   private val table: String) : MetadataStoreRepository {
 
-    companion object {
-        val logger = DataworksLogger.getLogger(ReconciliationService::class.toString())
-    }
-
-    override fun groupedUnreconciledRecords(): Map<String, List<UnreconciledRecord>> = unreconciledRecords().groupBy { it.topicName }
+    override fun groupedUnreconciledRecords(): Map<String, List<UnreconciledRecord>> =
+        unreconciledRecords().groupBy { it.topicName }
 
     override fun reconcileRecord(topicName: String, hbaseId: String, version: Long) {
         val rowsInserted = markRecordAsReconciled(topicName, hbaseId, version)
         logger.info("Recorded processing attempt", "topic_name" to topicName, "rows_inserted" to "$rowsInserted")
     }
 
-    override fun reconcileRecords(topicName: String, unreconciled: List<UnreconciledRecord>) {
-
+    override fun reconcileRecords(unreconciled: List<UnreconciledRecord>) {
+        logger.debug("Reconciling records", "record_count" to "${unreconciled.size}")
+        with (reconcileRecordStatement) {
+            unreconciled.forEach {
+                setInt(1, it.id)
+                addBatch()
+            }
+            executeBatch()
+        }
+        logger.debug("Reconciled records", "record_count" to "${unreconciled.size}")
     }
 
     override fun fetchUnreconciledRecords(): List<Map<String, Any>> {
@@ -39,9 +44,10 @@ class MetadataStoreRepositoryImpl(private val connection: Connection,
         val list = mutableListOf<UnreconciledRecord>()
         unreconciledRecordsStatement.executeQuery().use {
             while (it.next()) {
-                list.add(UnreconciledRecord(it.getString("topic_name"),
-                    it.getString("hbase_id"),
-                    it.getTimestamp("hbase_timestamp").time))
+                list.add(UnreconciledRecord(it.getInt("id"),
+                                            it.getString("topic_name"),
+                                            it.getString("hbase_id"),
+                                            it.getTimestamp("hbase_timestamp").time))
             }
         }
         return list
@@ -70,7 +76,7 @@ class MetadataStoreRepositoryImpl(private val connection: Connection,
     }
 
     private fun markRecordAsReconciled(topicName: String, hbaseId: String, hbaseVersion: Long) =
-        with (markRecordAsReconciledStatement) {
+        with (reconcileRecordsStatement) {
             setString(1, topicName)
             setString(2, hbaseId)
             setTimestamp(3, Timestamp(hbaseVersion))
@@ -108,7 +114,7 @@ class MetadataStoreRepositoryImpl(private val connection: Connection,
         return result
     }
 
-    private val markRecordAsReconciledStatement: PreparedStatement by lazy {
+    private val reconcileRecordsStatement: PreparedStatement by lazy {
         connection.prepareStatement(
             """
                 UPDATE $table
@@ -116,4 +122,18 @@ class MetadataStoreRepositoryImpl(private val connection: Connection,
                 WHERE topic_name= ? AND hbase_id = ? and hbase_timestamp = ?
             """.trimIndent())
     }
+
+    private val reconcileRecordStatement: PreparedStatement by lazy {
+        connection.prepareStatement(
+            """
+                UPDATE $table
+                SET reconciled_result=true, reconciled_timestamp=CURRENT_TIMESTAMP
+                WHERE id = ?
+            """.trimIndent())
+    }
+
+    companion object {
+        private val logger = DataworksLogger.getLogger(ScheduledReconciliationService::class.toString())
+    }
+
 }

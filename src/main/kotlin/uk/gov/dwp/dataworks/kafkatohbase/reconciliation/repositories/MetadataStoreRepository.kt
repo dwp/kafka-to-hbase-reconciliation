@@ -5,6 +5,6 @@ import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.domain.UnreconciledRecor
 interface MetadataStoreRepository {
     fun groupedUnreconciledRecords(): Map<String, List<UnreconciledRecord>>
     fun reconcileRecord(topicName: String, hbaseId: String, version: Long)
-    fun reconcileRecords(topicName: String, unreconciled: List<UnreconciledRecord>)
+    fun reconcileRecords(unreconciled: List<UnreconciledRecord>)
     fun fetchUnreconciledRecords(): List<Map<String, Any>>
 }

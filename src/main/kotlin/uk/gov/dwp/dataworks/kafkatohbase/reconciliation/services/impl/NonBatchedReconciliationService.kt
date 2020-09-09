@@ -1,46 +1,18 @@
 package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.impl
 
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
-import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.HBaseRepository
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.MetadataStoreRepository
-import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationService
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ScheduledReconciliationService
 import uk.gov.dwp.dataworks.logging.DataworksLogger
 import java.sql.Timestamp
 
 @Service
 @Profile("!BATCHED")
-class NonBatchedReconciliationService(
-    private val repository: HBaseRepository,
-    private val metadataStoreRepository: MetadataStoreRepository
-) : ReconciliationService {
-
-    companion object {
-        val logger = DataworksLogger.getLogger(ReconciliationService::class.toString())
-    }
-
-    @Value("\${reconciler.fixed.delay.millis}")
-    lateinit var reconciliationDelayMillis: String
-
-    private var delayNeedsLogging = true
-
-    fun logDelay() {
-        if (delayNeedsLogging) {
-            logger.info("Running reconciliation with fixed delay between executions",
-                "fixed_delay_millis" to reconciliationDelayMillis
-            )
-            delayNeedsLogging = false
-        }
-    }
-
-    //Executes with this millis delay between executions
-    @Scheduled(fixedDelayString="#{\${reconciler.fixed.delay.millis}}", initialDelay = 1000)
-    override fun startReconciliationOnTimer() {
-        logDelay()
-        startReconciliation()
-    }
+class NonBatchedReconciliationService(private val repository: HBaseRepository,
+                                      private val metadataStoreRepository: MetadataStoreRepository):
+    AbstractReconciliationService() {
 
     override fun startReconciliation() {
         logger.info("Starting reconciliation of metadata store records")
@@ -60,7 +32,7 @@ class NonBatchedReconciliationService(
         }
     }
 
-    override fun reconcileRecords(records: List<Map<String, Any>>): Int {
+    private fun reconcileRecords(records: List<Map<String, Any>>): Int {
         var totalRecordsReconciled = 0
 
         records.forEach { record ->
@@ -85,5 +57,9 @@ class NonBatchedReconciliationService(
         }
 
         return totalRecordsReconciled
+    }
+
+    companion object {
+        val logger = DataworksLogger.getLogger(ScheduledReconciliationService::class.toString())
     }
 }

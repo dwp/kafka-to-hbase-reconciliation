@@ -77,13 +77,8 @@ hbase-up: ## Bring up and provision mysql
 		echo ...hbase ready.; \
 	}
 
-hbase-populate: hbase-up
-	echo "Creating table 'claimant_advances:advanceDetails'..." ; \
-	docker exec -i hbase hbase shell <<< "create_namespace 'claimant_advances'"; \
-	docker exec -i hbase hbase shell <<< "create 'claimant_advances:advanceDetails', { NAME => 'cf', VERSIONS => '1000'}"; \
-	echo "Created table 'claimant_advances:advanceDetails'..." ; \
 
-services: hbase-up rdbms-up hbase-populate ## Bring up supporting services in docker
+services: hbase-up rdbms-up ## Bring up supporting services in docker
 
 up: services ## Bring up Reconciliation in Docker with supporting services
 	docker-compose -f docker-compose.yaml up --build -d reconciliation
