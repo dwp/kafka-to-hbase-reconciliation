@@ -64,7 +64,7 @@ class ReconciliationIntegrationTest : StringSpec() {
                 for (topicIndex in 1..10) {
                     logger.info("Adding records to metadatastore for topic 'db.database.collection$topicIndex'")
                     for (recordIndex in 1..200) {
-                        setString(1, printableVolubleHbaseKey(topicIndex, recordIndex))
+                        setString(1, printableHbaseKey(topicIndex, recordIndex))
                         setTimestamp(2, Timestamp(1544799662000))
                         setString(3, "db.database.collection$topicIndex")
                         setTimestamp(4, Timestamp(aWeekAgo.timeInMillis))
@@ -82,21 +82,22 @@ class ReconciliationIntegrationTest : StringSpec() {
     private suspend fun populateHbase() = withContext(Dispatchers.IO) {
         logger.info("Putting lots of data into hbase")
 
-        with(hbaseConnection()) {
+        hbaseConnection().use { connection ->
             for (topicIndex in 1..10) {
                 logger.info("Adding records to hbase for topic 'db.database.collection$topicIndex'")
                 val tablename = hbaseTableName("database:collection$topicIndex")
-                createTable(tablename)
-                hbaseTable(this, "database:collection$topicIndex").use {
+                connection.createTable(tablename)
+                hbaseTable(connection, "database:collection$topicIndex").use {
                     it.put((1..200 step 2).map { recordIndex ->
                         val body = wellFormedValidPayload("database", "collection$topicIndex")
-                        val key = volubleHbaseKey(topicIndex, recordIndex)
+                        val key = hbaseKey(topicIndex, recordIndex)
                         Put(key).apply { addColumn(columnFamily, columnQualifier, 1544799662000, body) }
                     })
                 }
                 logger.info("Added records to hbase for topic 'db.database.collection$topicIndex'")
             }
         }
+
         logger.info("Put lots of data into hbase")
     }
 
@@ -156,10 +157,10 @@ class ReconciliationIntegrationTest : StringSpec() {
         return ConnectionFactory.createConnection(HBaseConfiguration.create(config))
     }
 
-    private fun printableVolubleHbaseKey(topicIndex: Int, recordIndex: Int): String =
-        MessageParser().printableKey(volubleHbaseKey(topicIndex, recordIndex))
+    private fun printableHbaseKey(topicIndex: Int, recordIndex: Int): String =
+        MessageParser().printableKey(hbaseKey(topicIndex, recordIndex))
 
-    private fun volubleHbaseKey(topicIndex: Int, recordIndex: Int) = MessageParser().generateKeyFromRecordBody(
+    private fun hbaseKey(topicIndex: Int, recordIndex: Int) = MessageParser().generateKeyFromRecordBody(
         Parser.default().parse(StringBuilder("""{ "message": { "_id": "$topicIndex/$recordIndex" } }""")) as JsonObject
     )
 
