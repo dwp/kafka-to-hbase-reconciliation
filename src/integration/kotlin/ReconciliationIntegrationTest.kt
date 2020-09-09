@@ -3,12 +3,12 @@ import com.beust.klaxon.JsonObject
 import com.beust.klaxon.Parser
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.*
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hbase.*
 import org.apache.hadoop.hbase.client.ConnectionFactory
 import org.apache.hadoop.hbase.client.Put
-import org.apache.hadoop.hbase.client.Scan
 import uk.gov.dwp.dataworks.logging.DataworksLogger
 import utility.MessageParser
 import java.sql.Connection
@@ -36,12 +36,21 @@ class ReconciliationIntegrationTest : StringSpec() {
                 }
             }
 
-            reconciledRecordCount() shouldBe 1000
             allRecordCount() shouldBe 2000
 
-            hbaseConnection().use { connection ->
-                for (topicIndex in 1..10) {
-                    hbaseTableRecordCount(connection, "database:collection$topicIndex") shouldBe 100
+            with (metadatastoreConnection) {
+                createStatement().use { statement ->
+                    statement.executeQuery("SELECT hbase_id, reconciled_result FROM ucfs").use {
+                        while (it.next()) {
+                            val hbaseId = it.getString("hbase_id")
+                            val reconciledResult = it.getBoolean("reconciled_result")
+                            val matchResult = Regex("""\{"id":"\d+/(?<recordno>\d+)"}""").find(hbaseId)
+                            matchResult shouldNotBe null
+                            if (matchResult != null) {
+                                reconciledResult shouldBe matchResult.groupValues[1].toInt().isOdd()
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -112,9 +121,6 @@ class ReconciliationIntegrationTest : StringSpec() {
     private val columnFamily = "cf".toByteArray()
     private val columnQualifier = "record".toByteArray()
 
-    private fun hbaseTableRecordCount(connection: HBaseConnection, tableName: String) =
-            hbaseTable(connection, tableName).use { it.getScanner(Scan()).count() }
-
     private fun reconciledRecordCount(): Int = recordCount("SELECT COUNT(*) FROM ucfs WHERE reconciled_result=true")
     private fun allRecordCount(): Int = recordCount("SELECT COUNT(*) FROM ucfs")
 
@@ -164,4 +170,7 @@ class ReconciliationIntegrationTest : StringSpec() {
             VALUES (?, ?, ?, ?, ?)
         """.trimIndent()
         )
+
+    private fun Int.isOdd() = this % 2 == 1
 }
+

@@ -5,10 +5,7 @@ import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.domain.UnreconciledRecor
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.MetadataStoreRepository
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ScheduledReconciliationService
 import uk.gov.dwp.dataworks.logging.DataworksLogger
-import java.sql.Connection
-import java.sql.PreparedStatement
-import java.sql.ResultSet
-import java.sql.Timestamp
+import java.sql.*
 
 @Repository
 class MetadataStoreRepositoryImpl(private val connection: Connection,
@@ -26,11 +23,17 @@ class MetadataStoreRepositoryImpl(private val connection: Connection,
         if (unreconciled.isNotEmpty()) {
             logger.info("Reconciling records", "record_count" to "${unreconciled.size}")
             with (reconcileRecordStatement) {
-                unreconciled.forEach {
-                    setInt(1, it.id)
-                    addBatch()
+                try {
+                    unreconciled.forEach {
+                        setInt(1, it.id)
+                        addBatch()
+                    }
+                    executeBatch()
+                    connection.commit()
+                } catch (e: SQLException) {
+                    logger.error("Failed to update batch", e, "error" to "e.message", "error_code" to "${e.errorCode}")
+                    connection.rollback()
                 }
-                executeBatch()
             }
             logger.info("Reconciled records", "record_count" to "${unreconciled.size}")
         }
