@@ -10,24 +10,16 @@ import java.sql.*
 class MetadataStoreRepositoryImplTest {
 
     @Test
-    fun testReconcileRecordsWithAutoCommit() {
-        testAutoCommit(true)
-    }
+    fun testReconcileRecordsWithAutoCommit() = testAutoCommit(true)
 
     @Test
-    fun testReconcileRecordsWithoutAutoCommit() {
-        testAutoCommit(false)
-    }
+    fun testReconcileRecordsWithoutAutoCommit() = testAutoCommit(false)
 
     @Test
-    fun testReconcileRecordsExceptionWithAutoCommit() {
-        testRollback(true)
-    }
+    fun testReconcileRecordsExceptionWithAutoCommit() = testRollback(true)
 
     @Test
-    fun testReconcileRecordsExceptionWithoutAutoCommit() {
-        testRollback(false)
-    }
+    fun testReconcileRecordsExceptionWithoutAutoCommit() = testRollback(false)
 
     @Test
     fun testReconcileNoRecords() {

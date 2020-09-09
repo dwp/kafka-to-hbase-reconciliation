@@ -39,18 +39,6 @@ class MetadataStoreRepositoryImpl(private val connection: Connection,
         }
     }
 
-    private fun commit() {
-        if (!connection.autoCommit) {
-            connection.commit()
-        }
-    }
-
-    private fun rollback() {
-        if (!connection.autoCommit) {
-            connection.rollback()
-        }
-    }
-
     override fun fetchUnreconciledRecords(): List<Map<String, Any>> {
         logger.debug("Fetching unreconciled records from metadata store")
         val unreconciledRecords = getUnreconciledRecordsQuery()
@@ -148,6 +136,18 @@ class MetadataStoreRepositoryImpl(private val connection: Connection,
                 SET reconciled_result=true, reconciled_timestamp=CURRENT_TIMESTAMP
                 WHERE id = ?
             """.trimIndent())
+    }
+
+    private fun commit() {
+        if (!connection.autoCommit) {
+            connection.commit()
+        }
+    }
+
+    private fun rollback() {
+        if (!connection.autoCommit) {
+            connection.rollback()
+        }
     }
 
     companion object {
