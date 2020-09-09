@@ -4,12 +4,81 @@ import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.domain.UnreconciledRecord
 import java.sql.*
 
 class MetadataStoreRepositoryImplTest {
 
     @Test
-    fun testReconciledRecords() {
+    fun testReconcileRecordsWithAutoCommit() {
+        testAutoCommit(true)
+    }
+
+    @Test
+    fun testReconcileRecordsWithoutAutoCommit() {
+        testAutoCommit(false)
+    }
+
+    fun testAutoCommit(autoOn: Boolean) {
+        val statement = mock<PreparedStatement>()
+
+        val connection = mock<Connection> {
+            on { prepareStatement(any()) } doReturn statement
+            on { autoCommit } doReturn autoOn
+        }
+
+        val records = (1 .. 100).map {
+            UnreconciledRecord(it, "db.database.collection${it % 3}", "hbase_id_$it", (it * 10).toLong())
+        }
+
+        val repository = MetadataStoreRepositoryImpl(connection, "ucfs")
+        repository.reconcileRecords(records)
+
+        val sqlCaptor = argumentCaptor<String>()
+        verify(connection, times(1)).prepareStatement(sqlCaptor.capture())
+        verify(connection, times(1)).autoCommit
+
+        if (autoOn) {
+            verify(connection, times(0)).commit()
+        } else {
+            verify(connection, times(1)).commit()
+        }
+
+        verifyNoMoreInteractions(connection)
+        assertEquals("""
+                        UPDATE ucfs
+                        SET reconciled_result=true, reconciled_timestamp=CURRENT_TIMESTAMP
+                        WHERE id = ?
+                     """.trimIndent(), sqlCaptor.firstValue)
+
+        verify(statement, times(100)).addBatch()
+        val positionCaptor = argumentCaptor<Int>()
+        val idCaptor = argumentCaptor<Int>()
+        verify(statement, times(100)).setInt(positionCaptor.capture(), idCaptor.capture())
+
+        positionCaptor.allValues.forEach {
+            assertEquals(1, it)
+        }
+
+        idCaptor.allValues.forEachIndexed { index, id ->
+            assertEquals(index + 1, id)
+        }
+        verify(statement, times(1)).executeBatch()
+        verifyNoMoreInteractions(statement)
+    }
+
+    @Test
+    fun testReconcileNoRecords() {
+        val statement = mock<PreparedStatement>()
+        val connection = mock<Connection>()
+        val repository = MetadataStoreRepositoryImpl(connection, "ucfs")
+        repository.reconcileRecords(listOf<UnreconciledRecord>())
+        verifyZeroInteractions(connection)
+        verifyZeroInteractions(statement)
+    }
+
+    @Test
+    fun testGroupedUnreconciledRecords() {
         val resultSet = mock<ResultSet> {
             on { next() } doReturnConsecutively (1..101).map {it < 100}
             on { getInt("id") } doReturnConsecutively  (1..100).toList()
@@ -49,6 +118,7 @@ class MetadataStoreRepositoryImplTest {
         verify(resultSet, times(1)).close()
         verifyNoMoreInteractions(resultSet)
     }
+
 
     @Test
     fun givenALimitExistsForRecordsReturnedWhenIRequestAListOfRecordsFromMetadataStoreThenTheFirstValueContainsLimit() {

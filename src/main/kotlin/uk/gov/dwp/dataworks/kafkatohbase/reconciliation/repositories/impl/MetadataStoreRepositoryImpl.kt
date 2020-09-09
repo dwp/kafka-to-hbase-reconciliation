@@ -29,23 +29,23 @@ class MetadataStoreRepositoryImpl(private val connection: Connection,
                         addBatch()
                     }
                     executeBatch()
-                    commit(connection)
+                    commit()
                 } catch (e: SQLException) {
                     logger.error("Failed to update batch", e, "error" to "e.message", "error_code" to "${e.errorCode}")
-                    rollback(connection)
+                    rollback()
                 }
             }
             logger.info("Reconciled records", "record_count" to "${unreconciled.size}")
         }
     }
 
-    private fun commit(connection: Connection) {
+    private fun commit() {
         if (!connection.autoCommit) {
             connection.commit()
         }
     }
 
-    private fun rollback(connection: Connection) {
+    private fun rollback() {
         if (!connection.autoCommit) {
             connection.rollback()
         }
