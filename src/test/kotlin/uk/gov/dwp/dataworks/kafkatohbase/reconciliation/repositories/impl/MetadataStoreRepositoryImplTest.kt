@@ -29,79 +29,11 @@ class MetadataStoreRepositoryImplTest {
         testRollback(false)
     }
 
-    private fun testAutoCommit(autoOn: Boolean) {
-        val statement = mock<PreparedStatement>()
-        val connection = connection(statement, autoOn)
-        val repository = MetadataStoreRepositoryImpl(connection, "ucfs")
-        repository.reconcileRecords(unreconciledRecords())
-
-        val sqlCaptor = argumentCaptor<String>()
-        verify(connection, times(1)).prepareStatement(sqlCaptor.capture())
-        verify(connection, times(1)).autoCommit
-
-        if (!autoOn) {
-            verify(connection, times(1)).commit()
-        }
-
-        verifyNoMoreInteractions(connection)
-        assertEquals("""
-                        UPDATE ucfs
-                        SET reconciled_result=true, reconciled_timestamp=CURRENT_TIMESTAMP
-                        WHERE id = ?
-                     """.trimIndent(), sqlCaptor.firstValue)
-
-        verify(statement, times(100)).addBatch()
-        val positionCaptor = argumentCaptor<Int>()
-        val idCaptor = argumentCaptor<Int>()
-        verify(statement, times(100)).setInt(positionCaptor.capture(), idCaptor.capture())
-        positionCaptor.allValues.forEach { assertEquals(1, it) }
-        idCaptor.allValues.forEachIndexed { index, id -> assertEquals(index + 1, id) }
-        verify(statement, times(1)).executeBatch()
-        verifyNoMoreInteractions(statement)
-    }
-
-    private fun testRollback(autoOn: Boolean) {
-        val statement = mock<PreparedStatement> {
-            on { executeBatch() } doThrow SQLException("Error updating")
-        }
-
-        val connection = connection(statement, autoOn)
-
-        val repository = MetadataStoreRepositoryImpl(connection, "ucfs")
-        repository.reconcileRecords(unreconciledRecords())
-
-        verify(connection, times(1)).prepareStatement(any())
-        verify(connection, times(1)).autoCommit
-
-        if (!autoOn) {
-            verify(connection, times(1)).rollback()
-        }
-
-        verifyNoMoreInteractions(connection)
-    }
-
-    private fun connection(statement: PreparedStatement, autoOn: Boolean) =
-        mock<Connection> {
-            on { prepareStatement(any()) } doReturn statement
-            on { autoCommit } doReturn autoOn
-        }
-
-
-
-    private fun unreconciledRecords(): List<UnreconciledRecord> =
-        (1..100).map {
-            UnreconciledRecord(it, "db.database.collection${it % 3}", "hbase_id_$it", (it * 10).toLong())
-        }
-
-
     @Test
     fun testReconcileNoRecords() {
-        val statement = mock<PreparedStatement>()
         val connection = mock<Connection>()
-        val repository = MetadataStoreRepositoryImpl(connection, "ucfs")
-        repository.reconcileRecords(listOf<UnreconciledRecord>())
+        repository(connection).reconcileRecords(listOf<UnreconciledRecord>())
         verifyZeroInteractions(connection)
-        verifyZeroInteractions(statement)
     }
 
     @Test
@@ -122,9 +54,7 @@ class MetadataStoreRepositoryImplTest {
             on { prepareStatement(any()) } doReturn statement
         }
 
-        val repository = MetadataStoreRepositoryImpl(connection, "ucfs")
-        val grouped = repository.groupedUnreconciledRecords()
-
+        val grouped = repository(connection).groupedUnreconciledRecords()
         assertEquals(3, grouped.size)
         grouped.keys.sorted().forEachIndexed { index, key -> assertEquals("db.database.collection$index", key) }
         grouped.forEach { (_, records) -> assertEquals(33, records.size) }
@@ -162,9 +92,7 @@ class MetadataStoreRepositoryImplTest {
             on { createStatement() } doReturn statement
         }
 
-        val metadataStoreRepository = MetadataStoreRepositoryImpl(metadataStoreConnection, "ucfs")
-
-        metadataStoreRepository.fetchUnreconciledRecords()
+        repository(metadataStoreConnection).fetchUnreconciledRecords()
 
         verify(metadataStoreConnection, times(1)).createStatement()
         val captor = argumentCaptor<String>()
@@ -188,13 +116,72 @@ class MetadataStoreRepositoryImplTest {
             on { prepareStatement(any()) } doReturn statement
         }
 
-        val metadataStoreRepository = MetadataStoreRepositoryImpl(metadataStoreConnection, "ucfs")
-
         val hbaseId = "hbase-id"
         val hbaseTimestamp = 100L
-        metadataStoreRepository.reconcileRecord(topicName, hbaseId, hbaseTimestamp)
-
+        repository(metadataStoreConnection).reconcileRecord(topicName, hbaseId, hbaseTimestamp)
         verify(metadataStoreConnection, times(1)).prepareStatement(any())
         verify(statement, times(1)).setString(1, topicName)
     }
+
+    private fun testAutoCommit(autoOn: Boolean) {
+        val statement = mock<PreparedStatement>()
+        val connection = connection(statement, autoOn)
+        repository(connection).reconcileRecords(unreconciledRecords())
+        verifyBatchedConnectionInteractions(connection, autoOn, true)
+        verifyBatchedStatementInteractions(statement)
+    }
+
+    private fun testRollback(autoOn: Boolean) {
+        val statement = mock<PreparedStatement> {
+            on { executeBatch() } doThrow SQLException("Error updating")
+        }
+        val connection = connection(statement, autoOn)
+        repository(connection).reconcileRecords(unreconciledRecords())
+        verifyBatchedConnectionInteractions(connection, autoOn, false)
+        verifyBatchedStatementInteractions(statement)
+    }
+
+    private fun verifyBatchedConnectionInteractions(connection: Connection, autoOn: Boolean, updateSucceeds: Boolean) {
+        val sqlCaptor = argumentCaptor<String>()
+        verify(connection, times(1)).prepareStatement(sqlCaptor.capture())
+        verify(connection, times(1)).autoCommit
+        if (!autoOn) {
+            if (updateSucceeds) {
+                verify(connection, times(1)).commit()
+            }
+            else {
+                verify(connection, times(1)).rollback()
+            }
+        }
+        assertEquals("""
+                        UPDATE ucfs
+                        SET reconciled_result=true, reconciled_timestamp=CURRENT_TIMESTAMP
+                        WHERE id = ?""".trimIndent(), sqlCaptor.firstValue)
+        verifyNoMoreInteractions(connection)
+    }
+
+    private fun verifyBatchedStatementInteractions(statement: PreparedStatement) {
+        verify(statement, times(100)).addBatch()
+        val positionCaptor = argumentCaptor<Int>()
+        val idCaptor = argumentCaptor<Int>()
+        verify(statement, times(100)).setInt(positionCaptor.capture(), idCaptor.capture())
+        positionCaptor.allValues.forEach { assertEquals(1, it) }
+        idCaptor.allValues.forEachIndexed { index, id -> assertEquals(index + 1, id) }
+        verify(statement, times(1)).executeBatch()
+        verifyNoMoreInteractions(statement)
+    }
+
+    private fun connection(statement: PreparedStatement, autoOn: Boolean) =
+        mock<Connection> {
+            on { prepareStatement(any()) } doReturn statement
+            on { autoCommit } doReturn autoOn
+        }
+
+    private fun unreconciledRecords(): List<UnreconciledRecord> =
+        (1..100).map {
+            UnreconciledRecord(it, "db.database.collection${it % 3}", "hbase_id_$it", (it * 10).toLong())
+        }
+
+    private fun repository(connection: Connection): MetadataStoreRepositoryImpl =
+        MetadataStoreRepositoryImpl(connection, "ucfs")
 }
