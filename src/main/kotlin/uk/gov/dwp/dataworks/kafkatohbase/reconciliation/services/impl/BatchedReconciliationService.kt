@@ -10,7 +10,7 @@ import uk.gov.dwp.dataworks.logging.DataworksLogger
 import java.sql.Timestamp
 
 @Service
-class ReconciliationServiceImpl(
+class BatchedReconciliationService(
     private val hbaseRepository: HBaseRepository,
     private val metadataStoreRepository: MetadataStoreRepository) : ReconciliationService {
 
@@ -39,7 +39,7 @@ class ReconciliationServiceImpl(
         startReconciliation()
     }
 
-    fun startNonbatchedReconciliation() {
+    fun startNonBatchedReconciliation() {
         logger.info("Starting reconciliation of metadata store records")
         val recordsToReconcile = metadataStoreRepository.fetchUnreconciledRecords()
         val groupedUnreconciledRecords = metadataStoreRepository.groupedUnreconciledRecords()

@@ -15,8 +15,8 @@ import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationS
 import java.sql.Timestamp
 
 @RunWith(SpringRunner::class)
-@SpringBootTest(classes = [ReconciliationServiceImpl::class])
-class ReconciliationServiceImplTests {
+@SpringBootTest(classes = [NonBatchedReconciliationService::class])
+class NonBatchedReconciliationServiceTests {
 
 	@Autowired
 	private lateinit var reconciliationService: ReconciliationService

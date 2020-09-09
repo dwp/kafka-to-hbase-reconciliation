@@ -56,16 +56,17 @@ class ReconciliationIntegrationTest : StringSpec() {
     }
 
     private suspend fun dumpLoadsOfRecordsIntoMetadatastoreAndHbase() = coroutineScope {
-        launch { dumpLoadsOfRecordsIntoHbase() }
-        launch { dumpLoadsOfRecordsIntoMetadataStore() }
+        launch { populateHbase() }
+        launch { populateMetadataStore() }
     }
 
-    suspend private fun dumpLoadsOfRecordsIntoMetadataStore() = withContext(Dispatchers.IO) {
+    private suspend fun populateMetadataStore() = withContext(Dispatchers.IO) {
         println("Putting lots of data into metadatastore")
         with(metadatastoreConnection) {
             val aWeekAgo = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -7) }
             with(insertMetadatastoreRecordStatement(this)) {
                 for (topicIndex in 1..10) {
+                    println("Adding records to metadatastore for topic 'db.database.collection$topicIndex'")
                     for (recordIndex in 1..200) {
                         setString(1, printableVolubleHbaseKey(topicIndex, recordIndex))
                         setTimestamp(2, Timestamp(1544799662000))
@@ -74,6 +75,7 @@ class ReconciliationIntegrationTest : StringSpec() {
                         setBoolean(5, false)
                         addBatch()
                     }
+                    println("Added records to metadatastore for topic 'db.database.collection$topicIndex'")
                 }
                 executeBatch()
             }
@@ -81,27 +83,14 @@ class ReconciliationIntegrationTest : StringSpec() {
         println("Put lots of data into metadatastore")
     }
 
-    private suspend fun dumpLoadsOfRecordsIntoHbase() = withContext(Dispatchers.IO) {
+    private suspend fun populateHbase() = withContext(Dispatchers.IO) {
         println("Putting lots of data into hbase")
 
         with(hbaseConnection()) {
             for (topicIndex in 1..10) {
+                println("Adding records to hbase for topic 'db.database.collection$topicIndex'")
                 val tablename = hbaseTableName("database:collection$topicIndex")
-
-                try {
-                    admin.createNamespace(NamespaceDescriptor.create(tablename.namespaceAsString).run { build() })
-                } catch (e: Exception) { }
-
-                try {
-                    admin.createTable(HTableDescriptor(tablename).apply {
-                        addFamily(HColumnDescriptor(columnFamily).apply {
-                            maxVersions = Int.MAX_VALUE
-                            minVersions = 1
-                        })
-                    })
-                } catch (e: Exception) { }
-
-
+                createTable(tablename)
                 hbaseTable(this, "database:collection$topicIndex").use {
                     it.put((1..200 step 2).map { recordIndex ->
                         val body = wellFormedValidPayload("database", "collection$topicIndex")
@@ -109,9 +98,23 @@ class ReconciliationIntegrationTest : StringSpec() {
                         Put(key).apply { addColumn(columnFamily, columnQualifier, 1544799662000, body) }
                     })
                 }
+                println("Added records to hbase for topic 'db.database.collection$topicIndex'")
             }
         }
         println("Put lots of data into hbase")
+    }
+
+    private fun HBaseConnection.createTable(tablename: TableName) {
+        try {admin.createNamespace(NamespaceDescriptor.create(tablename.namespaceAsString).run { build() })}
+        catch (e: Exception) {}
+        try {
+            admin.createTable(HTableDescriptor(tablename).apply {
+                addFamily(HColumnDescriptor(columnFamily).apply {
+                    maxVersions = Int.MAX_VALUE
+                    minVersions = 1
+                })
+            })
+        } catch (e: Exception) {}
     }
 
     companion object {
