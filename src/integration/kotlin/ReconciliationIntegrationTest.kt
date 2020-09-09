@@ -101,8 +101,11 @@ class ReconciliationIntegrationTest : StringSpec() {
     }
 
     private fun HBaseConnection.createTable(tablename: TableName) {
-        try {admin.createNamespace(NamespaceDescriptor.create(tablename.namespaceAsString).run { build() })}
-        catch (e: Exception) {}
+        try {
+            admin.createNamespace(NamespaceDescriptor.create(tablename.namespaceAsString).run { build() })
+        } catch (e: Exception) {
+            logger.info("Namespace most likely existed already: '${e.message}'")
+        }
 
         try {
             admin.createTable(HTableDescriptor(tablename).apply {
@@ -111,7 +114,9 @@ class ReconciliationIntegrationTest : StringSpec() {
                     minVersions = 1
                 })
             })
-        } catch (e: Exception) {}
+        } catch (e: Exception) {
+            logger.info("Table most likely existed already: '${e.message}'")
+        }
     }
 
     companion object {

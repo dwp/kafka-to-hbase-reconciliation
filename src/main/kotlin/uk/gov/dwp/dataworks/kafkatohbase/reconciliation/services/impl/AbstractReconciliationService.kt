@@ -14,7 +14,7 @@ abstract class AbstractReconciliationService: ScheduledReconciliationService {
     override fun startScheduledReconciliation() {
         logDelay()
         val duration = measureTime { startReconciliation()}
-//        logger.info("Scheduled reconciliation finished", "duration" to "${duration}")
+        logger.info("Scheduled reconciliation finished", "duration" to "${duration}")
     }
 
     private fun logDelay() {
