@@ -1,4 +1,4 @@
-package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories
+package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.impl
 
 import com.nhaarman.mockitokotlin2.*
 import org.apache.hadoop.hbase.TableName
@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.utils.TableNameUtil
 
-class HBaseRepositoryTest {
+class HBaseRepositoryImplTest {
 
     @Test
     fun givenARecordExistsWhenCheckingIfItExistsFromTheTopicThenATrueResponseWillBeReturned() {
@@ -44,7 +44,7 @@ class HBaseRepositoryTest {
             on { decodePrintable(printableId) } doReturn hbaseId
         }
 
-        val hbaseRepository = HBaseRepository(connection, tableNameUtil)
+        val hbaseRepository = HBaseRepositoryImpl(connection, tableNameUtil)
         assertTrue(hbaseRepository.recordExistsInHBase(topic, printableId, version))
 
         verify(connection, times(1)).getTable(tableName)
@@ -88,7 +88,7 @@ class HBaseRepositoryTest {
             on { decodePrintable(printableId) } doReturn hbaseId
         }
 
-        val hbaseRepository = HBaseRepository(connection, tableNameUtil)
+        val hbaseRepository = HBaseRepositoryImpl(connection, tableNameUtil)
         assertFalse(hbaseRepository.recordExistsInHBase(topic, printableId, version))
 
         verify(connection, times(1)).getTable(tableName)

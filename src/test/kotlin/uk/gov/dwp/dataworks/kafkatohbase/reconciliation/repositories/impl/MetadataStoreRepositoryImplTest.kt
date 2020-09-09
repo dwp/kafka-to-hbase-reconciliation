@@ -1,4 +1,4 @@
-package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories
+package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.impl
 
 import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Test
@@ -7,7 +7,7 @@ import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.sql.Statement
 
-class MetadataStoreRepositoryTest {
+class MetadataStoreRepositoryImplTest {
 
     @Test
     fun givenALimitExistsForRecordsReturnedWhenIRequestAListOfRecordsFromMetadataStoreThenTheFirstValueContainsLimit() {
@@ -24,7 +24,7 @@ class MetadataStoreRepositoryTest {
             on { createStatement() } doReturn statement
         }
 
-        val metadataStoreRepository = MetadataStoreRepository(metadataStoreConnection, "ucfs")
+        val metadataStoreRepository = MetadataStoreRepositoryImpl(metadataStoreConnection, "ucfs")
 
         metadataStoreRepository.fetchUnreconciledRecords()
 
@@ -50,7 +50,7 @@ class MetadataStoreRepositoryTest {
             on { prepareStatement(any()) } doReturn statement
         }
 
-        val metadataStoreRepository = MetadataStoreRepository(metadataStoreConnection, "ucfs")
+        val metadataStoreRepository = MetadataStoreRepositoryImpl(metadataStoreConnection, "ucfs")
 
         val hbaseId = "hbase-id"
         val hbaseTimestamp = 100L

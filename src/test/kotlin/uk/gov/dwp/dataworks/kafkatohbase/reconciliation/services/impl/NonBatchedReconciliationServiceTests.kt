@@ -9,8 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.junit4.SpringRunner
-import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.HBaseRepository
-import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.MetadataStoreRepository
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.impl.HBaseRepositoryImpl
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.impl.MetadataStoreRepositoryImpl
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationService
 import java.sql.Timestamp
 
@@ -22,10 +22,10 @@ class NonBatchedReconciliationServiceTests {
 	private lateinit var reconciliationService: ReconciliationService
 
 	@MockBean
-	private lateinit var metadataStoreRepository: MetadataStoreRepository
+	private lateinit var metadataStoreRepository: MetadataStoreRepositoryImpl
 
 	@MockBean
-	private lateinit var HBaseRepository: HBaseRepository
+	private lateinit var HBaseRepository: HBaseRepositoryImpl
 
 	@Test
 	fun willHandleEmptyResultFromMetadataStore() {

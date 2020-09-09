@@ -1,6 +1,7 @@
 package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.impl
 
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.annotation.Profile
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.HBaseRepository
@@ -10,27 +11,9 @@ import uk.gov.dwp.dataworks.logging.DataworksLogger
 import java.sql.Timestamp
 
 @Service
-class BatchedReconciliationService(
-    private val hbaseRepository: HBaseRepository,
-    private val metadataStoreRepository: MetadataStoreRepository) : ReconciliationService {
-
-    companion object {
-        val logger = DataworksLogger.getLogger(ReconciliationService::class.toString())
-    }
-
-    @Value("\${reconciler.fixed.delay.millis}")
-    lateinit var reconciliationDelayMillis: String
-
-    private var delayNeedsLogging = true
-
-    fun logDelay() {
-        if (delayNeedsLogging) {
-            logger.info("Running reconciliation with fixed delay between executions",
-                "fixed_delay_millis" to reconciliationDelayMillis
-            )
-            delayNeedsLogging = false
-        }
-    }
+@Profile("BATCHED")
+class BatchedReconciliationService(private val hbaseRepository: HBaseRepository,
+                                   private val metadataStoreRepository: MetadataStoreRepository) : ReconciliationService {
 
     //Executes with this millis delay between executions
     @Scheduled(fixedDelayString="#{\${reconciler.fixed.delay.millis}}", initialDelay = 1000)
@@ -39,31 +22,12 @@ class BatchedReconciliationService(
         startReconciliation()
     }
 
-    fun startNonBatchedReconciliation() {
-        logger.info("Starting reconciliation of metadata store records")
-        val recordsToReconcile = metadataStoreRepository.fetchUnreconciledRecords()
-        val groupedUnreconciledRecords = metadataStoreRepository.groupedUnreconciledRecords()
-        if (recordsToReconcile.isNotEmpty()) {
-            logger.info("Found records to reconcile",
-                "records_to_reconcile" to recordsToReconcile.size.toString())
-            val totalRecordsReconciled = reconcileRecords(recordsToReconcile)
-
-            logger.debug(
-                    "Finished reconciliation for metadata store",
-                    "records_to_reconcile" to recordsToReconcile.size.toString(),
-                    "total_records_reconciled" to totalRecordsReconciled.toString()
-            )
-        } else {
-            logger.info("There are no records to be reconciled")
-        }
-    }
-
     override fun startReconciliation() {
         val groupedUnreconciledRecords = metadataStoreRepository.groupedUnreconciledRecords()
         if (groupedUnreconciledRecords.isNotEmpty()) {
             groupedUnreconciledRecords.forEach { topic, records ->
-                val wtf = hbaseRepository.recordsExistInHBase(topic, records)
-
+                val wtf = hbaseRepository.recordsNotInHbase(topic, records)
+                println(wtf)
             }
         } else {
         }
@@ -94,4 +58,24 @@ class BatchedReconciliationService(
 
         return totalRecordsReconciled
     }
+
+    fun logDelay() {
+        if (delayNeedsLogging) {
+            logger.info("Running reconciliation with fixed delay between executions",
+                "fixed_delay_millis" to reconciliationDelayMillis
+            )
+            delayNeedsLogging = false
+        }
+    }
+
+
+    @Value("\${reconciler.fixed.delay.millis}")
+    lateinit var reconciliationDelayMillis: String
+
+    private var delayNeedsLogging = true
+
+    companion object {
+        val logger = DataworksLogger.getLogger(ReconciliationService::class.toString())
+    }
+
 }
