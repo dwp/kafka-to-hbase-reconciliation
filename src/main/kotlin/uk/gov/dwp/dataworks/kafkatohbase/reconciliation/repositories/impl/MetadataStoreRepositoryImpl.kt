@@ -74,6 +74,7 @@ class MetadataStoreRepositoryImpl(private val connection: Connection,
                 FROM $table
                 WHERE write_timestamp > CURRENT_DATE - INTERVAL 14 DAY 
                 AND reconciled_result = false
+                LIMIT 100000
             """.trimIndent())
     }
 
