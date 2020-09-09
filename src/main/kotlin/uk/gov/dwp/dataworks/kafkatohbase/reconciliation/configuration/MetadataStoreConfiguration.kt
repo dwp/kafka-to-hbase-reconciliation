@@ -1,5 +1,6 @@
 package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration
 
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -71,7 +72,20 @@ data class MetadataStoreConfiguration(
     }
 
     @Bean
+    @Qualifier("table")
     fun metadatastoreTableName() = table
+
+    @Bean
+    @Qualifier("queryLimit")
+    fun queryLimit() = queryLimit
+
+    @Bean
+    @Qualifier("trimReconciledScale")
+    fun trimReconciledScale() = trimRecordsScale
+
+    @Bean
+    @Qualifier("trimReconciledUnit")
+    fun trimReconciledUnit() = trimRecordsUnit
 
     private fun addShutdownHook(connection: Connection) {
         logger.info("Adding Metastore shutdown hook")

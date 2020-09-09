@@ -1,5 +1,6 @@
 package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories
 
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Repository
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationService
 import uk.gov.dwp.dataworks.logging.DataworksLogger
@@ -11,10 +12,10 @@ import java.sql.Timestamp
 @Repository
 class MetadataStoreRepository(
     private val connection: Connection,
-    private val table: String,
-    private val queryLimit: String,
-    private val trimReconciledScale: String,
-    private val trimReconciledUnit: String
+    @Qualifier("table") private val table: String,
+    @Qualifier("queryLimit") private val queryLimit: String,
+    @Qualifier("trimReconciledScale") private val trimReconciledScale: String,
+    @Qualifier("trimReconciledUnit") private val trimReconciledUnit: String
 ) {
 
     companion object {
@@ -34,14 +35,15 @@ class MetadataStoreRepository(
 
     private fun getUnreconciledRecordsQuery(): ResultSet? {
         val statement = connection.createStatement()
-        return statement.executeQuery(
-            """
+        val sql = """
                 SELECT * FROM $table
                 WHERE write_timestamp > CURRENT_DATE - INTERVAL 14 DAY AND 
                 reconciled_result = false 
                 LIMIT $queryLimit
             """.trimIndent()
-        )
+
+        println(sql)
+        return statement.executeQuery(sql)
     }
 
     private fun markRecordAsReconciled(topicName: String, hbaseId: String, hbaseVersion: Long) =
