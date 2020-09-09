@@ -86,7 +86,7 @@ hbase-populate: hbase-up
 services: hbase-up rdbms-up hbase-populate ## Bring up supporting services in docker
 
 up: services ## Bring up Reconciliation in Docker with supporting services
-	docker-compose -f docker-compose.yaml up --build -d reconciliation
+	docker-compose -f docker-compose.yaml up --build -d reconciliation trim-reconciled-records
 
 restart: ## Restart Kafka2HBase and all supporting services
 	docker-compose restart
@@ -119,7 +119,7 @@ trim-reconciled-integration-test: ## Run the trim reconciled integration tests i
  	}
 	docker-compose -f docker-compose.yaml run --name trim-reconciled-integration-test trim-reconciled-integration-test gradle --no-daemon --rerun-tasks trim-reconciled-integration-test -x test -x unit
 
-integration-test-with-rebuild: integration-test-rebuild reconciliation-integration-test trim-reconciled-integration-test ## Rebuild and re-run only he integration-tests
+integration-test-with-rebuild: integration-test-rebuild reconciliation-integration-test ## Rebuild and re-run only he integration-tests
 
 .PHONY: integration-all ## Build and Run all the tests in containers from a clean start
 integration-all: down destroy build up reconciliation-integration-test trim-reconciled-integration-test
