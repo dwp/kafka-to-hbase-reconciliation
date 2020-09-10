@@ -32,6 +32,6 @@ class TrimReconciledRecordsServiceImplTest {
 
         service.trimReconciledRecords()
 
-
+        // Success is no errors
     }
 }

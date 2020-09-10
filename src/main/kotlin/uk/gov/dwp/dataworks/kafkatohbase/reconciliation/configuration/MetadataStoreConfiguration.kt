@@ -71,20 +71,20 @@ data class MetadataStoreConfiguration(
 
     @Bean
     @Qualifier("table")
-    fun metadatastoreTableName() = table
+    fun table() = table
 
     @Bean
     @Qualifier("queryLimit")
     fun queryLimit() = queryLimit
 
     private fun addShutdownHook(connection: Connection) {
-        logger.info("Adding Metastore shutdown hook")
+        logger.info("Adding Metadata Store shutdown hook")
         Runtime.getRuntime().addShutdownHook(object : Thread() {
             override fun run() {
-                logger.info("Metastore shutdown hook running - closing connection")
+                logger.info("Metadata Store shutdown hook running - closing connection")
                 connection.close()
             }
         })
-        logger.info("Added Metastore shutdown hook")
+        logger.info("Added Metadata Store shutdown hook")
     }
 }
