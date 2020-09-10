@@ -2,10 +2,11 @@ package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.impl
 
 import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Test
+import org.springframework.test.context.ActiveProfiles
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.ReconcilerConfiguration
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.MetadataStoreRepository
 
-
+@ActiveProfiles("TRIM_RECONCILED_RECORDS")
 class TrimReconciledRecordsServiceImplTest {
 
     @Test
