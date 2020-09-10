@@ -3,12 +3,14 @@ package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories
 import org.apache.hadoop.hbase.TableName
 import org.apache.hadoop.hbase.client.Connection
 import org.apache.hadoop.hbase.client.Get
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Repository
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationService
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.utils.TableNameUtil
 import uk.gov.dwp.dataworks.logging.DataworksLogger
 
 @Repository
+@Profile("HBASE")
 class HBaseRepository(private val connection: Connection, private val tableNameUtil: TableNameUtil) {
 
     companion object {

@@ -30,10 +30,10 @@ local-scrub: ## Scrub local output folders
 	gradle clean
 
 local-build: ## Build Kafka2HBase with gradle
-	gradle :unit build -x test -x unit -x integration-test
+	gradle :unit build -x test -x unit -x reconciliation-integration-test reconciliation-integration-test
 
 local-dist: ## Assemble distribution files in build/dist with gradle
-	gradle assembleDist -x test -x unit -x integration-test
+	gradle assembleDist -x test -x unit -x reconciliation-integration-test reconciliation-integration-test
 
 local-test: ## Run the unit tests with gradle
 	gradle --rerun-tasks unit
@@ -86,7 +86,7 @@ hbase-populate: hbase-up
 services: hbase-up rdbms-up hbase-populate ## Bring up supporting services in docker
 
 up: services ## Bring up Reconciliation in Docker with supporting services
-	docker-compose -f docker-compose.yaml up --build -d reconciliation
+	docker-compose -f docker-compose.yaml up --build -d reconciliation trim-reconciled-records
 
 restart: ## Restart Kafka2HBase and all supporting services
 	docker-compose restart
@@ -99,21 +99,30 @@ destroy: down ## Bring down the Kafka2HBase Docker container and services then d
 	docker volume prune -f
 
 integration-test-rebuild: ## Build only integration-test
-	docker-compose build integration-test
+	docker-compose build reconciliation-integration-test trim-reconciled-integration-test
 
-integration-test: ## Run the integration tests in a Docker container
+reconciliation-integration-test: ## Run the reconciliation integration tests in a Docker container
 	@{ \
 		set +e ;\
-		docker stop integration-test ;\
-		docker rm integration-test ;\
+		docker stop reconciliation-integration-test ;\
+		docker rm reconciliation-integration-test ;\
  		set -e ;\
  	}
-	docker-compose -f docker-compose.yaml run --name integration-test integration-test gradle --no-daemon --rerun-tasks integration-test -x test -x unit
+	docker-compose -f docker-compose.yaml run --name reconciliation-integration-test reconciliation-integration-test gradle --no-daemon --rerun-tasks reconciliation-integration-test -x test -x unit
 
-integration-test-with-rebuild: integration-test-rebuild integration-test ## Rebuild and re-run only he integration-tests
+trim-reconciled-integration-test: ## Run the trim reconciled integration tests in a Docker container
+	@{ \
+		set +e ;\
+		docker stop trim-reconciled-integration-test ;\
+		docker rm trim-reconciled-integration-test ;\
+ 		set -e ;\
+ 	}
+	docker-compose -f docker-compose.yaml run --name trim-reconciled-integration-test trim-reconciled-integration-test gradle --no-daemon --rerun-tasks trim-reconciled-integration-test -x test -x unit
+
+integration-test-with-rebuild: integration-test-rebuild reconciliation-integration-test ## Rebuild and re-run only he integration-tests
 
 .PHONY: integration-all ## Build and Run all the tests in containers from a clean start
-integration-all: down destroy build up integration-test
+integration-all: destroy build up reconciliation-integration-test trim-reconciled-integration-test
 
 build: local-all build-base ## build main images
 	docker-compose build
@@ -129,7 +138,7 @@ build-base: ## build the base images which certain images extend.
 		popd; \
 	}
 
-push-local-to-ecr: #Push a temp version of reconciliation to AWS DEV ECR
+push-local-to-ecr: ## Push a temp version of reconciliation to AWS DEV ECR
 	@{ \
 		export AWS_DEV_ACCOUNT=$(aws_dev_account); \
 		export TEMP_IMAGE_NAME=$(temp_image_name); \

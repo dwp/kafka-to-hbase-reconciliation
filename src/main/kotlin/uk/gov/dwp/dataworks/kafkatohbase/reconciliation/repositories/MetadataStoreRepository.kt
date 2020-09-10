@@ -1,5 +1,6 @@
 package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories
 
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Repository
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationService
 import uk.gov.dwp.dataworks.logging.DataworksLogger
@@ -9,8 +10,11 @@ import java.sql.ResultSet
 import java.sql.Timestamp
 
 @Repository
-class MetadataStoreRepository(private val connection: Connection,
-                              private val table: String) {
+class MetadataStoreRepository(
+    private val connection: Connection,
+    @Qualifier("table") private val table: String,
+    @Qualifier("queryLimit") private val queryLimit: String
+) {
 
     companion object {
         val logger = DataworksLogger.getLogger(ReconciliationService::class.toString())
@@ -29,24 +33,34 @@ class MetadataStoreRepository(private val connection: Connection,
 
     private fun getUnreconciledRecordsQuery(): ResultSet? {
         val statement = connection.createStatement()
-        return statement.executeQuery(
-            """
+        val sql = """
                 SELECT * FROM $table
                 WHERE write_timestamp > CURRENT_DATE - INTERVAL 14 DAY AND 
                 reconciled_result = false 
-                LIMIT 14
+                LIMIT $queryLimit
             """.trimIndent()
-        )
+
+        println(sql)
+        return statement.executeQuery(sql)
     }
 
     private fun markRecordAsReconciled(topicName: String, hbaseId: String, hbaseVersion: Long) =
-        with (markRecordAsReconciledStatement) {
+        with(markRecordAsReconciledStatement) {
             setString(1, topicName)
             setString(2, hbaseId)
             setTimestamp(3, Timestamp(hbaseVersion))
             executeUpdate()
         }
 
+    private val markRecordAsReconciledStatement: PreparedStatement by lazy {
+        connection.prepareStatement(
+            """
+                UPDATE $table
+                SET reconciled_result=true, reconciled_timestamp=CURRENT_TIMESTAMP
+                WHERE topic_name= ? AND hbase_id = ? and hbase_timestamp = ?
+            """.trimIndent()
+        )
+    }
 
     private fun mapResultSet(resultSet: ResultSet?): MutableList<Map<String, Any>> {
 
@@ -78,12 +92,31 @@ class MetadataStoreRepository(private val connection: Connection,
         return result
     }
 
-    private val markRecordAsReconciledStatement: PreparedStatement by lazy {
-        connection.prepareStatement(
+    fun deleteRecordsOlderThanPeriod(trimReconciledScale: String, trimReconciledUnit: String): Int {
+
+        logger.info(
+            "Deleting records in Metadata Store by scale and unit",
+            "scale" to trimReconciledScale,
+            "unit" to trimReconciledUnit
+        )
+
+        val statement = connection.createStatement()
+
+        val deletedCount = statement.executeUpdate(
             """
-                UPDATE $table
-                SET reconciled_result=true, reconciled_timestamp=CURRENT_TIMESTAMP
-                WHERE topic_name= ? AND hbase_id = ? and hbase_timestamp = ?
-            """.trimIndent())
+                DELETE FROM $table
+                WHERE reconciled_result = TRUE
+                AND reconciled_timestamp < CURRENT_DATE - INTERVAL $trimReconciledScale $trimReconciledUnit
+            """.trimIndent()
+        )
+
+        logger.info(
+            "Deleted records in Metadata Store by scale and unit",
+            "scale" to trimReconciledScale,
+            "unit" to trimReconciledUnit,
+            "deleted_count" to deletedCount.toString()
+        )
+
+        return deletedCount
     }
 }

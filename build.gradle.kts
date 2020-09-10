@@ -17,15 +17,6 @@ repositories {
 	maven(url = "https://jitpack.io")
 }
 
-//application {
-//	mainClassName = "uk.gov.dwp.dataworks.kafkatohbase.reconciliation.ReconciliationApplication"
-//}
-
-//tasks.getByName<BootRun>("bootRun") {
-//	main = "uk.gov.dwp.dataworks.kafkatohbase.reconciliation.ReconciliationApplication"
-//	systemProperties = properties
-//}
-
 dependencies {
 	annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 
@@ -78,8 +69,8 @@ sourceSets {
 	}
 }
 
-tasks.register<Test>("integration-test") {
-	description = "Runs the integration tests"
+tasks.register<Test>("reconciliation-integration-test") {
+	description = "Runs the reconciliation integration tests"
 	group = "verification"
 	testClassesDirs = sourceSets["integration"].output.classesDirs
 	classpath = sourceSets["integration"].runtimeClasspath
@@ -90,6 +81,27 @@ tasks.register<Test>("integration-test") {
 	//copy all env vars from unix/your integration container into the test
 	setEnvironment(System.getenv())
     //to copy individual ones do this
+	//environment("ABC", System.getEnv("ABC"))
+
+	useJUnitPlatform { }
+	testLogging {
+		exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+		events = setOf(org.gradle.api.tasks.testing.logging.TestLogEvent.SKIPPED, org.gradle.api.tasks.testing.logging.TestLogEvent.PASSED, org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED, org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_OUT)
+	}
+}
+
+tasks.register<Test>("trim-reconciled-integration-test") {
+	description = "Runs the trim reconciled records integration tests"
+	group = "verification"
+	testClassesDirs = sourceSets["integration"].output.classesDirs
+	classpath = sourceSets["integration"].runtimeClasspath
+	filter {
+		includeTestsMatching("TrimReconciledIntegrationKoTest*")
+	}
+
+	//copy all env vars from unix/your integration container into the test
+	setEnvironment(System.getenv())
+	//to copy individual ones do this
 	//environment("ABC", System.getEnv("ABC"))
 
 	useJUnitPlatform { }
