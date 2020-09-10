@@ -24,7 +24,7 @@ class MetadataStoreRepositoryImplTest {
     @Test
     fun testReconcileNoRecords() =
             mock<Connection>().run {
-                repository(this).reconcileRecords(listOf<UnreconciledRecord>())
+                repository(this).reconcileRecords(listOf())
                 verifyZeroInteractions(this)
             }
 
