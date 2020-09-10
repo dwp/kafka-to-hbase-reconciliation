@@ -1,5 +1,6 @@
 package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.impl
 
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.annotation.Profile
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
@@ -13,7 +14,9 @@ import uk.gov.dwp.dataworks.logging.DataworksLogger
 @Profile("TRIM_RECONCILED_RECORDS")
 class TrimReconciledRecordsServiceImpl(
     private val reconcilerConfiguration: ReconcilerConfiguration,
-    private val metadataStoreRepository: MetadataStoreRepository
+    private val metadataStoreRepository: MetadataStoreRepository,
+    @Qualifier("trimReconciledScale") private val trimReconciledScale: String,
+    @Qualifier("trimReconciledUnit") private val trimReconciledUnit: String
 ) : TrimReconciledRecordsService {
 
     companion object {
@@ -42,7 +45,7 @@ class TrimReconciledRecordsServiceImpl(
     override fun trimReconciledRecords() {
         logger.info("Starting trim for reconciled records in the metadata store")
 
-        val deletedCount = metadataStoreRepository.deleteRecordsOlderThanPeriod()
+        val deletedCount = metadataStoreRepository.deleteRecordsOlderThanPeriod(trimReconciledScale, trimReconciledUnit)
 
         logger.info("Finished trim for reconciled units",
             "deleted_count" to deletedCount.toString()

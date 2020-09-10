@@ -13,9 +13,7 @@ import java.sql.Timestamp
 class MetadataStoreRepository(
     private val connection: Connection,
     @Qualifier("table") private val table: String,
-    @Qualifier("queryLimit") private val queryLimit: String,
-    @Qualifier("trimReconciledScale") private val trimReconciledScale: String,
-    @Qualifier("trimReconciledUnit") private val trimReconciledUnit: String
+    @Qualifier("queryLimit") private val queryLimit: String
 ) {
 
     companion object {
@@ -94,7 +92,7 @@ class MetadataStoreRepository(
         return result
     }
 
-    fun deleteRecordsOlderThanPeriod(): Int {
+    fun deleteRecordsOlderThanPeriod(trimReconciledScale: String, trimReconciledUnit: String): Int {
 
         logger.info(
             "Deleting records in Metadata Store by scale and unit",

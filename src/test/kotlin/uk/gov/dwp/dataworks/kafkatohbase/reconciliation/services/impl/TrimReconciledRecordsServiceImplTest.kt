@@ -1,37 +1,32 @@
 package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.impl
 
-import com.nhaarman.mockitokotlin2.whenever
+import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Test
-import org.junit.runner.RunWith
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.mock.mockito.MockBean
-import org.springframework.test.context.ActiveProfiles
-import org.springframework.test.context.junit4.SpringRunner
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.ReconcilerConfiguration
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.MetadataStoreRepository
 
-@RunWith(SpringRunner::class)
-@SpringBootTest(classes = [TrimReconciledRecordsServiceImpl::class])
-@ActiveProfiles("TRIM_RECONCILED_RECORDS")
+
 class TrimReconciledRecordsServiceImplTest {
-
-    @Autowired
-    private lateinit var service: TrimReconciledRecordsServiceImpl
-
-    @MockBean
-    private lateinit var reconcilerConfiguration: ReconcilerConfiguration
-
-    @MockBean
-    private lateinit var metadataStoreRepository: MetadataStoreRepository
 
     @Test
     fun willDeleteRecordsOlderThanScaleAndUnit() {
 
-        whenever(metadataStoreRepository.deleteRecordsOlderThanPeriod()).thenReturn(1)
+        val trimReconciledScale = "1"
+        val trimReconciledUnit = "DAY"
+
+        val reconcilerConfiguration = mock<ReconcilerConfiguration>()
+        val metadataStoreRepository = mock<MetadataStoreRepository>() {
+            on {
+                deleteRecordsOlderThanPeriod(trimReconciledScale, trimReconciledUnit)
+            } doReturn 1
+        }
+
+        val service = TrimReconciledRecordsServiceImpl(
+            reconcilerConfiguration, metadataStoreRepository, trimReconciledScale, trimReconciledUnit
+        )
 
         service.trimReconciledRecords()
 
-        // Success is no errors
+        verify(metadataStoreRepository, times(1)).deleteRecordsOlderThanPeriod(trimReconciledScale, trimReconciledUnit)
     }
 }

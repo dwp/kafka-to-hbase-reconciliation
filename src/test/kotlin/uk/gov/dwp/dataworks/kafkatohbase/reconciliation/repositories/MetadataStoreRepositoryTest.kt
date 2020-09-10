@@ -24,7 +24,7 @@ class MetadataStoreRepositoryTest {
             on { createStatement() } doReturn statement
         }
 
-        val metadataStoreRepository = MetadataStoreRepository(metadataStoreConnection, "ucfs", "14", "1", "WEEK")
+        val metadataStoreRepository = MetadataStoreRepository(metadataStoreConnection, "ucfs", "14")
 
         metadataStoreRepository.fetchUnreconciledRecords()
 
@@ -50,7 +50,7 @@ class MetadataStoreRepositoryTest {
             on { prepareStatement(any()) } doReturn statement
         }
 
-        val metadataStoreRepository = MetadataStoreRepository(metadataStoreConnection, "ucfs", "14", "1", "WEEK")
+        val metadataStoreRepository = MetadataStoreRepository(metadataStoreConnection, "ucfs", "14")
 
         val hbaseId = "hbase-id"
         val hbaseTimestamp = 100L
@@ -62,6 +62,9 @@ class MetadataStoreRepositoryTest {
 
     @Test
     fun givenRecordsOlderThanScaleAndUnitExistWhenRequestingToTrimRecordsThenRecordsAreDeleted() {
+
+        val trimReconciledScale = "1"
+        val trimReconciledUnit = "DAY"
 
         val rowsUpdated = 1
 
@@ -75,9 +78,9 @@ class MetadataStoreRepositoryTest {
             on { createStatement() } doReturn statement
         }
 
-        val metadataStoreRepository = MetadataStoreRepository(metadataStoreConnection, "ucfs", "14", "1", "WEEK")
+        val metadataStoreRepository = MetadataStoreRepository(metadataStoreConnection, "ucfs", "14")
 
-        metadataStoreRepository.deleteRecordsOlderThanPeriod()
+        metadataStoreRepository.deleteRecordsOlderThanPeriod(trimReconciledScale, trimReconciledUnit)
 
         verify(metadataStoreConnection, times(1)).createStatement()
         verify(statement, times(1)).executeUpdate(any())

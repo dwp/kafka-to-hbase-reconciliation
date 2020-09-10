@@ -15,9 +15,9 @@ data class ReconcilerConfiguration(
 
     @Bean
     @Qualifier("trimReconciledScale")
-    fun trimReconciledScale() = trimReconciledScale
+    fun trimReconciledScale() = trimReconciledScale!!
 
     @Bean
     @Qualifier("trimReconciledUnit")
-    fun trimReconciledUnit() = trimReconciledUnit
+    fun trimReconciledUnit() = trimReconciledUnit!!
 }
