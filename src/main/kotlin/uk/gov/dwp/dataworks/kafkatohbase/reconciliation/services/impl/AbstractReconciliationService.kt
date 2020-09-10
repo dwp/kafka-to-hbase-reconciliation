@@ -13,7 +13,7 @@ abstract class AbstractReconciliationService: ScheduledReconciliationService {
     @Scheduled(fixedDelayString="#{\${reconciler.fixed.delay.millis}}", initialDelay = 1000)
     override fun startScheduledReconciliation() {
         logDelay()
-        val duration = measureTime { startReconciliation()}
+        val duration = measureTime { startReconciliation() }
         logger.info("Scheduled reconciliation finished", "duration" to "$duration")
     }
 
