@@ -81,23 +81,6 @@ services:
       - 16201:16201
     container_name: hbase
 
-  hbase-populate:
-    image: hbase-populate
-    build:
-      dockerfile: docker/hbasepopulate/Dockerfile
-      context: .
-    container_name: hbase-populate
-    depends_on:
-      - hbase
-    volumes:
-      - shared-volume:/opt/reconciliation/data
-    command: >-
-      --completed-flag /opt/reconciliation/data/ready
-      --dump-table-contents
-      --remove-output-file /opt/reconciliation/data/ucdata-file-output.txt
-      --test-configuration-file test-config.json
-      --zookeeper-quorum hbase
-
   metadatastore:
     image: mysql:5.7
     restart: always

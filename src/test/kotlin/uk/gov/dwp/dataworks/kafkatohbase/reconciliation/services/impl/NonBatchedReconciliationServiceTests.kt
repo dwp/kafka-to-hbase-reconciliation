@@ -11,20 +11,21 @@ import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.HBaseRepository
-import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.MetadataStoreRepository
-import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationService
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.impl.HBaseRepositoryImpl
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.impl.MetadataStoreRepositoryImpl
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ScheduledReconciliationService
 import java.sql.Timestamp
 
 @RunWith(SpringRunner::class)
-@SpringBootTest(classes = [ReconciliationServiceImpl::class])
-@ActiveProfiles("RECONCILIATION")
-class ReconciliationServiceImplTests {
+@SpringBootTest(classes = [NonBatchedReconciliationService::class])
+@ActiveProfiles("NON_BATCHED_RECONCILIATION")
+class NonBatchedReconciliationServiceTests {
 
 	@Autowired
-	private lateinit var reconciliationService: ReconciliationService
+	private lateinit var reconciliationService: NonBatchedReconciliationService
 
 	@MockBean
-	private lateinit var metadataStoreRepository: MetadataStoreRepository
+	private lateinit var metadataStoreRepository: MetadataStoreRepositoryImpl
 
 	@MockBean
 	private lateinit var hbaseRepository: HBaseRepository

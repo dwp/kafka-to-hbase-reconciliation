@@ -4,14 +4,14 @@ import com.amazonaws.services.secretsmanager.model.GetSecretValueRequest
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.stereotype.Component
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.SecretsManagerConfiguration
-import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationService
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ScheduledReconciliationService
 import uk.gov.dwp.dataworks.logging.DataworksLogger
 
 @Component
 class AWSSecretHelper : SecretHelperInterface {
 
     companion object {
-        val logger = DataworksLogger.getLogger(ReconciliationService::class.toString())
+        val logger = DataworksLogger.getLogger(ScheduledReconciliationService::class.toString())
     }
 
     val configuration: SecretsManagerConfiguration = SecretsManagerConfiguration()

@@ -46,7 +46,7 @@ data class MetadataStoreConfiguration(
             }
         }
 
-        HBaseConfiguration.logger.info("Metastore Configuration loaded", "metastore_properties" to properties.toString())
+        logger.info("Metadata Store Configuration loaded", "metastore_properties" to properties.toString())
         return properties
     }
 

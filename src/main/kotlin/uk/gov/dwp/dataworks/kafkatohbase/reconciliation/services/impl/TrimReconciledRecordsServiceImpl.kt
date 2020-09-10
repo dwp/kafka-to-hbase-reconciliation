@@ -6,7 +6,6 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.ReconcilerConfiguration
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.MetadataStoreRepository
-import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationService
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.TrimReconciledRecordsService
 import uk.gov.dwp.dataworks.logging.DataworksLogger
 
@@ -18,10 +17,6 @@ class TrimReconciledRecordsServiceImpl(
     @Qualifier("trimReconciledScale") private val trimReconciledScale: String,
     @Qualifier("trimReconciledUnit") private val trimReconciledUnit: String
 ) : TrimReconciledRecordsService {
-
-    companion object {
-        val logger = DataworksLogger.getLogger(ReconciliationService::class.toString())
-    }
 
     private var delayNeedsLogging = true
 
@@ -51,4 +46,9 @@ class TrimReconciledRecordsServiceImpl(
             "deleted_count" to deletedCount.toString()
         )
     }
+
+    companion object {
+        val logger = DataworksLogger.getLogger(TrimReconciledRecordsServiceImpl::class.toString())
+    }
+
 }
