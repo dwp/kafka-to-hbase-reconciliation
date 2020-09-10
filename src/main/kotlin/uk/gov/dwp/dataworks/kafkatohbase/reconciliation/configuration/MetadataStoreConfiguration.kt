@@ -1,10 +1,11 @@
 package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration
 
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.secrets.AWSSecretHelper
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.secrets.SecretHelperInterface
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.utils.readFile
 import uk.gov.dwp.dataworks.logging.DataworksLogger
 import java.sql.Connection
@@ -23,8 +24,12 @@ data class MetadataStoreConfiguration(
     var databaseName: String? = "NOT_SET",
     var caCertPath: String? = "NOT_SET",
     var queryLimit: String? = "NOT_SET",
-    var useAwsSecrets: String? = "NOT_SET"
+    var useAwsSecrets: String? = "NOT_SET",
 ) {
+
+
+    @Autowired
+    private lateinit var secretHelper: SecretHelperInterface
 
     companion object {
         val logger = DataworksLogger.getLogger(MetadataStoreConfiguration::class.toString())
@@ -53,7 +58,7 @@ data class MetadataStoreConfiguration(
     @Bean
     fun metadataStoreConnection(): Connection {
         val metaStorePassword = if (isUsingAWS) {
-            AWSSecretHelper().getSecret(passwordSecretName!!)!!
+            secretHelper.getSecret(passwordSecretName!!)!!
         } else {
             logger.info("Using dummy password")
             dummyPassword!!
