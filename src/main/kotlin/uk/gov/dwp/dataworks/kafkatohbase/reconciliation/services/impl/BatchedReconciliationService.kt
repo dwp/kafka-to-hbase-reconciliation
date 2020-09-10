@@ -7,7 +7,7 @@ import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.HBaseReposi
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.MetadataStoreRepository
 
 @Service
-@Profile("BATCHED")
+@Profile("RECONCILIATION")
 class BatchedReconciliationService(private val hbaseRepository: HBaseRepository,
                                    private val metadataStoreRepository: MetadataStoreRepository):
     AbstractReconciliationService() {

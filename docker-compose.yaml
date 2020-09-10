@@ -39,7 +39,7 @@ services:
       METADATASTORE_CA_CERT_PATH: "/certs/AmazonRootCA1.pem"
       METADATASTORE_QUERY_LIMIT: "20"
       METADATASTORE_USE_AWS_SECRETS: "false"
-      SPRING_PROFILES_ACTIVE: DUMMY_SECRETS,BATCHED,RECONCILIATION,HBASE
+      SPRING_PROFILES_ACTIVE: DUMMY_SECRETS,RECONCILIATION,HBASE
 
   trim-reconciled-records:
     image: trim-reconciled-records:latest

@@ -18,10 +18,11 @@ import java.sql.Timestamp
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(classes = [NonBatchedReconciliationService::class])
+@ActiveProfiles("NON_BATCHED_RECONCILIATION")
 class NonBatchedReconciliationServiceTests {
 
 	@Autowired
-	private lateinit var reconciliationService: ScheduledReconciliationService
+	private lateinit var reconciliationService: NonBatchedReconciliationService
 
 	@MockBean
 	private lateinit var metadataStoreRepository: MetadataStoreRepositoryImpl
