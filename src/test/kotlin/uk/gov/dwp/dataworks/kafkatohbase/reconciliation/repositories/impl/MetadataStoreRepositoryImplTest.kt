@@ -22,11 +22,12 @@ class MetadataStoreRepositoryImplTest {
     fun testReconcileRecordsExceptionWithoutAutoCommit() = testRollback(false)
 
     @Test
-    fun testReconcileNoRecords() {
-        val connection = mock<Connection>()
-        repository(connection).reconcileRecords(listOf<UnreconciledRecord>())
-        verifyZeroInteractions(connection)
-    }
+    fun testReconcileNoRecords() =
+            mock<Connection>().run {
+                repository(this).reconcileRecords(listOf<UnreconciledRecord>())
+                verifyZeroInteractions(this)
+            }
+
 
     @Test
     fun testGroupedUnreconciledRecords() {
