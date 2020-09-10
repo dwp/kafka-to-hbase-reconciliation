@@ -9,8 +9,8 @@ import uk.gov.dwp.dataworks.logging.DataworksLogger
 import java.sql.Timestamp
 
 @Service
-@Profile("!BATCHED")
-class NonBatchedReconciliationService(private val repository: HBaseRepository,
+@Profile("NON_BATCHED_RECONCILIATION")
+class NonBatchedReconciliationService(private val hbaseRepository: HBaseRepository,
                                       private val metadataStoreRepository: MetadataStoreRepository):
     AbstractReconciliationService() {
 
@@ -40,8 +40,8 @@ class NonBatchedReconciliationService(private val repository: HBaseRepository,
             val hbaseId = record["hbase_id"] as String
             val hbaseTimestamp = record["hbase_timestamp"] as Timestamp
 
-            if (repository.recordExistsInHBase(topicName, hbaseId, hbaseTimestamp.time)) {
-                logger.info("Reconciling record",
+            if (hbaseRepository.recordExistsInHBase(topicName, hbaseId, hbaseTimestamp.time)) {
+                logger.info("Reconcilling record",
                         "topic_name" to topicName,
                         "hbase_id" to hbaseId,
                         "hbase_timestamp" to hbaseTimestamp.toString())

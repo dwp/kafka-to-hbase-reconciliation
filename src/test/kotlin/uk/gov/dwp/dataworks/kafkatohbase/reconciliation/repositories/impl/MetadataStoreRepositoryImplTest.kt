@@ -94,6 +94,31 @@ class MetadataStoreRepositoryImplTest {
     }
 
     @Test
+    fun givenRecordsOlderThanScaleAndUnitExistWhenRequestingToTrimRecordsThenRecordsAreDeleted() {
+
+        val trimReconciledScale = "1"
+        val trimReconciledUnit = "DAY"
+
+        val rowsUpdated = 1
+
+        val statement = mock<Statement> {
+            on {
+                executeUpdate(any())
+            } doReturn rowsUpdated
+        }
+
+        val metadataStoreConnection = mock<Connection> {
+            on { createStatement() } doReturn statement
+        }
+
+        val metadataStoreRepository = MetadataStoreRepositoryImpl(metadataStoreConnection, "ucfs")
+
+        metadataStoreRepository.deleteRecordsOlderThanPeriod(trimReconciledScale, trimReconciledUnit)
+
+        verify(metadataStoreConnection, times(1)).createStatement()
+        verify(statement, times(1)).executeUpdate(any())
+    }
+    @Test
     fun givenRecordExistsToBeReconciledWhenRequestingToReconcileATopicNameThenTheTopicNameIsMarkedAsReconciled() {
 
         val topicName = "to:reconcile"

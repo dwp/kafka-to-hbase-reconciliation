@@ -1,8 +1,8 @@
 package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.impl
 
 import com.nhaarman.mockitokotlin2.*
-import junit.framework.Assert.assertEquals
-import junit.framework.Assert.assertTrue
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.domain.UnreconciledRecord
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.HBaseRepository

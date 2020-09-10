@@ -7,4 +7,5 @@ interface MetadataStoreRepository {
     fun reconcileRecord(topicName: String, hbaseId: String, version: Long)
     fun reconcileRecords(unreconciled: List<UnreconciledRecord>)
     fun fetchUnreconciledRecords(): List<Map<String, Any>>
+    fun deleteRecordsOlderThanPeriod(trimReconciledScale: String, trimReconciledUnit: String): Int
 }

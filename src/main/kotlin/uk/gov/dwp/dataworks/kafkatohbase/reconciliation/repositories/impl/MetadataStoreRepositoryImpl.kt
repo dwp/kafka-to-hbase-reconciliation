@@ -70,6 +70,33 @@ class MetadataStoreRepositoryImpl(private val connection: Connection,
         )
     }
 
+    override fun deleteRecordsOlderThanPeriod(trimReconciledScale: String, trimReconciledUnit: String): Int {
+
+        logger.info(
+            "Deleting records in Metadata Store by scale and unit",
+            "scale" to trimReconciledScale,
+            "unit" to trimReconciledUnit
+        )
+
+        val statement = connection.createStatement()
+
+        val deletedCount = statement.executeUpdate(
+            """
+                DELETE FROM $table
+                WHERE reconciled_result = TRUE
+                AND reconciled_timestamp < CURRENT_DATE - INTERVAL $trimReconciledScale $trimReconciledUnit
+            """.trimIndent()
+        )
+
+        logger.info(
+            "Deleted records in Metadata Store by scale and unit",
+            "scale" to trimReconciledScale,
+            "unit" to trimReconciledUnit,
+            "deleted_count" to deletedCount.toString()
+        )
+
+        return deletedCount
+    }
 
     private val unreconciledRecordsStatement: PreparedStatement by lazy {
         connection.prepareStatement("""
@@ -153,5 +180,4 @@ class MetadataStoreRepositoryImpl(private val connection: Connection,
     companion object {
         private val logger = DataworksLogger.getLogger(ScheduledReconciliationService::class.toString())
     }
-
 }

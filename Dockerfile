@@ -17,7 +17,6 @@ COPY ./AmazonRootCA1.pem /certs/
 RUN chown -R ${GROUP_NAME}:${USER_NAME} /certs
 RUN chmod -R a+rx /certs
 RUN chmod 600 /certs/AmazonRootCA1.pem
-RUN ls -la /certs
 
 RUN useradd ${USER} && \
         chown -R ${USER}.${USER} . && \

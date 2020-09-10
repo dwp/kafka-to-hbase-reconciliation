@@ -6,18 +6,16 @@ services:
     image: reconciliation:latest
     build: ./
     container_name: reconciliation
-    ports:
-      - "5005:5005"
     depends_on:
       - hbase
       - metadatastore
     environment:
-      JAVA_OPTS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
       CONTAINER_VERSION: "latest"
       ENVIRONMENT: "local-dev"
       APPLICATION_NAME: "reconciliation"
       APP_VERSION: "test"
       LOG_LEVEL: DEBUG
+      RECONCILER_TRIM_RECORDS_FIXED_DELAY_MILLIS: "1000"
       RECONCILER_FIXED_DELAY_MILLIS: "1000"
       SECRETS_REGION: "eu-west-2"
       SECRETS_METADATA_STORE_PASSWORD_SECRET: "metastore_password"
@@ -41,7 +39,38 @@ services:
       METADATASTORE_CA_CERT_PATH: "/certs/AmazonRootCA1.pem"
       METADATASTORE_QUERY_LIMIT: "20"
       METADATASTORE_USE_AWS_SECRETS: "false"
-      SPRING_PROFILES_ACTIVE: DUMMY_SECRETS,BATCHED
+      SPRING_PROFILES_ACTIVE: DUMMY_SECRETS,BATCHED,RECONCILIATION,HBASE
+
+  trim-reconciled-records:
+    image: trim-reconciled-records:latest
+    build: ./
+    container_name: trim-reconciled-records
+    depends_on:
+      - hbase
+      - metadatastore
+    environment:
+      CONTAINER_VERSION: "latest"
+      ENVIRONMENT: "local-dev"
+      APPLICATION_NAME: "trim-reconciled-records"
+      APP_VERSION: "test"
+      LOG_LEVEL: DEBUG
+      RECONCILER_TRIM_RECORDS_FIXED_DELAY_MILLIS: "1000"
+      RECONCILER_FIXED_DELAY_MILLIS: "1000"
+      SECRETS_REGION: "eu-west-2"
+      SECRETS_METADATA_STORE_PASSWORD_SECRET: "metastore_password"
+      METADATASTORE_USER: "reconciliationwriter"
+      METADATASTORE_PASSWORD_SECRET_NAME: "metastore_password"
+      METADATASTORE_DUMMY_PASSWORD: "my-password"
+      METADATASTORE_DATABASE_NAME: "metadatastore"
+      METADATASTORE_ENDPOINT: "metadatastore"
+      METADATASTORE_PORT: "3306"
+      METADATASTORE_TABLE: "ucfs"
+      METADATASTORE_CA_CERT_PATH: "/certs/AmazonRootCA1.pem"
+      METADATASTORE_QUERY_LIMIT: "20"
+      METADATASTORE_USE_AWS_SECRETS: "false"
+      RECONCILER_TRIM_RECONCILED_SCALE: "1"
+      RECONCILER_TRIM_RECONCILED_UNIT: "DAY"
+      SPRING_PROFILES_ACTIVE: DUMMY_SECRETS,TRIM_RECONCILED_RECORDS
 
   hbase:
     image: harisekhon/hbase:1.4
@@ -64,9 +93,9 @@ services:
       MYSQL_USER: "reconciliationwriter"
       MYSQL_PASSWORD: "my-password"
 
-  integration-test:
+  reconciliation-integration-test:
     image: reconciliation-integration:latest
-    container_name: integration-test
+    container_name: reconciliation-integration-test
     build:
       dockerfile: docker/integration/Dockerfile
       context: .
@@ -102,7 +131,50 @@ services:
       METADATASTORE_CA_CERT_PATH: "/certs/AmazonRootCA1.pem"
       METADATASTORE_QUERY_LIMIT: "20"
       METADATASTORE_USE_AWS_SECRETS: "false"
-      SPRING_PROFILES_ACTIVE: DUMMY_SECRETS
+      SPRING_PROFILES_ACTIVE: DUMMY_SECRETS,RECONCILIATION,HBASE
+
+  trim-reconciled-integration-test:
+    image: trim-reconciled-integration:latest
+    container_name: trim-reconciled-integration-test
+    build:
+      dockerfile: docker/integration/Dockerfile
+      context: .
+    depends_on:
+      - trim-reconciled-records
+    command: "gradle --rerun-tasks integration"
+    environment:
+      CONTAINER_VERSION: "latest"
+      ENVIRONMENT: "local-dev"
+      APPLICATION_NAME: "reconciliation"
+      APP_VERSION: "test"
+      LOG_LEVEL: DEBUG
+      RECONCILER_FIXED_DELAY_MILLIS: "1000"
+      SECRETS_REGION: "eu-west-2"
+      SECRETS_METADATA_STORE_PASSWORD_SECRET: "metastore_password"
+      HBASE_TABLE_PATTERN: ([-\w]+)\.([-\w]+)
+      HBASE_ZOOKEEPER_PARENT: "/hbase"
+      HBASE_ZOOKEEPER_PORT: "2181"
+      HBASE_ZOOKEEPER_QUORUM: "hbase"
+      HBASE_RPC_TIMEOUT_MILLISECONDS: "1200"
+      HBASE_CLIENT_TIMEOUT_MS: "1200"
+      HBASE_CLIENT_SCANNER_TIMEOUT_PERIOD_MS: "12000"
+      HBASE_OPERATION_TIMEOUT_MILLISECONDS": "1800"
+      HBASE_PAUSE_MILLISECONDS: "50"
+      HBASE_RETRIES": "3"
+      METADATASTORE_USER: "reconciliationwriter"
+      METADATASTORE_PASSWORD_SECRET_NAME: "metastore_password"
+      METADATASTORE_DUMMY_PASSWORD: "my-password"
+      METADATASTORE_DATABASE_NAME: "metadatastore"
+      METADATASTORE_ENDPOINT: "metadatastore"
+      METADATASTORE_PORT: "3306"
+      METADATASTORE_TABLE: "ucfs"
+      METADATASTORE_CA_CERT_PATH: "/certs/AmazonRootCA1.pem"
+      METADATASTORE_QUERY_LIMIT: "20"
+      METADATASTORE_USE_AWS_SECRETS: "false"
+      RECONCILER_TRIM_RECONCILED_FIXED_DELAY_MILLIS: "5000"
+      RECONCILER_TRIM_RECONCILED_SCALE: "1"
+      RECONCILER_TRIM_RECONCILED_UNIT: "DAY"
+      SPRING_PROFILES_ACTIVE: DUMMY_SECRETS,TRIM_RECONCILED_RECORDS
 
 volumes:
   shared-volume:
