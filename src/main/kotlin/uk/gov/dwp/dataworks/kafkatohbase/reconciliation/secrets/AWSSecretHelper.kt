@@ -3,11 +3,13 @@ package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.secrets
 import com.amazonaws.services.secretsmanager.AWSSecretsManager
 import com.amazonaws.services.secretsmanager.model.GetSecretValueRequest
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ScheduledReconciliationService
 import uk.gov.dwp.dataworks.logging.DataworksLogger
 
 @Component
+@Profile("!DUMMY_SECRETS")
 class AWSSecretHelper(private val secretsManager: AWSSecretsManager) : SecretHelperInterface {
 
     companion object {
