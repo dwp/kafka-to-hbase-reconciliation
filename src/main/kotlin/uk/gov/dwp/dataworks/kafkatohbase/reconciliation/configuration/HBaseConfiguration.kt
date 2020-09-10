@@ -7,10 +7,12 @@ import org.apache.hadoop.hbase.client.ConnectionFactory
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Profile
 import uk.gov.dwp.dataworks.logging.DataworksLogger
 
 @Configuration
 @ConfigurationProperties(prefix = "hbase")
+@Profile("HBASE")
 data class HBaseConfiguration(
     var zookeeperParent: String? = "NOT_SET",
     var zookeeperQuorum: String? = "NOT_SET",

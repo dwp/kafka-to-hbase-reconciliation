@@ -23,9 +23,7 @@ data class MetadataStoreConfiguration(
     var databaseName: String? = "NOT_SET",
     var caCertPath: String? = "NOT_SET",
     var queryLimit: String? = "NOT_SET",
-    var useAwsSecrets: String? = "NOT_SET",
-    var trimRecordsScale: String? = "NOT_SET",
-    var trimRecordsUnit: String? = "NOT_SET"
+    var useAwsSecrets: String? = "NOT_SET"
 ) {
 
     companion object {
@@ -78,14 +76,6 @@ data class MetadataStoreConfiguration(
     @Bean
     @Qualifier("queryLimit")
     fun queryLimit() = queryLimit
-
-    @Bean
-    @Qualifier("trimReconciledScale")
-    fun trimReconciledScale() = trimRecordsScale
-
-    @Bean
-    @Qualifier("trimReconciledUnit")
-    fun trimReconciledUnit() = trimRecordsUnit
 
     private fun addShutdownHook(connection: Connection) {
         logger.info("Adding Metastore shutdown hook")

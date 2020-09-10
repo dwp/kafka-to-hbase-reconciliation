@@ -122,7 +122,7 @@ trim-reconciled-integration-test: ## Run the trim reconciled integration tests i
 integration-test-with-rebuild: integration-test-rebuild reconciliation-integration-test ## Rebuild and re-run only he integration-tests
 
 .PHONY: integration-all ## Build and Run all the tests in containers from a clean start
-integration-all: down destroy build up reconciliation-integration-test trim-reconciled-integration-test
+integration-all: destroy build up reconciliation-integration-test trim-reconciled-integration-test
 
 build: local-all build-base ## build main images
 	docker-compose build

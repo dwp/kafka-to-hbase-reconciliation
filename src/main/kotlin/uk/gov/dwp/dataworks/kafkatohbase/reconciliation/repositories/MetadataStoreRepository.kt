@@ -108,7 +108,7 @@ class MetadataStoreRepository(
             """
                 DELETE FROM $table
                 WHERE reconciled_result = TRUE
-                AND reconciled_timestamp > $trimReconciledScale $trimReconciledUnit
+                AND reconciled_timestamp < CURRENT_DATE - INTERVAL $trimReconciledScale $trimReconciledUnit
             """.trimIndent()
         )
 
