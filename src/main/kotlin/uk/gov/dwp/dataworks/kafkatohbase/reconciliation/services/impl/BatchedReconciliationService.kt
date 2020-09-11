@@ -9,11 +9,16 @@ import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.MetadataSto
 @Service
 @Profile("RECONCILIATION")
 class BatchedReconciliationService(private val hbaseRepository: HBaseRepository,
-                                   private val metadataStoreRepository: MetadataStoreRepository):
-    AbstractReconciliationService() {
+                                   private val metadataStoreRepository: MetadataStoreRepository,
+                                   private val minimumAgeScale: Int,
+                                   private val minimumAgeUnit: String): AbstractReconciliationService() {
 
-    override fun startReconciliation() = metadataStoreRepository.reconcileRecords(unreconciledRecords())
+    override fun startReconciliation() =
+        metadataStoreRepository.reconcileRecords(unreconciledRecords())
+
 
     private fun unreconciledRecords(): List<UnreconciledRecord> =
-        metadataStoreRepository.groupedUnreconciledRecords().flatMap { hbaseRepository.recordsInHbase(it.key, it.value) }
+        metadataStoreRepository.groupedUnreconciledRecords(minimumAgeScale, minimumAgeUnit).flatMap {
+            hbaseRepository.recordsInHbase(it.key, it.value)
+        }
 }

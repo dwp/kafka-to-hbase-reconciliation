@@ -96,7 +96,7 @@ tasks.register<Test>("trim-reconciled-integration-test") {
 	testClassesDirs = sourceSets["integration"].output.classesDirs
 	classpath = sourceSets["integration"].runtimeClasspath
 	filter {
-		includeTestsMatching("TrimReconciledIntegrationKoTest*")
+		includeTestsMatching("TrimReconciledIntegrationTest*")
 	}
 
 	//copy all env vars from unix/your integration container into the test

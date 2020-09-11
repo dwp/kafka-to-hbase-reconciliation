@@ -4,14 +4,6 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeout
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.hbase.HBaseConfiguration
-import org.apache.hadoop.hbase.HConstants
-import org.apache.hadoop.hbase.TableName
-import org.apache.hadoop.hbase.client.Admin
-import org.apache.hadoop.hbase.client.ConnectionFactory
-import org.apache.hadoop.hbase.client.Put
-import org.apache.hadoop.hbase.client.Scan
 import uk.gov.dwp.dataworks.logging.DataworksLogger
 import utility.MessageParser
 import java.sql.Connection
@@ -21,10 +13,9 @@ import java.util.*
 import kotlin.time.ExperimentalTime
 import kotlin.time.minutes
 import kotlin.time.seconds
-import org.apache.hadoop.hbase.client.Connection as HBaseConnection
 
 @ExperimentalTime
-class TrimReconciledIntegrationKoTest : StringSpec() {
+class TrimReconciledIntegrationTest : StringSpec() {
 
     init {
         "Older reconciled records are deleted, unreconciled are left" {
@@ -48,7 +39,7 @@ class TrimReconciledIntegrationKoTest : StringSpec() {
     }
 
     companion object {
-        val logger = DataworksLogger.getLogger(TrimReconciledIntegrationKoTest::class.toString())
+        val logger = DataworksLogger.getLogger(TrimReconciledIntegrationTest::class.toString())
     }
 
     private val kafkaDb = "claimant-advances"
@@ -100,7 +91,6 @@ class TrimReconciledIntegrationKoTest : StringSpec() {
         }
     }
 
-    private fun reconciledRecordCount(): Int = recordCount("SELECT COUNT(*) FROM ucfs WHERE reconciled_result=true")
     private fun allRecordCount(): Int = recordCount("SELECT COUNT(*) FROM ucfs")
 
     private fun recordCount(sql: String): Int =

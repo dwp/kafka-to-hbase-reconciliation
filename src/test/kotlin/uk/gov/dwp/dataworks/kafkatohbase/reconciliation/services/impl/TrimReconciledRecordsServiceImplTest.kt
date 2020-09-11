@@ -16,7 +16,7 @@ class TrimReconciledRecordsServiceImplTest {
         val trimReconciledUnit = "DAY"
 
         val reconcilerConfiguration = mock<ReconcilerConfiguration>()
-        val metadataStoreRepository = mock<MetadataStoreRepository>() {
+        val metadataStoreRepository = mock<MetadataStoreRepository> {
             on {
                 deleteRecordsOlderThanPeriod(trimReconciledScale, trimReconciledUnit)
             } doReturn 1

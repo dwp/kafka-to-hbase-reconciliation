@@ -7,11 +7,17 @@ import org.springframework.context.annotation.Configuration
 
 @Configuration
 @ConfigurationProperties(prefix = "reconciler")
-data class ReconcilerConfiguration(
-    var trimRecordsFixedDelayMillis: String? = "NOT_SET",
-    var trimReconciledScale: String? = "NOT_SET",
-    var trimReconciledUnit: String? = "NOT_SET"
-) {
+data class ReconcilerConfiguration(var minimumAgeScale: Int = 10,
+                                   var minimumAgeUnit: String = "MINUTE",
+                                   var trimRecordsFixedDelayMillis: String? = "NOT_SET",
+                                   var trimReconciledScale: String? = "NOT_SET",
+                                   var trimReconciledUnit: String? = "NOT_SET") {
+
+    @Bean
+    fun minimumAgeScale() = minimumAgeScale
+
+    @Bean
+    fun minimumAgeUnit() = minimumAgeUnit
 
     @Bean
     @Qualifier("trimReconciledScale")
