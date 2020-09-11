@@ -2,6 +2,7 @@
 import com.beust.klaxon.JsonObject
 import com.beust.klaxon.Parser
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.*
@@ -11,11 +12,13 @@ import org.apache.hadoop.hbase.client.ConnectionFactory
 import org.apache.hadoop.hbase.client.Put
 import uk.gov.dwp.dataworks.logging.DataworksLogger
 import utility.MessageParser
+import utility.wellFormedValidPayload
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.Timestamp
 import java.util.*
 import kotlin.time.ExperimentalTime
+import kotlin.time.measureTime
 import kotlin.time.minutes
 import kotlin.time.seconds
 import org.apache.hadoop.hbase.client.Connection as HBaseConnection
@@ -30,10 +33,14 @@ class ReconciliationIntegrationTest : StringSpec() {
             }
 
             withTimeout(2.minutes) {
-                while (reconciledRecordCount() < 1000) {
-                    logger.info("Waiting for records to be reconciled")
-                    delay(1.seconds)
+                val timeTaken = measureTime {
+                    while (reconciledRecordCount() < 1000) {
+                        logger.info("Waiting for records to be reconciled")
+                        delay(1.seconds)
+                    }
                 }
+
+                timeTaken shouldBeGreaterThan 15.seconds
             }
 
             allRecordCount() shouldBe 2000
@@ -59,7 +66,6 @@ class ReconciliationIntegrationTest : StringSpec() {
     private suspend fun populateMetadataStore() = withContext(Dispatchers.IO) {
         logger.info("Putting lots of data into metadatastore")
         with(metadatastoreConnection) {
-            val aWeekAgo = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -7) }
             with(insertMetadatastoreRecordStatement(this)) {
                 for (topicIndex in 1..10) {
                     logger.info("Adding records to metadatastore for topic 'db.database.collection$topicIndex'")
@@ -67,8 +73,7 @@ class ReconciliationIntegrationTest : StringSpec() {
                         setString(1, printableHbaseKey(topicIndex, recordIndex))
                         setTimestamp(2, Timestamp(1544799662000))
                         setString(3, "db.database.collection$topicIndex")
-                        setTimestamp(4, Timestamp(aWeekAgo.timeInMillis))
-                        setBoolean(5, false)
+                        setBoolean(4, false)
                         addBatch()
                     }
                     logger.info("Added records to metadatastore for topic 'db.database.collection$topicIndex'")
@@ -172,8 +177,8 @@ class ReconciliationIntegrationTest : StringSpec() {
     private fun insertMetadatastoreRecordStatement(connection: Connection) =
         connection.prepareStatement(
             """
-            INSERT INTO ucfs (hbase_id, hbase_timestamp, topic_name, write_timestamp, reconciled_result)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO ucfs (hbase_id, hbase_timestamp, topic_name, reconciled_result)
+            VALUES (?, ?, ?, ?)
         """.trimIndent()
         )
 

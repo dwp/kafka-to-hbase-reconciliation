@@ -47,7 +47,7 @@ class MetadataStoreRepositoryImplTest {
             on { prepareStatement(any()) } doReturn statement
         }
 
-        val grouped = repository(connection).groupedUnreconciledRecords()
+        val grouped = repository(connection).groupedUnreconciledRecords(10, "MINUTE")
         assertEquals(3, grouped.size)
         grouped.keys.sorted().forEachIndexed { index, key -> assertEquals("db.database.collection$index", key) }
         grouped.forEach { (_, records) -> assertEquals(33, records.size) }
@@ -70,28 +70,6 @@ class MetadataStoreRepositoryImplTest {
     }
 
 
-    @Test
-    fun givenALimitExistsForRecordsReturnedWhenIRequestAListOfRecordsFromMetadataStoreThenTheFirstValueContainsLimit() {
-
-        val resultSet = mock<ResultSet> {
-            on { next() } doReturn false
-        }
-
-        val statement = mock<Statement> {
-            on { executeQuery(any()) } doReturn resultSet
-        }
-
-        val metadataStoreConnection = mock<Connection> {
-            on { createStatement() } doReturn statement
-        }
-
-        repository(metadataStoreConnection).fetchUnreconciledRecords()
-
-        verify(metadataStoreConnection, times(1)).createStatement()
-        val captor = argumentCaptor<String>()
-        verify(statement, times(1)).executeQuery(captor.capture())
-        assert(captor.firstValue.contains("LIMIT"))
-    }
 
     @Test
     fun givenRecordsOlderThanScaleAndUnitExistWhenRequestingToTrimRecordsThenRecordsAreDeleted() {
@@ -117,28 +95,6 @@ class MetadataStoreRepositoryImplTest {
 
         verify(metadataStoreConnection, times(1)).createStatement()
         verify(statement, times(1)).executeUpdate(any())
-    }
-    @Test
-    fun givenRecordExistsToBeReconciledWhenRequestingToReconcileATopicNameThenTheTopicNameIsMarkedAsReconciled() {
-
-        val topicName = "to:reconcile"
-        val rowsUpdated = 1
-
-        val statement = mock<PreparedStatement> {
-            on {
-                executeUpdate(any())
-            } doReturn rowsUpdated
-        }
-
-        val metadataStoreConnection = mock<Connection> {
-            on { prepareStatement(any()) } doReturn statement
-        }
-
-        val hbaseId = "hbase-id"
-        val hbaseTimestamp = 100L
-        repository(metadataStoreConnection).reconcileRecord(topicName, hbaseId, hbaseTimestamp)
-        verify(metadataStoreConnection, times(1)).prepareStatement(any())
-        verify(statement, times(1)).setString(1, topicName)
     }
 
     private fun testAutoCommit(autoOn: Boolean) {

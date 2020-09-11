@@ -22,7 +22,7 @@ internal class BatchedReconciliationServiceTest {
         }.associateBy {it[0].topicName}
 
         val metadataStoreRepository = mock<MetadataStoreRepository> {
-            on { groupedUnreconciledRecords() } doReturn groupedRecords
+            on { groupedUnreconciledRecords(10, "MINUTE") } doReturn groupedRecords
         }
 
         val hbaseRepository = mock<HBaseRepository> {
@@ -31,9 +31,9 @@ internal class BatchedReconciliationServiceTest {
             }
         }
 
-        val reconciliationService = BatchedReconciliationService(hbaseRepository, metadataStoreRepository)
+        val reconciliationService = BatchedReconciliationService(hbaseRepository, metadataStoreRepository, 10, "MINUTES")
         reconciliationService.startReconciliation()
-        verify(metadataStoreRepository, times(1)).groupedUnreconciledRecords()
+        verify(metadataStoreRepository, times(1)).groupedUnreconciledRecords(10, "MINUTE")
         val topicCaptor = argumentCaptor<String>()
         val recordsCaptor = argumentCaptor<List<UnreconciledRecord>>()
         verify(hbaseRepository, times(10)).recordsInHbase(topicCaptor.capture(), recordsCaptor.capture())
