@@ -91,7 +91,6 @@ class TrimReconciledIntegrationTest : StringSpec() {
         }
     }
 
-    private fun reconciledRecordCount(): Int = recordCount("SELECT COUNT(*) FROM ucfs WHERE reconciled_result=true")
     private fun allRecordCount(): Int = recordCount("SELECT COUNT(*) FROM ucfs")
 
     private fun recordCount(sql: String): Int =
