@@ -31,7 +31,7 @@ internal class BatchedReconciliationServiceTest {
             }
         }
 
-        val reconciliationService = BatchedReconciliationService(hbaseRepository, metadataStoreRepository, 10, "MINUTES")
+        val reconciliationService = BatchedReconciliationService(hbaseRepository, metadataStoreRepository, 10, "MINUTE")
         reconciliationService.startReconciliation()
         verify(metadataStoreRepository, times(1)).groupedUnreconciledRecords(10, "MINUTE")
         val topicCaptor = argumentCaptor<String>()

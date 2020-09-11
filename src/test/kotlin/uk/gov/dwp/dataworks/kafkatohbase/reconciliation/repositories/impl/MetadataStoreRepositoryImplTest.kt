@@ -58,6 +58,7 @@ class MetadataStoreRepositoryImplTest {
         assertTrue(sqlCaptor.firstValue.contains("LIMIT"))
 
         verify(statement, times(1)).executeQuery()
+        verify(statement, times(1)).close()
         verifyNoMoreInteractions(statement)
 
         verify(resultSet, times(100)).next()
