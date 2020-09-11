@@ -43,10 +43,10 @@ local-scrub-build: local-scrub local-build ## Scrub local artefacts and make new
 local-all: local-scrub-build local-test ## local-dist ## Build and test with gradle
 
 mysql-root: ## Get a root client session on the metadatastore database.
-	docker exec -it metadatastore mysql --host=127.0.0.1 --user=root --password=password metadatastore
+	docker exec -it metadatastore mysql --user=root --password=password metadatastore
 
 mysql-writer: ## Get a writer client session on the metadatastore database.
-	docker exec -it metadatastore mysql --host=127.0.0.1 --user=reconciliationwriter --password=my-password metadatastore
+	docker exec -it metadatastore mysql --user=reconciliationwriter --password=my-password metadatastore
 
 truncate-ucfs: ## truncate the ucfs table.
 	docker exec -i metadatastore \
