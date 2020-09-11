@@ -39,15 +39,11 @@ class MetadataStoreRepositoryImplTest {
             on { getTimestamp("hbase_timestamp") } doReturnConsecutively (1..100).map { Timestamp(it.toLong()) }
         }
 
-        val statement = mock<PreparedStatement> {
-            on { executeQuery() } doReturn resultSet
-        }
-
-        val connection = mock<Connection> {
-            on { prepareStatement(any()) } doReturn statement
-        }
-
-        val grouped = repository(connection).groupedUnreconciledRecords(10, "MINUTE")
+        val statement = mock<PreparedStatement> { on { executeQuery() } doReturn resultSet }
+        val connection = mock<Connection> { on { prepareStatement(any()) } doReturn statement }
+        val minAgeSize = 10
+        val minAgeUnit = "MINUTE"
+        val grouped = repository(connection).groupedUnreconciledRecords(minAgeSize, minAgeUnit)
         assertEquals(3, grouped.size)
         grouped.keys.sorted().forEachIndexed { index, key -> assertEquals("db.database.collection$index", key) }
         grouped.forEach { (_, records) -> assertEquals(33, records.size) }
@@ -56,6 +52,7 @@ class MetadataStoreRepositoryImplTest {
         verifyNoMoreInteractions(connection)
         assertTrue(sqlCaptor.firstValue.contains("reconciled_result = false"))
         assertTrue(sqlCaptor.firstValue.contains("LIMIT"))
+        assertTrue(sqlCaptor.firstValue.contains("write_timestamp < CURRENT_TIMESTAMP - INTERVAL $minAgeSize $minAgeUnit"))
 
         verify(statement, times(1)).executeQuery()
         verify(statement, times(1)).close()
