@@ -48,11 +48,11 @@ mysql-root: ## Get a root client session on the metadatastore database.
 mysql-writer: ## Get a writer client session on the metadatastore database.
 	docker exec -it metadatastore mysql --host=127.0.0.1 --user=reconciliationwriter --password=my-password metadatastore
 
-truncate-ucfs: ## Get a writer client session on the metadatastore database.
+truncate-ucfs: ## truncate the ucfs table.
 	docker exec -i metadatastore \
 		mysql --host=127.0.0.1 --user=reconciliationwriter --password=my-password metadatastore <<< "truncate ucfs;"
 
-truncate-hbase: ## Get a writer client session on the metadatastore database.
+truncate-hbase: ## truncate all hbase tables.
 	docker exec -i hbase hbase shell <<< list \
 			| egrep '^[a-z]' \
 			| while read; do echo truncate \'$$REPLY\'; done \
