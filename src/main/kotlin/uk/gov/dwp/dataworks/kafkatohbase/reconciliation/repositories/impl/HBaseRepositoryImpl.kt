@@ -35,7 +35,11 @@ class HBaseRepositoryImpl(private val connection: Connection, private val tableN
         }
     }
 
-    private fun get(id: String, version: Long) = Get(tableNameUtil.decodePrintable(id)).apply { setTimeStamp(version) }
+    private fun get(id: String, version: Long)=  Get(tableNameUtil.decodePrintable(id)).apply {
+        setTimeStamp(version)
+        isCheckExistenceOnly = true
+    }
+
     private fun table(topicName: String) = TableName.valueOf(tableName(topicName))
     private fun tableName(topicName: String) = tableNameUtil.getTableNameFromTopic(topicName)
 
