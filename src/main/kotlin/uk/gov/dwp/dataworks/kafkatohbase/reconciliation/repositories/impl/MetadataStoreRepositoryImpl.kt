@@ -102,7 +102,6 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
 
     private fun commit() {
         if (!connection().autoCommit) {
-            println("=======================================> COMMITTING")
             connection().commit()
         }
     }
