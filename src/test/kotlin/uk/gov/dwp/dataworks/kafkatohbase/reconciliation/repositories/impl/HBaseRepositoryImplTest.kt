@@ -11,11 +11,9 @@ import org.apache.hadoop.hbase.client.Table
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.springframework.test.context.ActiveProfiles
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.domain.UnreconciledRecord
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.utils.TableNameUtil
 
-@ActiveProfiles("HBASE")
 class HBaseRepositoryImplTest {
 
     @Test
