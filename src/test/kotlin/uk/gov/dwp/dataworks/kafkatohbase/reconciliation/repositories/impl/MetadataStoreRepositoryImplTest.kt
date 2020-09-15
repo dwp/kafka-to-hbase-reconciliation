@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.domain.UnreconciledRecord
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.suppliers.ConnectionSupplier
 import java.sql.*
 
 class MetadataStoreRepositoryImplTest {
@@ -23,7 +24,7 @@ class MetadataStoreRepositoryImplTest {
 
     @Test
     fun testReconcileNoRecords() =
-            mock<Connection>().run {
+            mock<ConnectionSupplier>().run {
                 repository(this).reconcileRecords(listOf())
                 verifyZeroInteractions(this)
             }
@@ -41,13 +42,16 @@ class MetadataStoreRepositoryImplTest {
 
         val statement = mock<PreparedStatement> { on { executeQuery() } doReturn resultSet }
         val connection = mock<Connection> { on { prepareStatement(any()) } doReturn statement }
+        val connectionSupplier = connectionSupplier(connection)
         val minAgeSize = 10
         val minAgeUnit = "MINUTE"
-        val grouped = repository(connection).groupedUnreconciledRecords(minAgeSize, minAgeUnit)
+        val grouped = repository(connectionSupplier).groupedUnreconciledRecords(minAgeSize, minAgeUnit)
         assertEquals(3, grouped.size)
         grouped.keys.sorted().forEachIndexed { index, key -> assertEquals("db.database.collection$index", key) }
         grouped.forEach { (_, records) -> assertEquals(33, records.size) }
         val sqlCaptor = argumentCaptor<String>()
+
+        verify(connectionSupplier, times(1)).connection()
         verify(connection, times(1)).prepareStatement(sqlCaptor.capture())
         verifyNoMoreInteractions(connection)
         assertTrue(sqlCaptor.firstValue.contains("reconciled_result = false"))
@@ -67,8 +71,6 @@ class MetadataStoreRepositoryImplTest {
         verifyNoMoreInteractions(resultSet)
     }
 
-
-
     @Test
     fun givenRecordsOlderThanScaleAndUnitExistWhenRequestingToTrimRecordsThenRecordsAreDeleted() {
 
@@ -87,10 +89,11 @@ class MetadataStoreRepositoryImplTest {
             on { createStatement() } doReturn statement
         }
 
-        val metadataStoreRepository = MetadataStoreRepositoryImpl(metadataStoreConnection, "ucfs")
+        val connectionSupplier = connectionSupplier(metadataStoreConnection)
+        val metadataStoreRepository = MetadataStoreRepositoryImpl(connectionSupplier, "ucfs")
 
         metadataStoreRepository.deleteRecordsOlderThanPeriod(trimReconciledScale, trimReconciledUnit)
-
+        verify(connectionSupplier, times(1)).connection()
         verify(metadataStoreConnection, times(1)).createStatement()
         verify(statement, times(1)).executeUpdate(any())
     }
@@ -98,7 +101,8 @@ class MetadataStoreRepositoryImplTest {
     private fun testAutoCommit(autoOn: Boolean) {
         val statement = mock<PreparedStatement>()
         val connection = connection(statement, autoOn)
-        repository(connection).reconcileRecords(unreconciledRecords())
+        val connectionSupplier = connectionSupplier(connection)
+        repository(connectionSupplier).reconcileRecords(unreconciledRecords())
         verifyBatchedConnectionInteractions(connection, autoOn, true)
         verifyBatchedStatementInteractions(statement)
     }
@@ -108,7 +112,8 @@ class MetadataStoreRepositoryImplTest {
             on { executeBatch() } doThrow SQLException("Error updating")
         }
         val connection = connection(statement, autoOn)
-        repository(connection).reconcileRecords(unreconciledRecords())
+        val connectionSupplier = connectionSupplier(connection)
+        repository(connectionSupplier).reconcileRecords(unreconciledRecords())
         verifyBatchedConnectionInteractions(connection, autoOn, false)
         verifyBatchedStatementInteractions(statement)
     }
@@ -143,6 +148,11 @@ class MetadataStoreRepositoryImplTest {
         verifyNoMoreInteractions(statement)
     }
 
+    private fun connectionSupplier(connection: Connection) =
+        mock<ConnectionSupplier> {
+            on { connection() } doReturn connection
+        }
+
     private fun connection(statement: PreparedStatement, autoOn: Boolean) =
         mock<Connection> {
             on { prepareStatement(any()) } doReturn statement
@@ -154,6 +164,6 @@ class MetadataStoreRepositoryImplTest {
             UnreconciledRecord(it, "db.database.collection${it % 3}", "hbase_id_$it", (it * 10).toLong())
         }
 
-    private fun repository(connection: Connection): MetadataStoreRepositoryImpl =
-        MetadataStoreRepositoryImpl(connection, "ucfs")
+    private fun repository(connectionSupplier: ConnectionSupplier): MetadataStoreRepositoryImpl =
+        MetadataStoreRepositoryImpl(connectionSupplier, "ucfs")
 }

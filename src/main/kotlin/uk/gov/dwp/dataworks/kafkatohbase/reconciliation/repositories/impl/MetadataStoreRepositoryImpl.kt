@@ -4,13 +4,13 @@ import org.springframework.stereotype.Repository
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.domain.UnreconciledRecord
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.MetadataStoreRepository
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ScheduledReconciliationService
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.suppliers.ConnectionSupplier
 import uk.gov.dwp.dataworks.logging.DataworksLogger
-import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.SQLException
 
 @Repository
-class MetadataStoreRepositoryImpl(private val connection: Connection,
+class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupplier,
                                   private val table: String) : MetadataStoreRepository {
 
     override fun groupedUnreconciledRecords(minAgeSize: Int, minAgeUnit: String): Map<String, List<UnreconciledRecord>> =
@@ -49,7 +49,7 @@ class MetadataStoreRepositoryImpl(private val connection: Connection,
             }
         }
 
-        return list
+       return list
     }
 
     override fun deleteRecordsOlderThanPeriod(trimReconciledScale: String, trimReconciledUnit: String): Int {
@@ -60,7 +60,7 @@ class MetadataStoreRepositoryImpl(private val connection: Connection,
             "unit" to trimReconciledUnit
         )
 
-        val statement = connection.createStatement()
+        val statement = connection().createStatement()
 
         val deletedCount = statement.executeUpdate(
             """
@@ -81,7 +81,7 @@ class MetadataStoreRepositoryImpl(private val connection: Connection,
     }
 
     private fun unreconciledRecordsStatement(minAgeSize: Int, minAgeUnit: String): PreparedStatement
-        = connection.prepareStatement("""
+        = connection().prepareStatement("""
                 SELECT id, hbase_id, hbase_timestamp, topic_name 
                 FROM $table
                 WHERE write_timestamp < CURRENT_TIMESTAMP - INTERVAL $minAgeSize $minAgeUnit
@@ -92,7 +92,7 @@ class MetadataStoreRepositoryImpl(private val connection: Connection,
 
 
     private val reconcileRecordStatement: PreparedStatement by lazy {
-        connection.prepareStatement(
+        connection().prepareStatement(
             """
                 UPDATE $table
                 SET reconciled_result=true, reconciled_timestamp=CURRENT_TIMESTAMP
@@ -101,16 +101,18 @@ class MetadataStoreRepositoryImpl(private val connection: Connection,
     }
 
     private fun commit() {
-        if (!connection.autoCommit) {
-            connection.commit()
+        if (!connection().autoCommit) {
+            connection().commit()
         }
     }
 
     private fun rollback() {
-        if (!connection.autoCommit) {
-            connection.rollback()
+        if (!connection().autoCommit) {
+            connection().rollback()
         }
     }
+
+    private fun connection() = connectionSupplier.connection()
 
     companion object {
         private val logger = DataworksLogger.getLogger(ScheduledReconciliationService::class.toString())

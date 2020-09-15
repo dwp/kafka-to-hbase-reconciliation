@@ -8,8 +8,6 @@ import org.springframework.context.annotation.Configuration
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.secrets.SecretHelperInterface
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.utils.readFile
 import uk.gov.dwp.dataworks.logging.DataworksLogger
-import java.sql.Connection
-import java.sql.DriverManager
 import java.util.*
 
 @Configuration
@@ -28,17 +26,18 @@ data class MetadataStoreConfiguration(
 ) {
 
 
-    @Autowired
-    private lateinit var secretHelper: SecretHelperInterface
-
-    companion object {
-        val logger = DataworksLogger.getLogger(MetadataStoreConfiguration::class.toString())
-    }
-    private val isUsingAWS by lazy { this.useAwsSecrets!!.toLowerCase() == "true" }
-
+    @Bean
     fun databaseUrl() = "jdbc:mysql://$endpoint:$port/$databaseName"
 
+    @Bean
     fun databaseProperties(): Properties {
+
+        val metaStorePassword = if (isUsingAWS) {
+            secretHelper.getSecret(passwordSecretName!!)!!
+        } else {
+            logger.info("Using dummy password")
+            dummyPassword!!
+        }
 
         val properties = Properties().apply {
             put("user", user)
@@ -49,29 +48,10 @@ data class MetadataStoreConfiguration(
                 put("ssl_ca", readFile(getProperty("ssl_ca_path")))
                 put("ssl_verify_cert", true)
             }
-        }
-
-        logger.info("Metadata Store Configuration loaded", "metastore_properties" to properties.toString())
-        return properties
-    }
-
-    @Bean
-    fun metadataStoreConnection(): Connection {
-        val metaStorePassword = if (isUsingAWS) {
-            secretHelper.getSecret(passwordSecretName!!)!!
-        } else {
-            logger.info("Using dummy password")
-            dummyPassword!!
-        }
-        val metastoreProperties = databaseProperties().apply {
             put("password", metaStorePassword)
         }
-
-        logger.info("Establishing connection with Metadata Store", "url" to databaseUrl())
-        val connection = DriverManager.getConnection(databaseUrl(), metastoreProperties)
-        logger.info("Established connection with Metadata Store", "url" to databaseUrl())
-        addShutdownHook(connection)
-        return connection
+        logger.info("Metadata Store Configuration loaded", "metastore_properties" to properties.toString())
+        return properties
     }
 
     @Bean
@@ -82,14 +62,15 @@ data class MetadataStoreConfiguration(
     @Qualifier("queryLimit")
     fun queryLimit() = queryLimit
 
-    private fun addShutdownHook(connection: Connection) {
-        logger.info("Adding Metadata Store shutdown hook")
-        Runtime.getRuntime().addShutdownHook(object : Thread() {
-            override fun run() {
-                logger.info("Metadata Store shutdown hook running - closing connection")
-                connection.close()
-            }
-        })
-        logger.info("Added Metadata Store shutdown hook")
+    @Autowired
+    private lateinit var secretHelper: SecretHelperInterface
+
+    companion object {
+        val logger = DataworksLogger.getLogger(MetadataStoreConfiguration::class.toString())
     }
+
+    private val isUsingAWS by lazy { this.useAwsSecrets!!.toLowerCase() == "true" }
+
+
+
 }
