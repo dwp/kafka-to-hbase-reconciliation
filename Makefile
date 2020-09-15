@@ -55,7 +55,7 @@ truncate-ucfs: ## truncate the ucfs table.
 truncate-hbase: ## truncate all hbase tables.
 	docker exec -i hbase hbase shell <<< list \
 			| egrep '^[a-z]' \
-			| fgrep -v '^list'
+			| grep -v '^list' \
 			| while read; do echo truncate \'$$REPLY\'; done \
 			| docker exec -i hbase hbase shell
 
