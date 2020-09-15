@@ -4,5 +4,4 @@ import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.domain.UnreconciledRecor
 
 interface HBaseRepository {
     fun recordsInHbase(topicName: String, records: List<UnreconciledRecord>): List<UnreconciledRecord>
-    fun recordExistsInHBase(topicName: String, id: String, version: Long): Boolean
 }

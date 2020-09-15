@@ -15,6 +15,7 @@ class ConnectionSupplierImpl(private val databaseUrl: String,
         if (_connection == null || _connection!!.isClosed || !_connection!!.isValid(0)) {
             logger.info("Establishing database connection", "url", databaseUrl)
             _connection = DriverManager.getConnection(databaseUrl, databaseProperties)
+            logger.info("Established database connection", "url", databaseUrl)
         }
         return _connection!!
     }
