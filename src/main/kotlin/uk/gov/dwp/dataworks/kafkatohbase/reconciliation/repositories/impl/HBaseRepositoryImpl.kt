@@ -30,10 +30,7 @@ class HBaseRepositoryImpl(private val connection: Connection, private val tableN
                 records.zip(table.existsAll(records.map { get(it.hbaseId, it.version) }).asIterable())
             }
         } else {
-            logger.warn(
-                "Table does not exist, marking all as not in hbase",
-                "table_name" to (tableName(topicName) ?: "")
-            )
+            logger.warn("Table does not exist, marking all as not in hbase","table_name" to (tableName(topicName) ?: ""))
             records.map { Pair(it, false) }
         }
     }
