@@ -39,10 +39,6 @@ data class HBaseConfiguration(
             setInt(HConstants.HBASE_CLIENT_RETRIES_NUMBER, retries?.toIntOrNull() ?: 666)
         }
 
-        logger.info("Hbase connection configuration",
-            HConstants.ZOOKEEPER_ZNODE_PARENT to configuration.get(HConstants.ZOOKEEPER_ZNODE_PARENT),
-            HConstants.ZOOKEEPER_QUORUM to configuration.get(HConstants.ZOOKEEPER_QUORUM),
-            "hbase.zookeeper.port" to "${configuration.get("hbase.zookeeper.port ")}")
 
 
         logger.info("Timeout configuration",
@@ -57,7 +53,12 @@ data class HBaseConfiguration(
     @Bean
     fun hbaseConnection(): Connection {
         logger.info("Establishing connection with HBase")
-        val connection = ConnectionFactory.createConnection(HBaseConfiguration.create(hbaseConfiguration()))
+        val configuration = hbaseConfiguration()
+        logger.info("Hbase connection configuration",
+            HConstants.ZOOKEEPER_ZNODE_PARENT to configuration.get(HConstants.ZOOKEEPER_ZNODE_PARENT),
+            HConstants.ZOOKEEPER_QUORUM to configuration.get(HConstants.ZOOKEEPER_QUORUM),
+            "hbase.zookeeper.port" to "${configuration.get("hbase.zookeeper.port")}")
+        val connection = ConnectionFactory.createConnection(HBaseConfiguration.create(configuration))
         addShutdownHook(connection)
         logger.info("Established connection with HBase")
 
