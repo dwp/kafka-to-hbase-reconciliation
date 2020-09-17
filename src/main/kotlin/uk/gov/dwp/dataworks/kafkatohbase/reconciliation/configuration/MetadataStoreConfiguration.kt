@@ -25,7 +25,6 @@ data class MetadataStoreConfiguration(
     var useAwsSecrets: String? = "NOT_SET",
 ) {
 
-
     @Bean
     fun databaseUrl() = "jdbc:mysql://$endpoint:$port/$databaseName"
 
@@ -70,7 +69,4 @@ data class MetadataStoreConfiguration(
     }
 
     private val isUsingAWS by lazy { this.useAwsSecrets!!.toLowerCase() == "true" }
-
-
-
 }

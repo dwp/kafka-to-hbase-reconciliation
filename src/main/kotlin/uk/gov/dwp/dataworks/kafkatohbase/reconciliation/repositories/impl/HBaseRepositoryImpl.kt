@@ -13,7 +13,7 @@ import uk.gov.dwp.dataworks.logging.DataworksLogger
 
 @Repository
 @Profile("HBASE")
-class HBaseRepositoryImpl(private val connection: Connection, private val tableNameUtil: TableNameUtil):
+class HBaseRepositoryImpl(private val connection: Connection, private val tableNameUtil: TableNameUtil) :
     HBaseRepository {
 
     override fun recordsInHbase(topicName: String, records: List<UnreconciledRecord>) =
@@ -24,7 +24,6 @@ class HBaseRepositoryImpl(private val connection: Connection, private val tableN
             .toList()
 
     private fun recordsExistInHBase(topicName: String, records: List<UnreconciledRecord>): List<Pair<UnreconciledRecord, Boolean>> {
-        logger.info("Checking batch is in hbase", "topic_name" to topicName, "table" to "${table(topicName)}")
         return if (connection.admin.tableExists(table(topicName))) {
             (connection.getTable(table(topicName))).use { table ->
                 records.zip(table.existsAll(records.map { get(it.hbaseId, it.version) }).asIterable())
@@ -35,7 +34,7 @@ class HBaseRepositoryImpl(private val connection: Connection, private val tableN
         }
     }
 
-    private fun get(id: String, version: Long)=  Get(tableNameUtil.decodePrintable(id)).apply {
+    private fun get(id: String, version: Long) =  Get(tableNameUtil.decodePrintable(id)).apply {
         setTimeStamp(version)
         isCheckExistenceOnly = true
     }
