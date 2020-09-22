@@ -30,6 +30,11 @@ class TableNameUtilTest {
 
     @Test
     fun testTableNameForHbaseSupportsDotInCollectionName() {
+
+        whenever(coalescedNameUtil.coalescedName("data:equality")).thenReturn("data:equality")
+        whenever(coalescedNameUtil.coalescedName("somedb:some-collection")).thenReturn("somedb:some-collection")
+        whenever(coalescedNameUtil.coalescedName("mydb:my.collection")).thenReturn("mydb:my.collection")
+
         assertThat(tableNameUtil.targetTable("data", "equality"))
             .isEqualTo("data:equality")
         assertThat(tableNameUtil.targetTable("somedb", "some-collection"))
@@ -43,7 +48,7 @@ class TableNameUtilTest {
 
         tableNameUtil.qualifiedTablePattern = """^\w+\.([-\w]+)\.([-.\w]+)$"""
 
-        whenever(coalescedNameUtil.coalescedName("ucfs:data_extended")).thenReturn("ucfs:data_extended")
+        whenever(coalescedNameUtil.coalescedName("ucfs:data.extended")).thenReturn("ucfs:data.extended")
 
         val topic = "db.ucfs.data.extended"
 
@@ -51,7 +56,7 @@ class TableNameUtilTest {
 
         assertThat(tableName).isEqualTo("ucfs:data_extended")
 
-        verify(coalescedNameUtil, times(1)).coalescedName("ucfs:data_extended")
+        verify(coalescedNameUtil, times(1)).coalescedName("ucfs:data.extended")
     }
 
     @Test
