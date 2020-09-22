@@ -17,6 +17,7 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
         unreconciledRecords(minAgeSize, minAgeUnit).groupBy { it.topicName }
 
     override fun reconcileRecords(unreconciled: List<UnreconciledRecord>) {
+        logger.info("Reconciling records", "record_count" to "${unreconciled.size}")
         if (unreconciled.isNotEmpty()) {
             logger.info("Reconciling records", "record_count" to "${unreconciled.size}")
             with (reconcileRecordStatement) {
