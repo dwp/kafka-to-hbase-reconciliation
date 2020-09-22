@@ -29,6 +29,32 @@ class TableNameUtilTest {
     private lateinit var coalescedNameUtil: CoalescedNameUtil
 
     @Test
+    fun testTableNameForHbaseSupportsDotInCollectionName() {
+        assertThat(tableNameUtil.targetTable("data", "equality"))
+            .isEqualTo("data:equality")
+        assertThat(tableNameUtil.targetTable("somedb", "some-collection"))
+            .isEqualTo("somedb:some_collection")
+        assertThat(tableNameUtil.targetTable("mydb", "my.collection"))
+            .isEqualTo("mydb:my_collection")
+    }
+
+    @Test
+    fun givenAValidExtendedTopicAndMainRegexWhenCalledToGetTableNameThenATableNameMatchedIsReturned() {
+
+        tableNameUtil.qualifiedTablePattern = """^\w+\.([-\w]+)\.([-.\w]+)$"""
+
+        whenever(coalescedNameUtil.coalescedName("ucfs:data_extended")).thenReturn("ucfs:data_extended")
+
+        val topic = "db.ucfs.data.extended"
+
+        val tableName = tableNameUtil.getTableNameFromTopic(topic)
+
+        assertThat(tableName).isEqualTo("ucfs:data_extended")
+
+        verify(coalescedNameUtil, times(1)).coalescedName("ucfs:data_extended")
+    }
+
+    @Test
     fun givenAValidTopicAndMainRegexWhenCalledToGetTableNameThenATableNameMatchedIsReturned() {
 
         tableNameUtil.qualifiedTablePattern = """^\w+\.([-\w]+)\.([-.\w]+)$"""
