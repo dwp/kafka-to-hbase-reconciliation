@@ -7,10 +7,10 @@ import uk.gov.dwp.dataworks.logging.DataworksLogger
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTime
 
-abstract class AbstractReconciliationService: ScheduledReconciliationService {
+abstract class AbstractReconciliationService : ScheduledReconciliationService {
 
     @ExperimentalTime
-    @Scheduled(fixedDelayString="#{\${reconciler.fixed.delay.millis}}", initialDelay = 1000)
+    @Scheduled(fixedDelayString = "#{\${reconciler.fixed.delay.millis}}", initialDelay = 1000)
     override fun startScheduledReconciliation() {
         logDelay()
         val duration = measureTime { startReconciliation() }
@@ -19,7 +19,8 @@ abstract class AbstractReconciliationService: ScheduledReconciliationService {
 
     private fun logDelay() {
         if (delayNeedsLogging) {
-            logger.info("Running reconciliation with fixed delay between executions",
+            logger.info(
+                "Running reconciliation with fixed delay between executions",
                 "fixed_delay_millis" to reconciliationDelayMillis
             )
             delayNeedsLogging = false

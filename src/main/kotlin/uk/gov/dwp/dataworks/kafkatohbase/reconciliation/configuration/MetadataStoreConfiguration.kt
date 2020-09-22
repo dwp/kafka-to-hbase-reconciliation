@@ -49,7 +49,9 @@ data class MetadataStoreConfiguration(
             }
             put("password", metaStorePassword)
         }
-        logger.info("Metadata Store Configuration loaded", "metastore_properties" to properties.toString())
+
+        logger.info("Metadata Store Configuration loaded", "properties" to properties.toString(), "table" to table, "query_limit" to queryLimit.toString())
+
         return properties
     }
 

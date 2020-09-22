@@ -13,8 +13,7 @@ import uk.gov.dwp.dataworks.logging.DataworksLogger
 
 @Repository
 @Profile("HBASE")
-class HBaseRepositoryImpl(private val connection: Connection, private val tableNameUtil: TableNameUtil) :
-    HBaseRepository {
+class HBaseRepositoryImpl(private val connection: Connection, private val tableNameUtil: TableNameUtil) : HBaseRepository {
 
     override fun recordsInHbase(topicName: String, records: List<UnreconciledRecord>) =
         recordsExistInHBase(topicName, records)
@@ -30,21 +29,26 @@ class HBaseRepositoryImpl(private val connection: Connection, private val tableN
                     val results = records.zip(table.existsAll(records.map { get(it.hbaseId, it.version) }).asIterable())
                     val (found, notFound)
                             = results.partition(Pair<UnreconciledRecord, Boolean>::second)
-                    logger.info("Checked batch of records from metadata store",
-                        "size" to "${records.size}", "found" to "${found.size}", "not_found" to "${notFound.size}")
+                    logger.info(
+                        "Checked batch of records from metadata store",
+                        "size" to "${records.size}", "found" to "${found.size}", "not_found" to "${notFound.size}"
+                    )
                     results
                 }
             } else {
-                logger.warn("Table does not exist, marking all as not in hbase","table_name" to (tableName(topicName) ?: ""))
+                logger.warn(
+                    "Table does not exist, marking all as not in hbase",
+                    "table_name" to (tableName(topicName) ?: "")
+                )
                 records.map { Pair(it, false) }
             }
-        }
-        else {
+        } else {
+            logger.info("There are no records to be reconciled in Metadata Store")
             listOf()
         }
     }
 
-    private fun get(id: String, version: Long) =  Get(tableNameUtil.decodePrintable(id)).apply {
+    private fun get(id: String, version: Long) = Get(tableNameUtil.decodePrintable(id)).apply {
         setTimeStamp(version)
         isCheckExistenceOnly = true
     }
