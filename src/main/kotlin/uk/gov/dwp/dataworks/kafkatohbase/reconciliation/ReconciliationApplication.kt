@@ -14,7 +14,6 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler
 class ReconciliationApplication
 
 fun main(args: Array<String>) {
-    //exitProcess(SpringApplication.exit(runApplication<ReconciliationApplication>(*args)))
     runApplication<ReconciliationApplication>(*args)
 }
 
