@@ -24,13 +24,23 @@ class HBaseRepositoryImpl(private val connection: Connection, private val tableN
             .toList()
 
     private fun recordsExistInHBase(topicName: String, records: List<UnreconciledRecord>): List<Pair<UnreconciledRecord, Boolean>> {
-        return if (connection.admin.tableExists(table(topicName))) {
-            (connection.getTable(table(topicName))).use { table ->
-                records.zip(table.existsAll(records.map { get(it.hbaseId, it.version) }).asIterable())
+        return if (records.isNotEmpty()) {
+            if (connection.admin.tableExists(table(topicName))) {
+                (connection.getTable(table(topicName))).use { table ->
+                    val results = records.zip(table.existsAll(records.map { get(it.hbaseId, it.version) }).asIterable())
+                    val (found, notFound)
+                            = results.partition(Pair<UnreconciledRecord, Boolean>::second)
+                    logger.info("Checked batch of records from metadata store",
+                        "size" to "${records.size}", "found" to "${found.size}", "not_found" to "${notFound.size}")
+                    results
+                }
+            } else {
+                logger.warn("Table does not exist, marking all as not in hbase","table_name" to (tableName(topicName) ?: ""))
+                records.map { Pair(it, false) }
             }
-        } else {
-            logger.warn("Table does not exist, marking all as not in hbase","table_name" to (tableName(topicName) ?: ""))
-            records.map { Pair(it, false) }
+        }
+        else {
+            listOf()
         }
     }
 

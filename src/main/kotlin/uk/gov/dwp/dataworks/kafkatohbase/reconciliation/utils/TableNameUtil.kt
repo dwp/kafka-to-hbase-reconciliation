@@ -35,6 +35,7 @@ class TableNameUtil(private val coalescedNameUtil: CoalescedNameUtil) {
         return decoded + printable.substring(16).toByteArray()
     }
 
-    private fun targetTable(namespace: String, tableName: String) =
-            coalescedNameUtil.coalescedName("$namespace:$tableName").replace("-", "_")
+    fun targetTable(namespace: String, tableName: String) =
+        coalescedNameUtil.coalescedName("$namespace:$tableName")
+            .replace("-", "_").replace(".", "_")
 }
