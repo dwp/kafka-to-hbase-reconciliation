@@ -38,11 +38,13 @@ class TrimReconciledRecordsServiceImpl(
     }
 
     override fun trimReconciledRecords() {
+
         logger.info("Starting trim for reconciled records in the metadata store")
 
         val deletedCount = metadataStoreRepository.deleteRecordsOlderThanPeriod(trimReconciledScale, trimReconciledUnit)
 
-        logger.info("Finished trim for reconciled units",
+        logger.info(
+            "Finished trim for reconciled units",
             "deleted_count" to deletedCount.toString()
         )
     }

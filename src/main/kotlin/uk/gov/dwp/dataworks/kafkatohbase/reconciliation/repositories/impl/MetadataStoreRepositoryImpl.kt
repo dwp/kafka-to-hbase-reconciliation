@@ -10,17 +10,22 @@ import java.sql.PreparedStatement
 import java.sql.SQLException
 
 @Repository
-class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupplier,
-                                  private val table: String) : MetadataStoreRepository {
+class MetadataStoreRepositoryImpl(
+    private val connectionSupplier: ConnectionSupplier,
+    private val table: String
+) : MetadataStoreRepository {
 
-    override fun groupedUnreconciledRecords(minAgeSize: Int, minAgeUnit: String): Map<String, List<UnreconciledRecord>> =
+    override fun groupedUnreconciledRecords(
+        minAgeSize: Int,
+        minAgeUnit: String
+    ): Map<String, List<UnreconciledRecord>> =
         unreconciledRecords(minAgeSize, minAgeUnit).groupBy { it.topicName }
 
     override fun reconcileRecords(unreconciled: List<UnreconciledRecord>) {
         logger.info("Reconciling records", "record_count" to "${unreconciled.size}")
         if (unreconciled.isNotEmpty()) {
             logger.info("Reconciling records", "record_count" to "${unreconciled.size}")
-            with (reconcileRecordStatement) {
+            with(reconcileRecordStatement) {
                 try {
                     unreconciled.forEach {
                         setInt(1, it.id)
@@ -34,6 +39,8 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
                 }
             }
             logger.info("Reconciled records", "record_count" to "${unreconciled.size}")
+        } else {
+            logger.info("No records to be reconciled")
         }
     }
 
@@ -42,15 +49,21 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
         unreconciledRecordsStatement(minAgeSize, minAgeUnit).use { statement ->
             statement.executeQuery().use { results ->
                 while (results.next()) {
-                    list.add(UnreconciledRecord(results.getInt("id"),
-                        results.getString("topic_name"),
-                        results.getString("hbase_id"),
-                        results.getTimestamp("hbase_timestamp").time))
+                    list.add(
+                        UnreconciledRecord(
+                            results.getInt("id"),
+                            results.getString("topic_name"),
+                            results.getString("hbase_id"),
+                            results.getTimestamp("hbase_timestamp").time
+                        )
+                    )
                 }
             }
         }
 
-       return list
+        logger.info("Retrieved unreconciled records", "unreconciled_record_count" to "${list.size}")
+
+        return list
     }
 
     override fun deleteRecordsOlderThanPeriod(trimReconciledScale: String, trimReconciledUnit: String): Int {
@@ -58,7 +71,8 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
         logger.info(
             "Deleting records in Metadata Store by scale and unit",
             "scale" to trimReconciledScale,
-            "unit" to trimReconciledUnit
+            "unit" to trimReconciledUnit,
+            "table" to table
         )
 
         val statement = connection().createStatement()
@@ -75,21 +89,24 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
             "Deleted records in Metadata Store by scale and unit",
             "scale" to trimReconciledScale,
             "unit" to trimReconciledUnit,
+            "table" to table,
             "deleted_count" to deletedCount.toString()
         )
 
         return deletedCount
     }
 
-    private fun unreconciledRecordsStatement(minAgeSize: Int, minAgeUnit: String): PreparedStatement
-        = connection().prepareStatement("""
+    private fun unreconciledRecordsStatement(minAgeSize: Int, minAgeUnit: String): PreparedStatement =
+        connection().prepareStatement(
+            """
                 SELECT id, hbase_id, hbase_timestamp, topic_name 
                 FROM $table
                 WHERE write_timestamp < CURRENT_TIMESTAMP - INTERVAL $minAgeSize $minAgeUnit
                 AND write_timestamp > CURRENT_DATE - INTERVAL 14 DAY
                 AND reconciled_result = false
                 LIMIT 100000
-            """.trimIndent())
+            """.trimIndent()
+        )
 
 
     private val reconcileRecordStatement: PreparedStatement by lazy {
@@ -98,7 +115,8 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
                 UPDATE $table
                 SET reconciled_result=true, reconciled_timestamp=CURRENT_TIMESTAMP
                 WHERE id = ?
-            """.trimIndent())
+            """.trimIndent()
+        )
     }
 
     private fun commit() {
