@@ -22,9 +22,9 @@ class MetadataStoreRepositoryImpl(
         unreconciledRecords(minAgeSize, minAgeUnit).groupBy { it.topicName }
 
     override fun reconcileRecords(unreconciled: List<UnreconciledRecord>) {
-        logger.info("Reconciling records", "record_count" to "${unreconciled.size}")
+        logger.info("Reconciling records", "record_count" to "${unreconciled.size}", "table" to table)
         if (unreconciled.isNotEmpty()) {
-            logger.info("Reconciling records", "record_count" to "${unreconciled.size}")
+            logger.info("Reconciling records", "record_count" to "${unreconciled.size}", "table" to table)
             with(reconcileRecordStatement) {
                 try {
                     unreconciled.forEach {
@@ -38,9 +38,9 @@ class MetadataStoreRepositoryImpl(
                     rollback()
                 }
             }
-            logger.info("Reconciled records", "record_count" to "${unreconciled.size}")
+            logger.info("Reconciled records", "record_count" to "${unreconciled.size}", "table" to table)
         } else {
-            logger.info("No records to be reconciled")
+            logger.info("No records to be reconciled", "table" to table)
         }
     }
 
@@ -61,7 +61,7 @@ class MetadataStoreRepositoryImpl(
             }
         }
 
-        logger.info("Retrieved unreconciled records", "unreconciled_record_count" to "${list.size}")
+        logger.info("Retrieved unreconciled records", "unreconciled_record_count" to "${list.size}", "table" to table)
 
         return list
     }
