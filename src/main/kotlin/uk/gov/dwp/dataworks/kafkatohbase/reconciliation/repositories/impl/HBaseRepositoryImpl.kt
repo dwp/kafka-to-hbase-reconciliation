@@ -30,7 +30,9 @@ class HBaseRepositoryImpl(private val connection: Connection, private val tableN
                     val (found, notFound)
                             = results.partition(Pair<UnreconciledRecord, Boolean>::second)
 
-                    logger.info("Checked batch of records from metadata store","size" to "${records.size}", "found" to "${found.size}", "not_found" to "${notFound.size}")
+                    logger.info("Checked batch of records from metadata store","size" to "${records.size}",
+                        "topic" to topicName,
+                        "found" to "${found.size}", "not_found" to "${notFound.size}")
 
                     notFound.asSequence().map { it.first }.forEach {
                         logger.debug("Record not found",
