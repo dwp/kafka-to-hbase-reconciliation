@@ -60,7 +60,7 @@ class TrimReconciledIntegrationTest : StringSpec() {
             with(insertMetadataStoreRecordStatement(this)) {
                 for (index in startIndex..endIndex) {
                     setString(1, printableHbaseKey(index))
-                    setTimestamp(2, Timestamp(1544799662000))
+                    setLong(2, 1544799662000)
                     setString(3, kafkaTopic)
                     setTimestamp(4, Timestamp(aWeekAgo.timeInMillis))
                     setTimestamp(5, null)
@@ -79,7 +79,7 @@ class TrimReconciledIntegrationTest : StringSpec() {
             with(insertMetadataStoreRecordStatement(this)) {
                 for (index in startIndex..endIndex) {
                     setString(1, printableHbaseKey(index))
-                    setTimestamp(2, Timestamp(1544799662000))
+                    setLong(2, 1544799662000)
                     setString(3, kafkaTopic)
                     setTimestamp(4, Timestamp(twoWeeksAgo.timeInMillis))
                     setTimestamp(5, Timestamp(aWeekAgo.timeInMillis))
