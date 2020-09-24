@@ -15,7 +15,6 @@ import utility.MessageParser
 import utility.wellFormedValidPayload
 import java.sql.Connection
 import java.sql.DriverManager
-import java.sql.Timestamp
 import java.util.*
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTime
@@ -69,7 +68,7 @@ class ReconciliationIntegrationTest : StringSpec() {
                     logger.info("Adding records to metadatastore for topic 'db.database.collection$topicIndex'")
                     for (recordIndex in 1..200) {
                         setString(1, printableHbaseKey(topicIndex, recordIndex))
-                        setTimestamp(2, Timestamp(1544799662000))
+                        setLong(2, 1544799662000L)
                         setString(3, "db.database.collection$topicIndex")
                         setBoolean(4, false)
                         addBatch()

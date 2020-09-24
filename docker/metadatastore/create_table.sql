@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS `ucfs` (
     `id` INT NOT NULL AUTO_INCREMENT,
     `hbase_id` VARCHAR(2048) NULL,
-    `hbase_timestamp` DATETIME NULL,
+    `hbase_timestamp` BIGINT NULL,
     `write_timestamp` DATETIME DEFAULT CURRENT_TIMESTAMP,
     `correlation_id` VARCHAR(160) NULL,
     `topic_name` VARCHAR(160) NULL,

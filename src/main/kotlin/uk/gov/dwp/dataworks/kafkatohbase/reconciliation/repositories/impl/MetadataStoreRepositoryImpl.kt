@@ -10,16 +10,11 @@ import java.sql.PreparedStatement
 import java.sql.SQLException
 
 @Repository
-class MetadataStoreRepositoryImpl(
-    private val connectionSupplier: ConnectionSupplier,
-    private val table: String
-) : MetadataStoreRepository {
+class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupplier, private val table: String):
+    MetadataStoreRepository {
 
-    override fun groupedUnreconciledRecords(
-        minAgeSize: Int,
-        minAgeUnit: String
-    ): Map<String, List<UnreconciledRecord>> =
-        unreconciledRecords(minAgeSize, minAgeUnit).groupBy { it.topicName }
+    override fun groupedUnreconciledRecords(minAgeSize: Int, minAgeUnit: String): Map<String, List<UnreconciledRecord>> =
+            unreconciledRecords(minAgeSize, minAgeUnit).groupBy { it.topicName }
 
     override fun reconcileRecords(unreconciled: List<UnreconciledRecord>) {
         logger.info("Reconciling records", "record_count" to "${unreconciled.size}", "table" to table)
@@ -54,7 +49,7 @@ class MetadataStoreRepositoryImpl(
                             results.getInt("id"),
                             results.getString("topic_name"),
                             results.getString("hbase_id"),
-                            results.getTimestamp("hbase_timestamp").time
+                            results.getLong("hbase_timestamp")
                         )
                     )
                 }

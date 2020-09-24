@@ -66,7 +66,7 @@ class MetadataStoreRepositoryImplTest {
         verify(resultSet, times(99)).getInt("id")
         verify(resultSet, times(99)).getString("topic_name")
         verify(resultSet, times(99)).getString("hbase_id")
-        verify(resultSet, times(99)).getTimestamp("hbase_timestamp")
+        verify(resultSet, times(99)).getLong("hbase_timestamp")
         verify(resultSet, times(1)).close()
         verifyNoMoreInteractions(resultSet)
     }
