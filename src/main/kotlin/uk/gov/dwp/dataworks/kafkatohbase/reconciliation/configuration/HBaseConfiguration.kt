@@ -18,7 +18,7 @@ data class HBaseConfiguration(
     var zookeeperQuorum: String? = "NOT_SET",
     var zookeeperPort: String? = "NOT_SET",
     var clientScannerTimeoutPeriodMs: String? = "NOT_SET",
-    var clientTimeoutMs: String? = "NOT_SET",
+    var clientOperationTimeoutMs: String? = "NOT_SET",
     var rpcReadTimeoutMs: String? = "NOT_SET",
     var retries: String? = "NOT_SET"
 ) {
@@ -34,7 +34,7 @@ data class HBaseConfiguration(
             set(HConstants.ZOOKEEPER_QUORUM, zookeeperQuorum ?: "NOPE")
             setInt("hbase.zookeeper.port", zookeeperPort?.toIntOrNull() ?: 666)
             setInt(HConstants.HBASE_CLIENT_SCANNER_TIMEOUT_PERIOD, clientScannerTimeoutPeriodMs?.toIntOrNull() ?: 666)
-            setInt(HConstants.HBASE_CLIENT_OPERATION_TIMEOUT, clientTimeoutMs?.toIntOrNull() ?: 666)
+            setInt(HConstants.HBASE_CLIENT_OPERATION_TIMEOUT, clientOperationTimeoutMs?.toIntOrNull() ?: 666)
             setInt(HConstants.HBASE_RPC_READ_TIMEOUT_KEY, rpcReadTimeoutMs?.toIntOrNull() ?: 666)
             setInt(HConstants.HBASE_CLIENT_RETRIES_NUMBER, retries?.toIntOrNull() ?: 666)
         }
