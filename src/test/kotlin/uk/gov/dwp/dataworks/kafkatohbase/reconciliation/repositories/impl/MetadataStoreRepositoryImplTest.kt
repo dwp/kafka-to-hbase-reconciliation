@@ -7,7 +7,10 @@ import org.junit.jupiter.api.Test
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.domain.UnreconciledRecord
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.suppliers.ConnectionSupplier
 import java.sql.*
+import kotlin.time.ExperimentalTime
 
+
+@ExperimentalTime
 class MetadataStoreRepositoryImplTest {
 
     @Test

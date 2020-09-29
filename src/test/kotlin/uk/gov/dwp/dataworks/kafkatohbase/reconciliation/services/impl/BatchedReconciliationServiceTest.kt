@@ -7,7 +7,9 @@ import org.junit.jupiter.api.Test
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.domain.UnreconciledRecord
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.HBaseRepository
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.MetadataStoreRepository
+import kotlin.time.ExperimentalTime
 
+@ExperimentalTime
 internal class BatchedReconciliationServiceTest {
 
     @Test
