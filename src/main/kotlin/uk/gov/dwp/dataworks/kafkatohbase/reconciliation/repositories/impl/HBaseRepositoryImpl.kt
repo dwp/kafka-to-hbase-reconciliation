@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Repository
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.domain.UnreconciledRecord
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.HBaseRepository
-import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ScheduledReconciliationService
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.utils.TableNameUtil
 import uk.gov.dwp.dataworks.logging.DataworksLogger
 
@@ -63,6 +62,6 @@ class HBaseRepositoryImpl(private val connection: Connection, private val tableN
     private fun tableName(topicName: String) = tableNameUtil.getTableNameFromTopic(topicName)
 
     companion object {
-        val logger = DataworksLogger.getLogger(ScheduledReconciliationService::class.toString())
+        val logger = DataworksLogger.getLogger(HBaseRepositoryImpl::class.toString())
     }
 }

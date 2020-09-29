@@ -9,9 +9,13 @@ import org.springframework.stereotype.Service
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.domain.UnreconciledRecord
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.HBaseRepository
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.MetadataStoreRepository
+import uk.gov.dwp.dataworks.logging.DataworksLogger
+import kotlin.time.ExperimentalTime
+import kotlin.time.measureTimedValue
 
 @Service
 @Profile("RECONCILIATION")
+@ExperimentalTime
 class BatchedReconciliationService(
     private val hbaseRepository: HBaseRepository,
     private val metadataStoreRepository: MetadataStoreRepository,
@@ -24,11 +28,26 @@ class BatchedReconciliationService(
 
 
     private fun unreconciledRecords(): List<UnreconciledRecord> = runBlocking {
-        metadataStoreRepository.groupedUnreconciledRecords(minimumAgeScale, minimumAgeUnit)
-            .map { (topic, records) ->
-                    async(Dispatchers.IO) {
-                        hbaseRepository.recordsInHbase(topic, records)
-                    }
+        val rdbmsTimedValue = measureTimedValue {
+            metadataStoreRepository.groupedUnreconciledRecords(minimumAgeScale, minimumAgeUnit);
+        }
+
+        logger.info("Queried rdbms", "duration" to "${rdbmsTimedValue.duration}")
+
+        val hbaseTimedValue = measureTimedValue {
+            rdbmsTimedValue.value.map { (topic, records) ->
+                async(Dispatchers.IO) {
+                    hbaseRepository.recordsInHbase(topic, records)
+                }
             }.awaitAll().flatten()
+        }
+
+        logger.info("Queried hbase", "duration" to "${hbaseTimedValue.duration}")
+
+        hbaseTimedValue.value
+    }
+
+    companion object {
+        private val logger = DataworksLogger.getLogger(AbstractReconciliationService::class.java.toString())
     }
 }

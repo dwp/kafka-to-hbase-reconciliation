@@ -3,40 +3,44 @@ package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.impl
 import org.springframework.stereotype.Repository
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.domain.UnreconciledRecord
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.MetadataStoreRepository
-import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ScheduledReconciliationService
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.suppliers.ConnectionSupplier
 import uk.gov.dwp.dataworks.logging.DataworksLogger
 import java.sql.PreparedStatement
 import java.sql.SQLException
+import kotlin.time.ExperimentalTime
+import kotlin.time.measureTime
 
 @Repository
+@ExperimentalTime
 class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupplier, private val table: String):
     MetadataStoreRepository {
 
     override fun groupedUnreconciledRecords(minAgeSize: Int, minAgeUnit: String): Map<String, List<UnreconciledRecord>> =
             unreconciledRecords(minAgeSize, minAgeUnit).groupBy { it.topicName }
 
+
     override fun reconcileRecords(unreconciled: List<UnreconciledRecord>) {
-        logger.info("Reconciling records", "record_count" to "${unreconciled.size}", "table" to table)
-        if (unreconciled.isNotEmpty()) {
-            logger.info("Reconciling records", "record_count" to "${unreconciled.size}", "table" to table)
-            with(reconcileRecordStatement) {
-                try {
-                    unreconciled.forEach {
-                        setInt(1, it.id)
-                        addBatch()
+        val timeTaken = measureTime {
+            if (unreconciled.isNotEmpty()) {
+                logger.info("Reconciling records", "record_count" to "${unreconciled.size}", "table" to table)
+                with (reconcileRecordStatement) {
+                    try {
+                        unreconciled.forEach {
+                            setInt(1, it.id)
+                            addBatch()
+                        }
+                        executeBatch()
+                        commit()
+                    } catch (e: SQLException) {
+                        logger.error("Failed to update batch", e, "error" to "e.message", "error_code" to "${e.errorCode}")
+                        rollback()
                     }
-                    executeBatch()
-                    commit()
-                } catch (e: SQLException) {
-                    logger.error("Failed to update batch", e, "error" to "e.message", "error_code" to "${e.errorCode}")
-                    rollback()
                 }
+            } else {
+                logger.info("No records to be reconciled", "table" to table)
             }
-            logger.info("Reconciled records", "record_count" to "${unreconciled.size}", "table" to table)
-        } else {
-            logger.info("No records to be reconciled", "table" to table)
         }
+        logger.info("Updated rdbms", "record_count" to "${unreconciled.size}", "table" to table, "duration" to "$timeTaken")
     }
 
     private fun unreconciledRecords(minAgeSize: Int, minAgeUnit: String): MutableList<UnreconciledRecord> {
@@ -129,6 +133,6 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
     private fun connection() = connectionSupplier.connection()
 
     companion object {
-        private val logger = DataworksLogger.getLogger(ScheduledReconciliationService::class.toString())
+        private val logger = DataworksLogger.getLogger(MetadataStoreRepositoryImpl::class.java.toString())
     }
 }
