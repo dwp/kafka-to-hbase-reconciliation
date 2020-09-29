@@ -23,7 +23,7 @@ class HBaseRepositoryImpl(private val connection: Connection, private val tableN
 
     private fun recordsExistInHBase(topicName: String, records: List<UnreconciledRecord>): List<Pair<UnreconciledRecord, Boolean>> {
         return if (records.isNotEmpty()) {
-            if (connection.admin.tableExists(table(topicName))) {
+            if (tableExists(topicName)) {
                 (connection.getTable(table(topicName))).use { table ->
                     val results = records.zip(table.existsAll(records.map { get(it.hbaseId, it.version) }).asIterable())
                     val (found, notFound)
@@ -52,6 +52,22 @@ class HBaseRepositoryImpl(private val connection: Connection, private val tableN
             listOf()
         }
     }
+
+
+    private fun tableExists(topicName: String): Boolean {
+        return if (_mutableMap.containsKey(topicName)) {
+            true
+        }
+        else {
+            val exists = connection.admin.tableExists(table(topicName))
+            if (exists) {
+                _mutableMap[topicName] = true
+            }
+            exists
+        }
+    }
+
+    private var _mutableMap: MutableMap<String, Boolean> = mutableMapOf()
 
     private fun get(id: String, version: Long) = Get(tableNameUtil.decodePrintable(id)).apply {
         setTimeStamp(version)
