@@ -40,7 +40,7 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
                 logger.info("No records to be reconciled", "table" to table)
             }
         }
-        logger.info("Updated rdbms", "record_count" to "${unreconciled.size}", "table" to table, "duration" to "$timeTaken")
+        logger.info("Updated metadatastore", "record_count" to "${unreconciled.size}", "table" to table, "duration" to "$timeTaken")
     }
 
     private fun unreconciledRecords(minAgeSize: Int, minAgeUnit: String): MutableList<UnreconciledRecord> {
