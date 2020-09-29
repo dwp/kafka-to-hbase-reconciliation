@@ -38,8 +38,6 @@ internal class BatchedReconciliationServiceTest {
         val recordsCaptor = argumentCaptor<List<UnreconciledRecord>>()
         verify(hbaseRepository, times(10)).recordsInHbase(topicCaptor.capture(), recordsCaptor.capture())
 
-        //println(topicCaptor.allValues)
-
         for (topicIndex in 1 .. 10) {
             assertTrue(topicCaptor.allValues.contains("db.database.collection${topicIndex}"))
         }
