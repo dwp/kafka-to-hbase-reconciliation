@@ -38,13 +38,18 @@ internal class BatchedReconciliationServiceTest {
         val recordsCaptor = argumentCaptor<List<UnreconciledRecord>>()
         verify(hbaseRepository, times(10)).recordsInHbase(topicCaptor.capture(), recordsCaptor.capture())
 
-        topicCaptor.allValues.forEachIndexed { index, topic -> assertEquals("db.database.collection${index + 1}", topic)}
-        recordsCaptor.allValues.forEachIndexed { topicIndex, list ->
+        for (topicIndex in 1 .. 10) {
+            assertTrue(topicCaptor.allValues.contains("db.database.collection${topicIndex}"))
+        }
+
+        recordsCaptor.allValues.forEach { list ->
             list.forEachIndexed { recordIndex, unreconciledRecord ->
-                assertEquals(((topicIndex + 1) * 1000) + (recordIndex + 1), unreconciledRecord.id)
-                assertEquals("db.database.collection${topicIndex + 1}", unreconciledRecord.topicName)
-                assertEquals("${topicIndex + 1}/${recordIndex + 1}", unreconciledRecord.hbaseId)
-                assertEquals((((topicIndex + 1) * 1000) + (recordIndex + 1)).toLong(), unreconciledRecord.version)
+                val matchResult = Regex("""\d+$""").find(unreconciledRecord.topicName)
+                val topicNo = matchResult?.groupValues?.get(0)?.toInt()!!
+                assertEquals(((topicNo) * 1000) + (recordIndex + 1), unreconciledRecord.id)
+                assertEquals("db.database.collection${topicNo}", unreconciledRecord.topicName)
+                assertEquals("${topicNo}/${recordIndex + 1}", unreconciledRecord.hbaseId)
+                assertEquals((((topicNo) * 1000) + (recordIndex + 1)).toLong(), unreconciledRecord.version)
             }
         }
         verifyNoMoreInteractions(hbaseRepository)
