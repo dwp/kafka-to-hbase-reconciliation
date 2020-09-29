@@ -32,7 +32,7 @@ class BatchedReconciliationService(
             metadataStoreRepository.groupedUnreconciledRecords(minimumAgeScale, minimumAgeUnit);
         }
 
-        logger.info("Queried rdbms", "duration" to "${rdbmsTimedValue.duration}")
+        logger.info("Queried metadatastore", "duration" to "${rdbmsTimedValue.duration}")
 
         val hbaseTimedValue = measureTimedValue {
             rdbmsTimedValue.value.map { (topic, records) ->
