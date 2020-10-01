@@ -50,7 +50,7 @@ mysql-writer: ## Get a writer client session on the metadatastore database.
 
 truncate-ucfs: ## truncate the ucfs table.
 	docker exec -i metadatastore \
-		mysql --host=127.0.0.1 --user=reconciliationwriter --password=my-password metadatastore <<< "truncate ucfs;"
+		mysql --user=reconciliationwriter --password=my-password metadatastore <<< "truncate ucfs;"
 
 truncate-hbase: ## truncate all hbase tables.
 	docker exec -i hbase hbase shell <<< list \
@@ -90,11 +90,6 @@ hbase-up: ## Bring up and provision mysql
 
 
 services: hbase-up rdbms-up ## Bring up supporting services in docker
-
-stop-services:
-	docker ps -a | awk '{print $1 }' | fgrep --color=auto -v CONTAINER | xargs -r docker stop | xargs -r docker rm
-
-restart-service: stop-services services
 
 up: services ## Bring up Reconciliation in Docker with supporting services
 	docker-compose -f docker-compose.yaml up --build -d reconciliation trim-reconciled-records
