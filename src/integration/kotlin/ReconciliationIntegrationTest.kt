@@ -27,11 +27,11 @@ class ReconciliationIntegrationTest : StringSpec() {
     init {
         "Matching records are reconciled, mismatches are not" {
             val timeTaken = measureTime {
-                withTimeout(3.minutes) {
+                withTimeout(15.minutes) {
                     launch { populateHbase() }
                     launch { populateMetadataStore() }
                     launch {
-                        while (reconciledRecordCount() < 1000) {
+                        while (reconciledRecordCount() < ((topicCount * recordCount) / 2)) {
                             logger.info("Waiting for records to be reconciled")
                             delay(1.seconds)
                         }
@@ -40,7 +40,7 @@ class ReconciliationIntegrationTest : StringSpec() {
             }
 
             timeTaken shouldBeGreaterThan 15.seconds
-            allRecordCount() shouldBe 2000
+            allRecordCount() shouldBe topicCount * recordCount
 
             with (metadatastoreConnection) {
                 createStatement().use { statement ->
@@ -64,9 +64,9 @@ class ReconciliationIntegrationTest : StringSpec() {
         logger.info("Putting lots of data into metadatastore")
         with(metadatastoreConnection) {
             with(insertMetadatastoreRecordStatement(this)) {
-                for (topicIndex in 1..10) {
+                for (topicIndex in 1..topicCount) {
                     logger.info("Adding records to metadatastore for topic 'db.database.collection$topicIndex'")
-                    for (recordIndex in 1..200) {
+                    for (recordIndex in 1..recordCount) {
                         setString(1, printableHbaseKey(topicIndex, recordIndex))
                         setLong(2, 1544799662000L)
                         setString(3, "db.database.collection$topicIndex")
@@ -85,11 +85,11 @@ class ReconciliationIntegrationTest : StringSpec() {
         logger.info("Putting lots of data into hbase")
 
         hbaseConnection().use { connection ->
-            for (topicIndex in 1..10) {
+            for (topicIndex in 1..topicCount) {
                 logger.info("Adding records to hbase for topic 'db.database.collection$topicIndex'")
                 connection.ensureTable(hbaseTableNameString(topicIndex))
                 hbaseTable(connection, hbaseTableNameString(topicIndex)).use {
-                    it.put((1..200 step 2).map { recordIndex ->
+                    it.put((1..recordCount step 2).map { recordIndex ->
                         val body = wellFormedValidPayload("database", "collection$topicIndex")
                         val key = hbaseKey(topicIndex, recordIndex)
                         Put(key).apply { addColumn(columnFamily, columnQualifier, 1544799662000, body) }
@@ -177,5 +177,8 @@ class ReconciliationIntegrationTest : StringSpec() {
         )
 
     private fun Int.isOdd() = this % 2 == 1
+
+    private val topicCount = 10
+    private val recordCount = 1000
 }
 

@@ -43,7 +43,6 @@ class BatchedReconciliationService(
         }
 
         logger.info("Queried hbase", "duration" to "${hbaseTimedValue.duration}")
-
         hbaseTimedValue.value
     }
 

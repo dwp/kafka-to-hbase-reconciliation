@@ -123,14 +123,14 @@ class MetadataStoreRepositoryImplTest {
 
     private fun verifyBatchedConnectionInteractions(connection: Connection, autoOn: Boolean, updateSucceeds: Boolean) {
         val sqlCaptor = argumentCaptor<String>()
-        verify(connection, times(1)).prepareStatement(sqlCaptor.capture())
-        verify(connection, times(1)).autoCommit
+        verify(connection, times(10)).prepareStatement(sqlCaptor.capture())
+        verify(connection, times(10)).autoCommit
         if (!autoOn) {
             if (updateSucceeds) {
-                verify(connection, times(1)).commit()
+                verify(connection, times(10)).commit()
             }
             else {
-                verify(connection, times(1)).rollback()
+                verify(connection, times(10)).rollback()
             }
         }
         assertEquals("""

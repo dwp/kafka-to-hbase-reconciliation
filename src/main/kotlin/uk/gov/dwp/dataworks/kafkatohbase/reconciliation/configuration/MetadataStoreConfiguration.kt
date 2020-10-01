@@ -23,7 +23,8 @@ data class MetadataStoreConfiguration(
     var caCertPath: String? = "NOT_SET",
     var queryLimit: String? = "NOT_SET",
     var useAwsSecrets: String? = "NOT_SET",
-) {
+    var numberOfParallelUpdates: Int = 10,
+    var batchSize: Int = 10_000) {
 
     @Bean
     fun databaseUrl() = "jdbc:mysql://$endpoint:$port/$databaseName"
@@ -62,6 +63,12 @@ data class MetadataStoreConfiguration(
     @Bean
     @Qualifier("queryLimit")
     fun queryLimit() = queryLimit
+
+    @Bean
+    fun numberOfParallelUpdates() = numberOfParallelUpdates
+
+    @Bean
+    fun batchSize() = batchSize
 
     @Autowired
     private lateinit var secretHelper: SecretHelperInterface

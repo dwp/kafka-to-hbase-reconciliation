@@ -72,7 +72,6 @@ rdbms-up: ## Bring up and provision mysql
 			sleep 2; \
 			echo Waiting for metadatastore.; \
 		done; \
-		sleep 5; \
 		echo ...metadatastore ready.; \
 	}
 	docker exec -i metadatastore mysql --host=127.0.0.1 --user=root --password=password metadatastore  < ./docker/metadatastore/create_table.sql
@@ -86,12 +85,16 @@ hbase-up: ## Bring up and provision mysql
 			sleep 2; \
 			echo Waiting for hbase.; \
 		done; \
-		sleep 5; \
 		echo ...hbase ready.; \
 	}
 
 
 services: hbase-up rdbms-up ## Bring up supporting services in docker
+
+stop-services:
+	docker ps -a | awk '{print $1 }' | fgrep --color=auto -v CONTAINER | xargs -r docker stop | xargs -r docker rm
+
+restart-service: stop-services services
 
 up: services ## Bring up Reconciliation in Docker with supporting services
 	docker-compose -f docker-compose.yaml up --build -d reconciliation trim-reconciled-records
