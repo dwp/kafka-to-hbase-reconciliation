@@ -25,14 +25,18 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
             unreconciledRecords(minAgeSize, minAgeUnit).groupBy { it.topicName }
 
     override fun reconcileRecords(unreconciled: List<UnreconciledRecord>) {
-        val timeTaken = measureTime {
-            runBlocking {
-                unreconciled.chunked(unreconciled.size / numberOfParallelUpdates).forEach { batch ->
-                    launch(Dispatchers.IO) { reconcileBatch(batch) }
+        if (unreconciled.isNotEmpty()) {
+            val timeTaken = measureTime {
+                runBlocking {
+                    unreconciled.chunked(unreconciled.size / numberOfParallelUpdates).forEach { batch ->
+                        launch(Dispatchers.IO) {
+                            reconcileBatch(batch)
+                        }
+                    }
                 }
             }
+            logger.info("Updated metadatastore", "record_count" to "${unreconciled.size}", "table" to table, "duration" to "$timeTaken")
         }
-        logger.info("Updated metadatastore", "record_count" to "${unreconciled.size}", "table" to table, "duration" to "$timeTaken")
     }
 
     private fun reconcileBatch(batch: List<UnreconciledRecord>) =
@@ -47,7 +51,8 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
                         commit(connection)
                         logger.info("Updated sub-batch", "size" to "${batch.size}")
                     } catch (e: SQLException) {
-                        logger.error("Failed to update batch", e, "error" to "e.message", "error_code" to "${e.errorCode}")
+                        logger.error("Failed to update batch", e, "error" to "${e.message}", "error_code" to "${e.errorCode}")
+                        e.printStackTrace(System.err)
                         rollback(connection)
                     }
                 }
@@ -74,36 +79,29 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
                 }
             }
 
-    override fun deleteRecordsOlderThanPeriod(trimReconciledScale: String, trimReconciledUnit: String): Int {
+    override fun deleteRecordsOlderThanPeriod(trimReconciledScale: String, trimReconciledUnit: String): Int =
         connection().use { connection ->
-            logger.info(
-                "Deleting records in Metadata Store by scale and unit",
+            logger.info("Deleting records in Metadata Store by scale and unit",
                 "scale" to trimReconciledScale,
                 "unit" to trimReconciledUnit,
-                "table" to table
-            )
+                "table" to table)
 
-            val statement = connection.createStatement()
-
-            val deletedCount = statement.executeUpdate(
-                """
+            connection.createStatement().use {
+                val deletedCount = it.executeUpdate("""
                     DELETE FROM $table
                     WHERE reconciled_result = TRUE
                     AND reconciled_timestamp < CURRENT_DATE - INTERVAL $trimReconciledScale $trimReconciledUnit
-                """.trimIndent()
-            )
+                """.trimIndent())
 
-            logger.info(
-                "Deleted records in Metadata Store by scale and unit",
-                "scale" to trimReconciledScale,
-                "unit" to trimReconciledUnit,
-                "table" to table,
-                "deleted_count" to deletedCount.toString()
-            )
+                logger.info("Deleted records in Metadata Store by scale and unit",
+                    "scale" to trimReconciledScale,
+                    "unit" to trimReconciledUnit,
+                    "table" to table,
+                    "deleted_count" to deletedCount.toString())
+                deletedCount
+            }
 
-            return deletedCount
         }
-    }
 
     private fun unreconciledRecordsStatement(connection: Connection, minAgeSize: Int, minAgeUnit: String): PreparedStatement =
         connection.prepareStatement(

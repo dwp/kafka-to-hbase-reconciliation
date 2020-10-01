@@ -17,12 +17,14 @@ class PooledConnectionSupplier(private val databaseUrl: String,
 
     override fun connection(): Connection = dataSource.connection
 
-
     private val dataSource by lazy {
-        val connectionFactory = DriverManagerConnectionFactory(databaseUrl, databaseProperties)
-        val poolableConnectionFactory = PoolableConnectionFactory(connectionFactory, null)
-        val connectionPool = GenericObjectPool(poolableConnectionFactory)
-        poolableConnectionFactory.pool = connectionPool
-        PoolingDataSource(connectionPool)
+        DriverManagerConnectionFactory(databaseUrl, databaseProperties).let { factory ->
+            PoolableConnectionFactory(factory, null).let { poolable ->
+                GenericObjectPool(poolable).run {
+                    poolable.pool = this
+                    PoolingDataSource(this)
+                }
+            }
+        }
     }
 }

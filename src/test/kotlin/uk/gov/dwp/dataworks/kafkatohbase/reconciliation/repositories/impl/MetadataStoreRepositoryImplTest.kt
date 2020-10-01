@@ -45,7 +45,7 @@ class MetadataStoreRepositoryImplTest {
 
         val statement = mock<PreparedStatement> { on { executeQuery() } doReturn resultSet }
         val connection = mock<Connection> { on { prepareStatement(any()) } doReturn statement }
-        val connectionSupplier = connectionSupplier(connection)
+        val connectionSupplier = connectionSupplier(listOf(connection))
         val minAgeSize = 10
         val minAgeUnit = "MINUTE"
         val grouped = repository(connectionSupplier).groupedUnreconciledRecords(minAgeSize, minAgeUnit)
@@ -56,6 +56,7 @@ class MetadataStoreRepositoryImplTest {
 
         verify(connectionSupplier, times(1)).connection()
         verify(connection, times(1)).prepareStatement(sqlCaptor.capture())
+        verify(connection, times(1)).close()
         verifyNoMoreInteractions(connection)
         assertTrue(sqlCaptor.firstValue.contains("reconciled_result = false"))
         assertTrue(sqlCaptor.firstValue.contains("LIMIT"))
@@ -76,7 +77,6 @@ class MetadataStoreRepositoryImplTest {
 
     @Test
     fun givenRecordsOlderThanScaleAndUnitExistWhenRequestingToTrimRecordsThenRecordsAreDeleted() {
-
         val trimReconciledScale = "1"
         val trimReconciledUnit = "DAY"
 
@@ -92,68 +92,76 @@ class MetadataStoreRepositoryImplTest {
             on { createStatement() } doReturn statement
         }
 
-        val connectionSupplier = connectionSupplier(metadataStoreConnection)
-        val metadataStoreRepository = MetadataStoreRepositoryImpl(connectionSupplier, "ucfs")
+        val connectionSupplier = connectionSupplier(listOf(metadataStoreConnection))
+        val metadataStoreRepository = MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100)
 
         metadataStoreRepository.deleteRecordsOlderThanPeriod(trimReconciledScale, trimReconciledUnit)
         verify(connectionSupplier, times(1)).connection()
         verify(metadataStoreConnection, times(1)).createStatement()
+        verify(metadataStoreConnection, times(1)).close()
+        verifyNoMoreInteractions(metadataStoreConnection)
         verify(statement, times(1)).executeUpdate(any())
+        verify(statement, times(1)).close()
+        verifyNoMoreInteractions(statement)
     }
 
     private fun testAutoCommit(autoOn: Boolean) {
-        val statement = mock<PreparedStatement>()
-        val connection = connection(statement, autoOn)
-        val connectionSupplier = connectionSupplier(connection)
+        val statements = (0 until 10).map { mock<PreparedStatement>() }
+        val connections = (0 until 10).map { connection(statements[it], autoOn) }
+        val connectionSupplier = connectionSupplier(connections)
         repository(connectionSupplier).reconcileRecords(unreconciledRecords())
-        verifyBatchedConnectionInteractions(connection, autoOn, true)
-        verifyBatchedStatementInteractions(statement)
+        connections.forEach { verifyBatchedConnectionInteractions(it, autoOn, true) }
+        statements.forEach(::verifyBatchedStatementInteractions)
     }
 
     private fun testRollback(autoOn: Boolean) {
-        val statement = mock<PreparedStatement> {
-            on { executeBatch() } doThrow SQLException("Error updating")
+        val statements = (0 until 10).map {
+            mock<PreparedStatement> {
+                on { executeBatch() } doThrow SQLException("Error updating")
+            }
         }
-        val connection = connection(statement, autoOn)
-        val connectionSupplier = connectionSupplier(connection)
+        val connections = (0 until 10).map { connection(statements[it], autoOn) }
+        val connectionSupplier = connectionSupplier(connections)
         repository(connectionSupplier).reconcileRecords(unreconciledRecords())
-        verifyBatchedConnectionInteractions(connection, autoOn, false)
-        verifyBatchedStatementInteractions(statement)
+        connections.forEach { verifyBatchedConnectionInteractions(it, autoOn, false) }
+        statements.forEach(::verifyBatchedStatementInteractions)
     }
 
     private fun verifyBatchedConnectionInteractions(connection: Connection, autoOn: Boolean, updateSucceeds: Boolean) {
         val sqlCaptor = argumentCaptor<String>()
-        verify(connection, times(10)).prepareStatement(sqlCaptor.capture())
-        verify(connection, times(10)).autoCommit
+        verify(connection, times(1)).prepareStatement(sqlCaptor.capture())
+        verify(connection, times(1)).autoCommit
         if (!autoOn) {
             if (updateSucceeds) {
-                verify(connection, times(10)).commit()
+                verify(connection, times(1)).commit()
             }
             else {
-                verify(connection, times(10)).rollback()
+                verify(connection, times(1)).rollback()
             }
         }
         assertEquals("""
                         UPDATE ucfs
                         SET reconciled_result=true, reconciled_timestamp=CURRENT_TIMESTAMP
                         WHERE id = ?""".trimIndent(), sqlCaptor.firstValue)
+        verify(connection, times(1)).close()
         verifyNoMoreInteractions(connection)
     }
 
     private fun verifyBatchedStatementInteractions(statement: PreparedStatement) {
-        verify(statement, times(100)).addBatch()
+        verify(statement, times(10)).addBatch()
         val positionCaptor = argumentCaptor<Int>()
         val idCaptor = argumentCaptor<Int>()
-        verify(statement, times(100)).setInt(positionCaptor.capture(), idCaptor.capture())
+        verify(statement, times(10)).setInt(positionCaptor.capture(), idCaptor.capture())
         positionCaptor.allValues.forEach { assertEquals(1, it) }
-        idCaptor.allValues.forEachIndexed { index, id -> assertEquals(index + 1, id) }
+        idCaptor.allValues.forEachIndexed { index, id -> assertEquals((index + 1) % 10, id % 10) }
         verify(statement, times(1)).executeBatch()
+        verify(statement, times(1)).close()
         verifyNoMoreInteractions(statement)
     }
 
-    private fun connectionSupplier(connection: Connection) =
+    private fun connectionSupplier(connections: List<Connection>) =
         mock<ConnectionSupplier> {
-            on { connection() } doReturn connection
+            on { connection() } doReturnConsecutively  connections
         }
 
     private fun connection(statement: PreparedStatement, autoOn: Boolean) =
@@ -168,5 +176,5 @@ class MetadataStoreRepositoryImplTest {
         }
 
     private fun repository(connectionSupplier: ConnectionSupplier): MetadataStoreRepositoryImpl =
-        MetadataStoreRepositoryImpl(connectionSupplier, "ucfs")
+        MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100)
 }
