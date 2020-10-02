@@ -142,7 +142,7 @@ class MetadataStoreRepositoryImplTest {
         assertEquals("""
                         UPDATE ucfs
                         SET reconciled_result=true, reconciled_timestamp=CURRENT_TIMESTAMP
-                        WHERE id = ?""".trimIndent(), sqlCaptor.firstValue)
+                        WHERE id = ?""".trimIndent(), sqlCaptor.firstValue.trim())
         verify(connection, times(1)).close()
         verifyNoMoreInteractions(connection)
     }
