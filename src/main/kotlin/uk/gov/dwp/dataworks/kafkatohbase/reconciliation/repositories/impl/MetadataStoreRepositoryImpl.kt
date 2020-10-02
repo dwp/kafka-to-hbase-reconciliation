@@ -28,7 +28,7 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
         if (unreconciled.isNotEmpty()) {
             val timeTaken = measureTime {
                 runBlocking {
-                    unreconciled.chunked(unreconciled.size / numberOfParallelUpdates).forEach { batch ->
+                    unreconciled.chunked(maxOf(unreconciled.size / numberOfParallelUpdates, 1)).forEach { batch ->
                         launch(Dispatchers.IO) {
                             reconcileBatch(batch)
                         }
