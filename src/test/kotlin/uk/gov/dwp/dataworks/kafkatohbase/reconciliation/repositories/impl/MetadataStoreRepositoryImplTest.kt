@@ -32,6 +32,33 @@ class MetadataStoreRepositoryImplTest {
                 verifyZeroInteractions(this)
             }
 
+    @Test
+    fun testReconcileOneRecord() {
+        val statement = mock<PreparedStatement>()
+
+        val connection = mock<Connection> {
+            on { prepareStatement(any()) } doReturn statement
+            on { autoCommit } doReturn false
+        }
+
+        val connectionSupplier = connectionSupplier(listOf(connection))
+
+        repository(connectionSupplier).reconcileRecords(listOf(
+            UnreconciledRecord(1,"db.database.collection1","hbase_id_1",(10).toLong())))
+        verify(connectionSupplier, times(1)).connection()
+        verifyNoMoreInteractions(connectionSupplier)
+        verify(connection, times(1)).prepareStatement(any())
+        verify(connection, times(1)).autoCommit
+        verify(connection, times(1)).commit()
+        verify(connection, times(1)).close()
+        verifyNoMoreInteractions(connection)
+
+        verify(statement, times(1)).setInt(1, 1)
+        verify(statement, times(1)).addBatch()
+        verify(statement, times(1)).executeBatch()
+        verify(statement, times(1)).close()
+        verifyNoMoreInteractions(statement)
+    }
 
     @Test
     fun testGroupedUnreconciledRecords() {
