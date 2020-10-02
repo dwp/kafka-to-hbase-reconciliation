@@ -16,7 +16,6 @@ class AWSSecretHelper(private val secretsManager: AWSSecretsManager) : SecretHel
     }
 
     override fun getSecret(secretName: String): String? {
-
         logger.info("Getting value from aws secret manager", "secret_name" to secretName)
 
         try {

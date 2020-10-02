@@ -2,6 +2,7 @@ package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.impl
 
 import org.apache.hadoop.hbase.TableName
 import org.apache.hadoop.hbase.client.Connection
+import org.apache.hadoop.hbase.client.Consistency
 import org.apache.hadoop.hbase.client.Get
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Repository
@@ -72,6 +73,7 @@ class HBaseRepositoryImpl(private val connection: Connection, private val tableN
     private fun get(id: String, version: Long) = Get(tableNameUtil.decodePrintable(id)).apply {
         setTimeStamp(version)
         isCheckExistenceOnly = true
+        consistency = Consistency.TIMELINE
     }
 
     private fun table(topicName: String) = TableName.valueOf(tableName(topicName))

@@ -57,7 +57,7 @@ data class HBaseConfiguration(
         logger.info("Hbase connection configuration",
             HConstants.ZOOKEEPER_ZNODE_PARENT to configuration.get(HConstants.ZOOKEEPER_ZNODE_PARENT),
             HConstants.ZOOKEEPER_QUORUM to configuration.get(HConstants.ZOOKEEPER_QUORUM),
-            "hbase.zookeeper.port" to "${configuration.get("hbase.zookeeper.port")}")
+            "hbase.zookeeper.port" to configuration.get("hbase.zookeeper.port"))
         val connection = ConnectionFactory.createConnection(HBaseConfiguration.create(configuration))
         addShutdownHook(connection)
         logger.info("Established connection with HBase")

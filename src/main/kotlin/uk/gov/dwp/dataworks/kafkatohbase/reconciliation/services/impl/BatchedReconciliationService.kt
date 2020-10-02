@@ -29,7 +29,7 @@ class BatchedReconciliationService(
 
     private fun unreconciledRecords(): List<UnreconciledRecord> = runBlocking {
         val rdbmsTimedValue = measureTimedValue {
-            metadataStoreRepository.groupedUnreconciledRecords(minimumAgeScale, minimumAgeUnit);
+            metadataStoreRepository.groupedUnreconciledRecords(minimumAgeScale, minimumAgeUnit)
         }
 
         logger.info("Queried metadatastore", "duration" to "${rdbmsTimedValue.duration}")
@@ -43,7 +43,6 @@ class BatchedReconciliationService(
         }
 
         logger.info("Queried hbase", "duration" to "${hbaseTimedValue.duration}")
-
         hbaseTimedValue.value
     }
 

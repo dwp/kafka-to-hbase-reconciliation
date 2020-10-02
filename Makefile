@@ -50,7 +50,7 @@ mysql-writer: ## Get a writer client session on the metadatastore database.
 
 truncate-ucfs: ## truncate the ucfs table.
 	docker exec -i metadatastore \
-		mysql --host=127.0.0.1 --user=reconciliationwriter --password=my-password metadatastore <<< "truncate ucfs;"
+		mysql --user=reconciliationwriter --password=my-password metadatastore <<< "truncate ucfs;"
 
 truncate-hbase: ## truncate all hbase tables.
 	docker exec -i hbase hbase shell <<< list \
@@ -72,7 +72,6 @@ rdbms-up: ## Bring up and provision mysql
 			sleep 2; \
 			echo Waiting for metadatastore.; \
 		done; \
-		sleep 5; \
 		echo ...metadatastore ready.; \
 	}
 	docker exec -i metadatastore mysql --host=127.0.0.1 --user=root --password=password metadatastore  < ./docker/metadatastore/create_table.sql
@@ -86,7 +85,6 @@ hbase-up: ## Bring up and provision mysql
 			sleep 2; \
 			echo Waiting for hbase.; \
 		done; \
-		sleep 5; \
 		echo ...hbase ready.; \
 	}
 
