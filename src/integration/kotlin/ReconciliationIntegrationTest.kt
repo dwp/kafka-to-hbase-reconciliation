@@ -1,8 +1,8 @@
-
 import com.beust.klaxon.JsonObject
 import com.beust.klaxon.Parser
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.comparables.shouldBeGreaterThan
+import io.kotest.matchers.comparables.shouldBeGreaterThanOrEqualTo
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.*
@@ -26,13 +26,17 @@ import org.apache.hadoop.hbase.client.Connection as HBaseConnection
 class ReconciliationIntegrationTest : StringSpec() {
     init {
         "Matching records are reconciled, mismatches are not" {
+            val allRecords = topicCount * recordCount
+            val halfRecords = allRecords / 2
             val timeTaken = measureTime {
                 withTimeout(15.minutes) {
                     launch { populateHbase() }
                     launch { populateMetadataStore() }
                     launch {
-                        while (reconciledRecordCount() < ((topicCount * recordCount) / 2)) {
-                            logger.info("Waiting for records to be reconciled")
+                        var recordsDone = 0
+                        while (recordsDone < halfRecords) {
+                            recordsDone = reconciledRecordCount()
+                            logger.info("Waiting for >= $halfRecords records to be reconciled but is $recordsDone so far...")
                             delay(1.seconds)
                         }
                     }
@@ -40,9 +44,11 @@ class ReconciliationIntegrationTest : StringSpec() {
             }
 
             timeTaken shouldBeGreaterThan 15.seconds
-            allRecordCount() shouldBe topicCount * recordCount
+            reconciledRecordCount() shouldBeGreaterThanOrEqualTo halfRecords
+            allRecordCount() shouldBeGreaterThanOrEqualTo allRecords
 
-            with (metadatastoreConnection) {
+            logger.info("Checking records in metastore are updated...")
+            with(metadatastoreConnection) {
                 createStatement().use { statement ->
                     statement.executeQuery("SELECT hbase_id, reconciled_result FROM ucfs").use {
                         while (it.next()) {
@@ -57,6 +63,7 @@ class ReconciliationIntegrationTest : StringSpec() {
                     }
                 }
             }
+            logger.info("Done!")
         }
     }
 
