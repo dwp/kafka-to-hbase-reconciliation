@@ -12,8 +12,10 @@ services:
     environment:
       CONTAINER_VERSION: "latest"
       ENVIRONMENT: "local-dev"
-      APPLICATION_NAME: "reconciliation"
+      APPLICATION: "reconciliation"
+      COMPONENT: "jar-file"
       APP_VERSION: "test"
+      CORRELATION_ID: "N/A"
       LOG_LEVEL: DEBUG
       RECONCILER_TRIM_RECORDS_FIXED_DELAY_MILLIS: "1000"
       RECONCILER_FIXED_DELAY_MILLIS: "1000"
@@ -53,8 +55,10 @@ services:
     environment:
       CONTAINER_VERSION: "latest"
       ENVIRONMENT: "local-dev"
-      APPLICATION_NAME: "trim-reconciled-records"
+      APPLICATION: "trim-reconciled-records"
+      COMPONENT: "jar-file"
       APP_VERSION: "test"
+      CORRELATION_ID: "N/A"
       LOG_LEVEL: DEBUG
       RECONCILER_TRIM_RECORDS_FIXED_DELAY_MILLIS: "1000"
       RECONCILER_FIXED_DELAY_MILLIS: "1000"
@@ -108,8 +112,10 @@ services:
     environment:
       CONTAINER_VERSION: "latest"
       ENVIRONMENT: "local-dev"
-      APPLICATION_NAME: "reconciliation"
+      APPLICATION: "reconciliation"
       APP_VERSION: "test"
+      COMPONENT: "jar-file"
+      CORRELATION_ID: "N/A"
       LOG_LEVEL: DEBUG
       RECONCILER_FIXED_DELAY_MILLIS: "1000"
       SECRETS_REGION: "eu-west-2"
@@ -148,8 +154,10 @@ services:
     environment:
       CONTAINER_VERSION: "latest"
       ENVIRONMENT: "local-dev"
-      APPLICATION_NAME: "reconciliation"
+      APPLICATION: "reconciliation"
       APP_VERSION: "test"
+      COMPONENT: "jar-file"
+      CORRELATION_ID: "N/A"
       LOG_LEVEL: DEBUG
       RECONCILER_FIXED_DELAY_MILLIS: "1000"
       SECRETS_REGION: "eu-west-2"
