@@ -52,9 +52,11 @@ data class MetadataStoreConfiguration(
     fun table() = table
 
     @Bean
+    @Qualifier("numberOfParallelUpdates")
     fun numberOfParallelUpdates() = numberOfParallelUpdates
 
     @Bean
+    @Qualifier("batchSize")
     fun batchSize() = batchSize
 
     @Autowired
