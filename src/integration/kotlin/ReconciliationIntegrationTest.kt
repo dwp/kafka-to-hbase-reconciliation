@@ -27,6 +27,7 @@ class ReconciliationIntegrationTest : StringSpec() {
     init {
         "Matching records are reconciled, mismatches are not" {
             val allRecords = topicCount * recordCount
+            val halfRecords = allRecords / 2
             val timeTaken = measureTime {
                 withTimeout(15.minutes) {
                     launch { populateHbase() }
@@ -35,7 +36,7 @@ class ReconciliationIntegrationTest : StringSpec() {
                         var recordsDone = 0
                         while (recordsDone < allRecords) {
                             recordsDone = reconciledRecordCount()
-                            logger.info("Waiting for >= $allRecords records to be reconciled but is $recordsDone so far...")
+                            logger.info("Waiting for >= $halfRecords records to be reconciled but is $recordsDone so far...")
                             delay(1.seconds)
                         }
                     }
@@ -43,6 +44,7 @@ class ReconciliationIntegrationTest : StringSpec() {
             }
 
             timeTaken shouldBeGreaterThan 15.seconds
+            reconciledRecordCount() shouldBeGreaterThanOrEqualTo halfRecords
             allRecordCount() shouldBeGreaterThanOrEqualTo allRecords
 
             logger.info("Checking records in metastore are updated...")
