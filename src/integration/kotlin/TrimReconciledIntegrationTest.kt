@@ -21,7 +21,6 @@ class TrimReconciledIntegrationTest : StringSpec() {
         "Older reconciled records are deleted, unreconciled are left" {
             emptyMetadataStoreTable()
             val recordsInMetadataStore = allRecordCount()
-
             recordsInMetadataStore shouldBe 0
 
             insertMetadataStoreData(0, 1)
@@ -35,6 +34,7 @@ class TrimReconciledIntegrationTest : StringSpec() {
             }
 
             allRecordCount() shouldBe 2
+            logger.info("Done!")
         }
     }
 
