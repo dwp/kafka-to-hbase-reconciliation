@@ -21,7 +21,6 @@ data class MetadataStoreConfiguration(
     var table: String = "NOT_SET",
     var databaseName: String? = "NOT_SET",
     var caCertPath: String? = "NOT_SET",
-    var queryLimit: String? = "NOT_SET",
     var useAwsSecrets: Boolean = true,
     var numberOfParallelUpdates: Int = 10,
     var batchSize: Int = 10_000) {
@@ -51,10 +50,6 @@ data class MetadataStoreConfiguration(
     @Bean
     @Qualifier("table")
     fun table() = table
-
-    @Bean
-    @Qualifier("queryLimit")
-    fun queryLimit() = queryLimit
 
     @Bean
     fun numberOfParallelUpdates() = numberOfParallelUpdates
