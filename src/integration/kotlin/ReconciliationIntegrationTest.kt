@@ -34,7 +34,7 @@ class ReconciliationIntegrationTest : StringSpec() {
                     launch { populateMetadataStore() }
                     launch {
                         var recordsDone = 0
-                        while (recordsDone < allRecords) {
+                        while (recordsDone < halfRecords) {
                             recordsDone = reconciledRecordCount()
                             logger.info("Waiting for >= $halfRecords records to be reconciled but is $recordsDone so far...")
                             delay(1.seconds)
