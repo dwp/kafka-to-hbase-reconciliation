@@ -21,7 +21,7 @@ data class HBaseConfiguration(
     var clientOperationTimeoutMs: String? = "NOT_SET",
     var rpcReadTimeoutMs: String? = "NOT_SET",
     var retries: String? = "NOT_SET",
-    var replicaId: Int = 0
+    var replicaId: String? = "NOT_SET"
 ) {
 
     companion object {
@@ -67,7 +67,7 @@ data class HBaseConfiguration(
     }
 
     @Bean
-    fun replicaId() = replicaId!!.toInt()
+    fun replicaId() = replicaId?.toIntOrNull() ?: -1
 
     private fun addShutdownHook(connection: Connection) {
         logger.info("Adding HBase shutdown hook")

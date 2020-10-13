@@ -86,7 +86,9 @@ class HBaseRepositoryImpl(
         setTimeStamp(version)
         isCheckExistenceOnly = true
         consistency = Consistency.TIMELINE
-        setReplicaId = replicaId
+        if (replicaId > 0) {
+            setReplicaId(replicaId)
+        }
     }
 
     private fun table(topicName: String) = TableName.valueOf(tableName(topicName))
