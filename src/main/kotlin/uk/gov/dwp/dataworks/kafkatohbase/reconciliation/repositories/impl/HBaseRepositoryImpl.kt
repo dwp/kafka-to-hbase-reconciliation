@@ -86,7 +86,7 @@ class HBaseRepositoryImpl(
         setTimeStamp(version)
         isCheckExistenceOnly = true
         consistency = Consistency.TIMELINE
-        if (replicaId => 0) {
+        if (replicaId >= 0) {
             setReplicaId(replicaId)
         }
     }

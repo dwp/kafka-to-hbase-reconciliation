@@ -17,7 +17,7 @@ import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.utils.TableNameUtil
 class HBaseRepositoryImplTest {
 
     @Test
-    fun confirmConnectionToHbaseAndRecordsCanBeRetrievedWithReplica() {
+    fun confirmConnectionToHbaseAndRecordsCanBeRetrievedWithZeroReplicaId() {
         confirmConnectionToHbaseAndRecordsCanBeRetrieved(0,0)
     }
 
