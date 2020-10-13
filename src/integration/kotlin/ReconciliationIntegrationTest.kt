@@ -121,6 +121,7 @@ class ReconciliationIntegrationTest : StringSpec() {
                 addFamily(HColumnDescriptor(columnFamily).apply {
                     maxVersions = Int.MAX_VALUE
                     minVersions = 1
+                    regionReplication = 3
                 })
             })
         }

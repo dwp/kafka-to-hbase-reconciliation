@@ -17,7 +17,21 @@ import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.utils.TableNameUtil
 class HBaseRepositoryImplTest {
 
     @Test
-    fun works() {
+    fun confirmConnectionToHbaseAndRecordsCanBeRetrievedWithZeroReplicaId() {
+        confirmConnectionToHbaseAndRecordsCanBeRetrieved(0,0)
+    }
+
+    @Test
+    fun confirmConnectionToHbaseAndRecordsCanBeRetrievedWithReplica() {
+        confirmConnectionToHbaseAndRecordsCanBeRetrieved(1,1)
+    }
+
+    @Test
+    fun confirmReplicaIsSetToDefaultGivenNegativeValue() {
+        confirmConnectionToHbaseAndRecordsCanBeRetrieved(-1,-2)
+    }
+
+    fun confirmConnectionToHbaseAndRecordsCanBeRetrieved(replicaIdExpected: Int, replicaIdActual: Int) {
         val topic = "db.database.collection"
         val tableName = "database:collection"
 
@@ -48,12 +62,13 @@ class HBaseRepositoryImplTest {
             }
         }
 
-        val hBaseRepository = HBaseRepositoryImpl(connection, tableNameUtil)
+        val hBaseRepository = HBaseRepositoryImpl(connection, tableNameUtil, replicaIdActual)
         val unreconciled = hBaseRepository.recordsInHbase(topic, unreconciledRecords)
         assertEquals(1, getCaptor.allValues.size)
         getCaptor.firstValue.forEachIndexed { index, get ->
             assertEquals("${index + 1}", String(get.row))
             assertTrue(get.isCheckExistenceOnly)
+            assertEquals(replicaIdExpected, get.replicaId)
         }
 
         assertEquals(50, unreconciled.size)

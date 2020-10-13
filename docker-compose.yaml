@@ -30,6 +30,7 @@ services:
       HBASE_CLIENT_SCANNER_TIMEOUT_PERIOD_MS: "60000"
       HBASE_PAUSE_MILLISECONDS: "50"
       HBASE_RETRIES": "3"
+      HBASE_REPLICA_ID: "2"
       METADATASTORE_USER: "reconciliationwriter"
       METADATASTORE_PASSWORD_SECRET_NAME: "metastore_password"
       METADATASTORE_DUMMY_PASSWORD: "my-password"
@@ -44,6 +45,7 @@ services:
       RECONCILER_MINIMUM_AGE_SCALE: "15"
       RECONCILER_MINIMUM_AGE_UNIT: "SECOND"
       SPRING_PROFILES_ACTIVE: DUMMY_SECRETS,RECONCILIATION,HBASE
+
 
   trim-reconciled-records:
     image: trim-reconciled-records:latest
