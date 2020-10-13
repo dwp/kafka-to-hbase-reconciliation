@@ -18,6 +18,11 @@ class HBaseRepositoryImplTest {
 
     @Test
     fun confirmConnectionToHbaseAndRecordsCanBeRetrievedWithReplica() {
+        confirmConnectionToHbaseAndRecordsCanBeRetrieved(0,0)
+    }
+
+    @Test
+    fun confirmConnectionToHbaseAndRecordsCanBeRetrievedWithReplica() {
         confirmConnectionToHbaseAndRecordsCanBeRetrieved(1,1)
     }
 
