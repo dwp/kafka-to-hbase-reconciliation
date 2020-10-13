@@ -42,13 +42,17 @@ class HBaseRepositoryImpl(
                     logger.info(
                         "Checked batch of records from metadata store", "size" to "${records.size}",
                         "topic" to topicName,
-                        "found" to "${found.size}", "not_found" to "${notFound.size}"
+                        "found" to "${found.size}", "not_found" to "${notFound.size}",
+                        "replica_id" to "${replicaId}"
                     )
 
                     notFound.asSequence().map { it.first }.forEach {
                         logger.debug(
                             "Record not found",
-                            "topic_name" to topicName, "hbase_id" to it.hbaseId, "timestamp" to "${it.version}"
+                            "topic_name" to topicName,
+                            "hbase_id" to it.hbaseId,
+                            "timestamp" to "${it.version}",
+                            "replica_id" to "${replicaId}"
                         )
                     }
 
