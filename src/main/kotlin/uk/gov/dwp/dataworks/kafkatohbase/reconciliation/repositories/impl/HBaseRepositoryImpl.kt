@@ -16,7 +16,7 @@ import uk.gov.dwp.dataworks.logging.DataworksLogger
 class HBaseRepositoryImpl(
     private val connection: Connection,
     private val tableNameUtil: TableNameUtil,
-    private val replicaId: Int
+    private val replicationFactor: Int
 ) : HBaseRepository {
 
     override fun recordsInHbase(topicName: String, records: List<UnreconciledRecord>) =
@@ -33,8 +33,9 @@ class HBaseRepositoryImpl(
         return if (records.isNotEmpty()) {
             if (tableExists(topicName)) {
                 (connection.getTable(table(topicName))).use { table ->
-                    val results = records.zip(table.existsAll(records.map { get(it.hbaseId, it.version, replicaId) })
-                        .asIterable()
+                    val results = records.zip(
+                        table.existsAll(records.map { get(it.hbaseId, it.version, randomiseReplicaId(replicationFactor)) })
+                            .asIterable()
                     )
                     val (found, notFound)
                             = results.partition(Pair<UnreconciledRecord, Boolean>::second)
@@ -87,12 +88,23 @@ class HBaseRepositoryImpl(
         isCheckExistenceOnly = true
         consistency = Consistency.TIMELINE
         if (replicaId => 0) {
-            setReplicaId(replicaId)
+        setReplicaId(replicaId)
         }
     }
 
     private fun table(topicName: String) = TableName.valueOf(tableName(topicName))
     private fun tableName(topicName: String) = tableNameUtil.getTableNameFromTopic(topicName)
+
+    private fun randomiseReplicaId(replicationFactor: Int): Int {
+        val start = 0
+        val end = replicationFactor + 1
+
+        if (end < start) {
+            logger.error("Replication factor is less than 0", "replication_factor" to "${replicationFactor}")
+            throw IllegalArgumentException("Replication factor is less than 0")
+        }
+        return Random(System.nanoTime()).nextInt(start, end)
+    }
 
     companion object {
         val logger = DataworksLogger.getLogger(HBaseRepositoryImpl::class.toString())
