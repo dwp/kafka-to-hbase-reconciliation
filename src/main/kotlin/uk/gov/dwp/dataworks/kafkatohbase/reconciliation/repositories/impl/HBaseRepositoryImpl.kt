@@ -111,22 +111,13 @@ class HBaseRepositoryImpl(
     private fun tableName(topicName: String) = tableNameUtil.getTableNameFromTopic(topicName)
 
     fun randomiseReplicaId(replicationFactor: Int): Int {
-        if (replicationFactor == -1) {
-            return -1
-        }
-
         val start = 1
+        val end = replicationFactor - 1
 
         if (replicationFactor <= start ) {
             return 1
         }
 
-        val end = replicationFactor - 1
-
-        if (end < start) {
-            logger.error("Replication factor is less than 0", "replication_factor" to "${replicationFactor}")
-            throw IllegalArgumentException("Replication factor is less than 0")
-        }
         return Random(System.nanoTime()).nextInt(start, end)
     }
 
