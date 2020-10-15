@@ -113,10 +113,9 @@ class HBaseRepositoryImpl(
         val start = 1
         val end = replicationFactor - 1
 
-        if (replicationFactor <= start ) {
-            return 1
+        if (end <= start ) {
+            return -1
         }
-
         return Random(System.nanoTime()).nextInt(start, end)
     }
 
