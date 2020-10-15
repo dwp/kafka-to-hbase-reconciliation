@@ -20,7 +20,7 @@ class HBaseRepositoryImplTest {
     @Test
     fun confirmReplicaIsSetToDefaultGivenNegativeValue() {
         val replicationFactor = -5
-        assertThat(confirmConnectionToHbaseAndRecordsCanBeRetrieved(replicationFactor)).isEqualTo(1)
+        assertThat(confirmConnectionToHbaseAndRecordsCanBeRetrieved(replicationFactor)).isEqualTo(-1)
     }
 
     @Test
@@ -42,9 +42,9 @@ class HBaseRepositoryImplTest {
     }
 
     @Test
-    fun confirmRandomisedReplicaIdIsOneIfReplicationFactorIsOne() {
+    fun confirmRandomisedReplicaIdIsHbaseDefaultIfReplicationFactorIsOne() {
         val replicationFactor = 1
-        assertThat(confirmConnectionToHbaseAndRecordsCanBeRetrieved(replicationFactor)).isEqualTo(1)
+        assertThat(confirmConnectionToHbaseAndRecordsCanBeRetrieved(replicationFactor)).isEqualTo(-1)
     }
 
     fun confirmConnectionToHbaseAndRecordsCanBeRetrieved(replicationFactor: Int) : Int {
