@@ -10,6 +10,7 @@ import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.domain.UnreconciledRecor
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.HBaseRepository
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.utils.TableNameUtil
 import uk.gov.dwp.dataworks.logging.DataworksLogger
+import kotlin.random.Random
 
 @Repository
 @Profile("HBASE")
@@ -30,6 +31,8 @@ class HBaseRepositoryImpl(
         topicName: String,
         records: List<UnreconciledRecord>
     ): List<Pair<UnreconciledRecord, Boolean>> {
+        val replicaId = randomiseReplicaId(replicationFactor)
+
         return if (records.isNotEmpty()) {
             if (tableExists(topicName)) {
                 (connection.getTable(table(topicName))).use { table ->
@@ -38,7 +41,7 @@ class HBaseRepositoryImpl(
                             get(
                                 it.hbaseId,
                                 it.version,
-                                randomiseReplicaId(replicationFactor)
+                                replicaId
                             )
                         })
                             .asIterable()
@@ -50,6 +53,7 @@ class HBaseRepositoryImpl(
                         "Checked batch of records from metadata store", "size" to "${records.size}",
                         "topic" to topicName,
                         "found" to "${found.size}", "not_found" to "${notFound.size}",
+                        "replication_factor" to "${replicationFactor}",
                         "replica_id" to "${replicaId}"
                     )
 
@@ -59,6 +63,7 @@ class HBaseRepositoryImpl(
                             "topic_name" to topicName,
                             "hbase_id" to it.hbaseId,
                             "timestamp" to "${it.version}",
+                            "replication_factor" to "${replicationFactor}",
                             "replica_id" to "${replicaId}"
                         )
                     }
@@ -105,9 +110,18 @@ class HBaseRepositoryImpl(
     private fun table(topicName: String) = TableName.valueOf(tableName(topicName))
     private fun tableName(topicName: String) = tableNameUtil.getTableNameFromTopic(topicName)
 
-    private fun randomiseReplicaId(replicationFactor: Int): Int {
-        val start = 0
-        val end = replicationFactor + 1
+    fun randomiseReplicaId(replicationFactor: Int): Int {
+        if (replicationFactor == -1) {
+            return -1
+        }
+
+        val start = 1
+
+        if (replicationFactor <= start ) {
+            return 1
+        }
+
+        val end = replicationFactor - 1
 
         if (end < start) {
             logger.error("Replication factor is less than 0", "replication_factor" to "${replicationFactor}")
