@@ -112,9 +112,10 @@ class HBaseRepositoryImpl(
     fun randomiseReplicaId(replicationFactor: Int): Int {
         val start = 1
         val end = replicationFactor - 1
+        val hbaseDefault = -1
 
-        if (end <= start ) {
-            return -1
+        if (end <= start) {
+            return hbaseDefault
         }
         return Random(System.nanoTime()).nextInt(start, end)
     }
