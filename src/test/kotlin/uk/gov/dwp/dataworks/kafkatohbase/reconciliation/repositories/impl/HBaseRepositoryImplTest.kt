@@ -48,6 +48,7 @@ class HBaseRepositoryImplTest {
     }
 
     fun confirmConnectionToHbaseAndRecordsCanBeRetrieved(replicationFactor: Int) : Int {
+
         val topic = "db.database.collection"
         val tableName = "database:collection"
 

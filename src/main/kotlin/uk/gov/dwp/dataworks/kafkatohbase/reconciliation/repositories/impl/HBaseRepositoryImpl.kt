@@ -98,7 +98,7 @@ class HBaseRepositoryImpl(
 
     private var _mutableMap: MutableMap<String, Boolean> = mutableMapOf()
 
-    private fun get(id: String, version: Long, replicaId: Int) = Get(tableNameUtil.decodePrintable(id)).apply {
+    private fun get(id: String, version: Long) = Get(tableNameUtil.decodePrintable(id)).apply {
         setTimeStamp(version)
         isCheckExistenceOnly = true
         consistency = Consistency.TIMELINE
