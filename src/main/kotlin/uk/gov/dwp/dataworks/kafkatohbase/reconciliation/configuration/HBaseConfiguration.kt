@@ -67,7 +67,7 @@ data class HBaseConfiguration(
     }
 
     @Bean
-    fun replicationFactor() = replicationFactor?.toIntOrNull() ?: -1
+    fun replicationFactor() = replicationFactor?.toIntOrNull() ?: 1
 
     private fun addShutdownHook(connection: Connection) {
         logger.info("Adding HBase shutdown hook")
