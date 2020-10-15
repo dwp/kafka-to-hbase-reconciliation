@@ -112,6 +112,9 @@ class HBaseRepositoryImpl(
         val start = 1
         val end = replicationFactor - 1
 
+        if (replicationFactor == -1) {
+            return -1
+        }
         if (replicationFactor <= start ) {
             return 1
         }
