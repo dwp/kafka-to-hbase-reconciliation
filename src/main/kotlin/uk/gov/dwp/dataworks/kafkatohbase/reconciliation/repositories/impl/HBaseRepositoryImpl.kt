@@ -32,7 +32,7 @@ class HBaseRepositoryImpl(
         records: List<UnreconciledRecord>
     ): List<Pair<UnreconciledRecord, Boolean>> {
 
-        val replicaId = if (replicationFactor == -1) -1 else randomiseReplicaId(replicationFactor)
+        val replicaId = randomiseReplicaId(replicationFactor)
 
         return if (records.isNotEmpty()) {
             if (tableExists(topicName)) {
