@@ -8,6 +8,7 @@ import org.apache.hadoop.hbase.client.Admin
 import org.apache.hadoop.hbase.client.Connection
 import org.apache.hadoop.hbase.client.Get
 import org.apache.hadoop.hbase.client.Table
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -17,21 +18,37 @@ import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.utils.TableNameUtil
 class HBaseRepositoryImplTest {
 
     @Test
-    fun confirmConnectionToHbaseAndRecordsCanBeRetrievedWithZeroReplicaId() {
-        confirmConnectionToHbaseAndRecordsCanBeRetrieved(0,0)
-    }
-
-    @Test
-    fun confirmConnectionToHbaseAndRecordsCanBeRetrievedWithReplica() {
-        confirmConnectionToHbaseAndRecordsCanBeRetrieved(1,1)
-    }
-
-    @Test
     fun confirmReplicaIsSetToDefaultGivenNegativeValue() {
-        confirmConnectionToHbaseAndRecordsCanBeRetrieved(-1,-2)
+        val replicationFactor = -5
+        assertThat(confirmConnectionToHbaseAndRecordsCanBeRetrieved(replicationFactor)).isEqualTo(-1)
     }
 
-    fun confirmConnectionToHbaseAndRecordsCanBeRetrieved(replicaIdExpected: Int, replicaIdActual: Int) {
+    @Test
+    fun confirmRandomisedReplicaIdIsAboveZero() {
+        val replicationFactor = 3
+        assertThat(confirmConnectionToHbaseAndRecordsCanBeRetrieved(replicationFactor)).isGreaterThan(0)
+    }
+
+    @Test
+    fun confirmRandomisedReplicaIdIsBelowReplicationFactor() {
+        val replicationFactor = 3
+        assertThat(confirmConnectionToHbaseAndRecordsCanBeRetrieved(replicationFactor)).isLessThan(3)
+    }
+
+    @Test
+    fun confirmRandomisedReplicaIdWithinAcceptedRange() {
+        val replicationFactor = 3
+        assertThat(confirmConnectionToHbaseAndRecordsCanBeRetrieved(replicationFactor)).isBetween(1, replicationFactor - 1)
+    }
+
+    @Test
+    fun confirmRandomisedReplicaIdIsHbaseDefaultIfReplicationFactorIsOne() {
+        val replicationFactor = 1
+        assertThat(confirmConnectionToHbaseAndRecordsCanBeRetrieved(replicationFactor)).isEqualTo(-1)
+    }
+
+    fun confirmConnectionToHbaseAndRecordsCanBeRetrieved(replicationFactor: Int) : Int {
+
         val topic = "db.database.collection"
         val tableName = "database:collection"
 
@@ -62,13 +79,14 @@ class HBaseRepositoryImplTest {
             }
         }
 
-        val hBaseRepository = HBaseRepositoryImpl(connection, tableNameUtil, replicaIdActual)
+        val hBaseRepository = HBaseRepositoryImpl(connection, tableNameUtil, replicationFactor)
         val unreconciled = hBaseRepository.recordsInHbase(topic, unreconciledRecords)
         assertEquals(1, getCaptor.allValues.size)
+        var replicaId = 0
         getCaptor.firstValue.forEachIndexed { index, get ->
             assertEquals("${index + 1}", String(get.row))
             assertTrue(get.isCheckExistenceOnly)
-            assertEquals(replicaIdExpected, get.replicaId)
+            replicaId = get.replicaId
         }
 
         assertEquals(50, unreconciled.size)
@@ -76,5 +94,7 @@ class HBaseRepositoryImplTest {
         unreconciled.forEachIndexed { index, record ->
             assertEquals((index + 1) * 2, record.id)
         }
+
+        return replicaId
     }
 }

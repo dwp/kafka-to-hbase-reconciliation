@@ -10,13 +10,14 @@ import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.domain.UnreconciledRecor
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.HBaseRepository
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.utils.TableNameUtil
 import uk.gov.dwp.dataworks.logging.DataworksLogger
+import kotlin.random.Random
 
 @Repository
 @Profile("HBASE")
 class HBaseRepositoryImpl(
     private val connection: Connection,
     private val tableNameUtil: TableNameUtil,
-    private val replicaId: Int
+    private val replicationFactor: Int
 ) : HBaseRepository {
 
     override fun recordsInHbase(topicName: String, records: List<UnreconciledRecord>) =
@@ -30,11 +31,21 @@ class HBaseRepositoryImpl(
         topicName: String,
         records: List<UnreconciledRecord>
     ): List<Pair<UnreconciledRecord, Boolean>> {
+
+        val replicaId = randomiseReplicaId(replicationFactor)
+
         return if (records.isNotEmpty()) {
             if (tableExists(topicName)) {
                 (connection.getTable(table(topicName))).use { table ->
-                    val results = records.zip(table.existsAll(records.map { get(it.hbaseId, it.version, replicaId) })
-                        .asIterable()
+                    val results = records.zip(
+                        table.existsAll(records.map {
+                            get(
+                                it.hbaseId,
+                                it.version,
+                                replicaId
+                            )
+                        })
+                            .asIterable()
                     )
                     val (found, notFound)
                             = results.partition(Pair<UnreconciledRecord, Boolean>::second)
@@ -43,6 +54,7 @@ class HBaseRepositoryImpl(
                         "Checked batch of records from metadata store", "size" to "${records.size}",
                         "topic" to topicName,
                         "found" to "${found.size}", "not_found" to "${notFound.size}",
+                        "replication_factor" to "${replicationFactor}",
                         "replica_id" to "${replicaId}"
                     )
 
@@ -52,6 +64,7 @@ class HBaseRepositoryImpl(
                             "topic_name" to topicName,
                             "hbase_id" to it.hbaseId,
                             "timestamp" to "${it.version}",
+                            "replication_factor" to "${replicationFactor}",
                             "replica_id" to "${replicaId}"
                         )
                     }
@@ -90,13 +103,22 @@ class HBaseRepositoryImpl(
         setTimeStamp(version)
         isCheckExistenceOnly = true
         consistency = Consistency.TIMELINE
-        if (replicaId >= 0) {
-            setReplicaId(replicaId)
-        }
+        setReplicaId(replicaId)
     }
 
     private fun table(topicName: String) = TableName.valueOf(tableName(topicName))
     private fun tableName(topicName: String) = tableNameUtil.getTableNameFromTopic(topicName)
+
+    fun randomiseReplicaId(replicationFactor: Int): Int {
+        val start = 1
+        val end = replicationFactor - 1
+        val hbaseDefault = -1
+
+        if (end <= start) {
+            return hbaseDefault
+        }
+        return Random(System.nanoTime()).nextInt(start, end)
+    }
 
     companion object {
         val logger = DataworksLogger.getLogger(HBaseRepositoryImpl::class.toString())
