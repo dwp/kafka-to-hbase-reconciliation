@@ -14,6 +14,64 @@ import kotlin.time.ExperimentalTime
 class MetadataStoreRepositoryImplTest {
 
     @Test
+    fun testDeleteAll() {
+        val rowsUpdated = 1
+
+        val sql = """DELETE FROM ucfs
+        |WHERE reconciled_result = TRUE""".trimMargin()
+
+        val statement = mock<Statement> {
+            on { executeUpdate(sql) } doReturn rowsUpdated
+        }
+
+        val metadataStoreConnection = mock<Connection> {
+            on { createStatement() } doReturn statement
+        }
+
+        val connectionSupplier = connectionSupplier(listOf(metadataStoreConnection))
+        val metadataStoreRepository = MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100)
+
+        metadataStoreRepository.deleteAllReconciledRecords()
+
+        verify(connectionSupplier, times(1)).connection()
+        verifyNoMoreInteractions(connectionSupplier)
+        verify(metadataStoreConnection, times(1)).createStatement()
+        verify(metadataStoreConnection, times(1)).close()
+        verifyNoMoreInteractions(metadataStoreConnection)
+        verify(statement, times(1)).executeUpdate(sql)
+        verify(statement, times(1)).close()
+        verifyNoMoreInteractions(statement)
+    }
+
+    @Test
+    fun testOptimize() {
+
+        val sql = "OPTIMIZE TABLE ucfs"
+
+        val statement = mock<Statement> {
+            on { execute(sql) } doReturn true
+        }
+
+        val metadataStoreConnection = mock<Connection> {
+            on { createStatement() } doReturn statement
+        }
+
+        val connectionSupplier = connectionSupplier(listOf(metadataStoreConnection))
+        val metadataStoreRepository = MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100)
+
+        metadataStoreRepository.optimizeTable()
+
+        verify(connectionSupplier, times(1)).connection()
+        verifyNoMoreInteractions(connectionSupplier)
+        verify(metadataStoreConnection, times(1)).createStatement()
+        verify(metadataStoreConnection, times(1)).close()
+        verifyNoMoreInteractions(metadataStoreConnection)
+        verify(statement, times(1)).execute(sql)
+        verify(statement, times(1)).close()
+        verifyNoMoreInteractions(statement)
+    }
+
+    @Test
     fun testReconcileRecordsWithAutoCommit() = testAutoCommit(true)
 
     @Test
