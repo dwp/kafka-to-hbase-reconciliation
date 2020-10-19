@@ -33,14 +33,10 @@ class MetadataStoreRepositoryImplTest {
 
         metadataStoreRepository.deleteAllReconciledRecords()
 
-        verify(connectionSupplier, times(1)).connection()
-        verifyNoMoreInteractions(connectionSupplier)
-        verify(metadataStoreConnection, times(1)).createStatement()
-        verify(metadataStoreConnection, times(1)).close()
-        verifyNoMoreInteractions(metadataStoreConnection)
+        verifySupplierInteractions(connectionSupplier)
+        verifyConnectionInteractions(metadataStoreConnection)
         verify(statement, times(1)).executeUpdate(sql)
-        verify(statement, times(1)).close()
-        verifyNoMoreInteractions(statement)
+        verifyCommonStatementInteractions(statement)
     }
 
     @Test
@@ -61,14 +57,10 @@ class MetadataStoreRepositoryImplTest {
 
         metadataStoreRepository.optimizeTable()
 
-        verify(connectionSupplier, times(1)).connection()
-        verifyNoMoreInteractions(connectionSupplier)
-        verify(metadataStoreConnection, times(1)).createStatement()
-        verify(metadataStoreConnection, times(1)).close()
-        verifyNoMoreInteractions(metadataStoreConnection)
+        verifySupplierInteractions(connectionSupplier)
+        verifyConnectionInteractions(metadataStoreConnection)
         verify(statement, times(1)).execute(sql)
-        verify(statement, times(1)).close()
-        verifyNoMoreInteractions(statement)
+        verifyCommonStatementInteractions(statement)
     }
 
     @Test
@@ -103,8 +95,7 @@ class MetadataStoreRepositoryImplTest {
 
         repository(connectionSupplier).reconcileRecords(listOf(
             UnreconciledRecord(1,"db.database.collection1","hbase_id_1",(10).toLong())))
-        verify(connectionSupplier, times(1)).connection()
-        verifyNoMoreInteractions(connectionSupplier)
+        verifySupplierInteractions(connectionSupplier)
         verify(connection, times(1)).prepareStatement(any())
         verify(connection, times(1)).autoCommit
         verify(connection, times(1)).commit()
@@ -116,6 +107,11 @@ class MetadataStoreRepositoryImplTest {
         verify(statement, times(1)).executeBatch()
         verify(statement, times(1)).close()
         verifyNoMoreInteractions(statement)
+    }
+
+    private fun verifySupplierInteractions(connectionSupplier: ConnectionSupplier) {
+        verify(connectionSupplier, times(1)).connection()
+        verifyNoMoreInteractions(connectionSupplier)
     }
 
     @Test
@@ -182,12 +178,20 @@ class MetadataStoreRepositoryImplTest {
 
         metadataStoreRepository.deleteRecordsOlderThanPeriod(trimReconciledScale, trimReconciledUnit)
         verify(connectionSupplier, times(1)).connection()
+        verifyConnectionInteractions(metadataStoreConnection)
+        verify(statement, times(1)).executeUpdate(any())
+        verifyCommonStatementInteractions(statement)
+    }
+
+    private fun verifyCommonStatementInteractions(statement: Statement) {
+        verify(statement, times(1)).close()
+        verifyNoMoreInteractions(statement)
+    }
+
+    private fun verifyConnectionInteractions(metadataStoreConnection: Connection) {
         verify(metadataStoreConnection, times(1)).createStatement()
         verify(metadataStoreConnection, times(1)).close()
         verifyNoMoreInteractions(metadataStoreConnection)
-        verify(statement, times(1)).executeUpdate(any())
-        verify(statement, times(1)).close()
-        verifyNoMoreInteractions(statement)
     }
 
     private fun testAutoCommit(autoOn: Boolean) {
