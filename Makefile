@@ -108,6 +108,7 @@ integration-test-rebuild: ## Build only integration-test
 	docker-compose build reconciliation-integration-test trim-reconciled-integration-test
 
 reconciliation-integration-test: ## Run the reconciliation integration tests in a Docker container
+	docker-compose -f docker-compose.yaml up --build -d reconciliation
 	@{ \
 		set +e ;\
 		docker stop reconciliation-integration-test ;\
@@ -115,8 +116,12 @@ reconciliation-integration-test: ## Run the reconciliation integration tests in 
  		set -e ;\
  	}
 	docker-compose -f docker-compose.yaml run --name reconciliation-integration-test reconciliation-integration-test gradle --no-daemon --rerun-tasks reconciliation-integration-test -x test -x unit
+	docker-compose stop reconciliation
+	docker-compose rm reconciliation
+
 
 trim-reconciled-integration-test: ## Run the trim reconciled integration tests in a Docker container
+	docker-compose -f docker-compose.yaml up --build -d trim-reconciled-records
 	@{ \
 		set +e ;\
 		docker stop trim-reconciled-integration-test ;\
@@ -124,11 +129,13 @@ trim-reconciled-integration-test: ## Run the trim reconciled integration tests i
  		set -e ;\
  	}
 	docker-compose -f docker-compose.yaml run --name trim-reconciled-integration-test trim-reconciled-integration-test gradle --no-daemon --rerun-tasks trim-reconciled-integration-test -x test -x unit
+	docker-compose stop trim-reconciled-records
+	docker-compose rm trim-reconciled-records
 
 integration-test-with-rebuild: integration-test-rebuild reconciliation-integration-test ## Rebuild and re-run only he integration-tests
 
 .PHONY: integration-all ## Build and Run all the tests in containers from a clean start
-integration-all: destroy build up reconciliation-integration-test trim-reconciled-integration-test
+integration-all: destroy build reconciliation-integration-test trim-reconciled-integration-test
 
 build: local-all build-base ## build main images
 	docker-compose build
