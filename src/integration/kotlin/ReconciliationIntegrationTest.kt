@@ -1,8 +1,8 @@
-
 import com.beust.klaxon.JsonObject
 import com.beust.klaxon.Parser
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.comparables.shouldBeGreaterThan
+import io.kotest.matchers.comparables.shouldBeGreaterThanOrEqualTo
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.*
@@ -26,13 +26,17 @@ import org.apache.hadoop.hbase.client.Connection as HBaseConnection
 class ReconciliationIntegrationTest : StringSpec() {
     init {
         "Matching records are reconciled, mismatches are not" {
+            val allRecords = topicCount * recordCount
+            val halfRecords = allRecords / 2
             val timeTaken = measureTime {
-                withTimeout(3.minutes) {
+                withTimeout(15.minutes) {
                     launch { populateHbase() }
                     launch { populateMetadataStore() }
                     launch {
-                        while (reconciledRecordCount() < 1000) {
-                            logger.info("Waiting for records to be reconciled")
+                        var recordsDone = 0
+                        while (recordsDone < halfRecords) {
+                            recordsDone = reconciledRecordCount()
+                            logger.info("Waiting for >= $halfRecords records to be reconciled but is $recordsDone so far...")
                             delay(1.seconds)
                         }
                     }
@@ -40,9 +44,11 @@ class ReconciliationIntegrationTest : StringSpec() {
             }
 
             timeTaken shouldBeGreaterThan 15.seconds
-            allRecordCount() shouldBe 2000
+            reconciledRecordCount() shouldBeGreaterThanOrEqualTo halfRecords
+            allRecordCount() shouldBeGreaterThanOrEqualTo allRecords
 
-            with (metadatastoreConnection) {
+            logger.info("Checking records in metastore are updated...")
+            with(metadatastoreConnection) {
                 createStatement().use { statement ->
                     statement.executeQuery("SELECT hbase_id, reconciled_result FROM ucfs").use {
                         while (it.next()) {
@@ -57,6 +63,7 @@ class ReconciliationIntegrationTest : StringSpec() {
                     }
                 }
             }
+            logger.info("Done!")
         }
     }
 
@@ -64,9 +71,9 @@ class ReconciliationIntegrationTest : StringSpec() {
         logger.info("Putting lots of data into metadatastore")
         with(metadatastoreConnection) {
             with(insertMetadatastoreRecordStatement(this)) {
-                for (topicIndex in 1..10) {
+                for (topicIndex in 1..topicCount) {
                     logger.info("Adding records to metadatastore for topic 'db.database.collection$topicIndex'")
-                    for (recordIndex in 1..200) {
+                    for (recordIndex in 1..recordCount) {
                         setString(1, printableHbaseKey(topicIndex, recordIndex))
                         setLong(2, 1544799662000L)
                         setString(3, "db.database.collection$topicIndex")
@@ -85,11 +92,11 @@ class ReconciliationIntegrationTest : StringSpec() {
         logger.info("Putting lots of data into hbase")
 
         hbaseConnection().use { connection ->
-            for (topicIndex in 1..10) {
+            for (topicIndex in 1..topicCount) {
                 logger.info("Adding records to hbase for topic 'db.database.collection$topicIndex'")
                 connection.ensureTable(hbaseTableNameString(topicIndex))
                 hbaseTable(connection, hbaseTableNameString(topicIndex)).use {
-                    it.put((1..200 step 2).map { recordIndex ->
+                    it.put((1..recordCount step 2).map { recordIndex ->
                         val body = wellFormedValidPayload("database", "collection$topicIndex")
                         val key = hbaseKey(topicIndex, recordIndex)
                         Put(key).apply { addColumn(columnFamily, columnQualifier, 1544799662000, body) }
@@ -114,6 +121,7 @@ class ReconciliationIntegrationTest : StringSpec() {
                 addFamily(HColumnDescriptor(columnFamily).apply {
                     maxVersions = Int.MAX_VALUE
                     minVersions = 1
+                    regionReplication = 3
                 })
             })
         }
@@ -177,5 +185,8 @@ class ReconciliationIntegrationTest : StringSpec() {
         )
 
     private fun Int.isOdd() = this % 2 == 1
+
+    private val topicCount = 10
+    private val recordCount = 1000
 }
 

@@ -20,7 +20,8 @@ data class HBaseConfiguration(
     var clientScannerTimeoutPeriodMs: String? = "NOT_SET",
     var clientOperationTimeoutMs: String? = "NOT_SET",
     var rpcReadTimeoutMs: String? = "NOT_SET",
-    var retries: String? = "NOT_SET"
+    var retries: String? = "NOT_SET",
+    var replicationFactor: String? = "NOT_SET"
 ) {
 
     companion object {
@@ -57,13 +58,16 @@ data class HBaseConfiguration(
         logger.info("Hbase connection configuration",
             HConstants.ZOOKEEPER_ZNODE_PARENT to configuration.get(HConstants.ZOOKEEPER_ZNODE_PARENT),
             HConstants.ZOOKEEPER_QUORUM to configuration.get(HConstants.ZOOKEEPER_QUORUM),
-            "hbase.zookeeper.port" to "${configuration.get("hbase.zookeeper.port")}")
+            "hbase.zookeeper.port" to configuration.get("hbase.zookeeper.port"))
         val connection = ConnectionFactory.createConnection(HBaseConfiguration.create(configuration))
         addShutdownHook(connection)
         logger.info("Established connection with HBase")
 
         return connection
     }
+
+    @Bean
+    fun replicationFactor() = replicationFactor?.toIntOrNull() ?: -1
 
     private fun addShutdownHook(connection: Connection) {
         logger.info("Adding HBase shutdown hook")

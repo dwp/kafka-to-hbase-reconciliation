@@ -50,7 +50,7 @@ mysql-writer: ## Get a writer client session on the metadatastore database.
 
 truncate-ucfs: ## truncate the ucfs table.
 	docker exec -i metadatastore \
-		mysql --host=127.0.0.1 --user=reconciliationwriter --password=my-password metadatastore <<< "truncate ucfs;"
+		mysql --user=reconciliationwriter --password=my-password metadatastore <<< "truncate ucfs;"
 
 truncate-hbase: ## truncate all hbase tables.
 	docker exec -i hbase hbase shell <<< list \
@@ -72,7 +72,6 @@ rdbms-up: ## Bring up and provision mysql
 			sleep 2; \
 			echo Waiting for metadatastore.; \
 		done; \
-		sleep 5; \
 		echo ...metadatastore ready.; \
 	}
 	docker exec -i metadatastore mysql --host=127.0.0.1 --user=root --password=password metadatastore  < ./docker/metadatastore/create_table.sql
@@ -86,7 +85,6 @@ hbase-up: ## Bring up and provision mysql
 			sleep 2; \
 			echo Waiting for hbase.; \
 		done; \
-		sleep 5; \
 		echo ...hbase ready.; \
 	}
 
@@ -109,7 +107,8 @@ destroy: down ## Bring down the Kafka2HBase Docker container and services then d
 integration-test-rebuild: ## Build only integration-test
 	docker-compose build reconciliation-integration-test trim-reconciled-integration-test
 
-reconciliation-integration-test: ## Run the reconciliation integration tests in a Docker container
+reconciliation-integration-test:  ## Run the reconciliation integration tests in a Docker container
+	docker-compose -f docker-compose.yaml up --build -d reconciliation
 	@{ \
 		set +e ;\
 		docker stop reconciliation-integration-test ;\
@@ -117,8 +116,12 @@ reconciliation-integration-test: ## Run the reconciliation integration tests in 
  		set -e ;\
  	}
 	docker-compose -f docker-compose.yaml run --name reconciliation-integration-test reconciliation-integration-test gradle --no-daemon --rerun-tasks reconciliation-integration-test -x test -x unit
+	docker-compose stop reconciliation
+	docker-compose rm reconciliation
+
 
 trim-reconciled-integration-test: ## Run the trim reconciled integration tests in a Docker container
+	docker-compose -f docker-compose.yaml up --build -d trim-reconciled-records
 	@{ \
 		set +e ;\
 		docker stop trim-reconciled-integration-test ;\
@@ -126,11 +129,13 @@ trim-reconciled-integration-test: ## Run the trim reconciled integration tests i
  		set -e ;\
  	}
 	docker-compose -f docker-compose.yaml run --name trim-reconciled-integration-test trim-reconciled-integration-test gradle --no-daemon --rerun-tasks trim-reconciled-integration-test -x test -x unit
+	docker-compose stop trim-reconciled-records
+	docker-compose rm trim-reconciled-records
 
 integration-test-with-rebuild: integration-test-rebuild reconciliation-integration-test ## Rebuild and re-run only he integration-tests
 
 .PHONY: integration-all ## Build and Run all the tests in containers from a clean start
-integration-all: destroy build up reconciliation-integration-test trim-reconciled-integration-test
+integration-all: destroy build services reconciliation-integration-test trim-reconciled-integration-test
 
 build: local-all build-base ## build main images
 	docker-compose build

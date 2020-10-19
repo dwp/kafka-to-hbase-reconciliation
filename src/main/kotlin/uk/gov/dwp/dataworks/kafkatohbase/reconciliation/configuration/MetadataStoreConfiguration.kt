@@ -21,54 +21,48 @@ data class MetadataStoreConfiguration(
     var table: String = "NOT_SET",
     var databaseName: String? = "NOT_SET",
     var caCertPath: String? = "NOT_SET",
-    var queryLimit: String? = "NOT_SET",
-    var useAwsSecrets: String? = "NOT_SET",
-) {
+    var useAwsSecrets: Boolean = true,
+    var numberOfParallelUpdates: String? = "NOT_SET",
+    var batchSize: String? = "NOT_SET") {
 
     @Bean
     fun databaseUrl() = "jdbc:mysql://$endpoint:$port/$databaseName"
 
     @Bean
-    fun databaseProperties(): Properties {
-
-        val metaStorePassword = if (isUsingAWS) {
-            secretHelper.getSecret(passwordSecretName!!)!!
-        } else {
-            logger.info("Using dummy password")
-            dummyPassword!!
-        }
-
-        val properties = Properties().apply {
+    fun databaseProperties(): Properties =
+        Properties().apply {
             put("user", user)
-            put("useAwsSecrets", useAwsSecrets)
-
-            if (isUsingAWS) {
+            if (useAwsSecrets) {
                 put("ssl_ca_path", caCertPath)
                 put("ssl_ca", readFile(getProperty("ssl_ca_path")))
                 put("ssl_verify_cert", true)
             }
-            put("password", metaStorePassword)
+            put("password", password(useAwsSecrets))
         }
 
-        logger.info("Metadata Store Configuration loaded", "properties" to properties.toString(), "table" to table, "query_limit" to queryLimit.toString())
-
-        return properties
-    }
+    private fun password(useAwsSecrets: Boolean) =
+        if (useAwsSecrets) {
+            secretHelper.getSecret(passwordSecretName!!)!!
+        } else {
+            dummyPassword!!
+        }
 
     @Bean
     @Qualifier("table")
     fun table() = table
 
     @Bean
-    @Qualifier("queryLimit")
-    fun queryLimit() = queryLimit
+    @Qualifier("numberOfParallelUpdates")
+    fun numberOfParallelUpdates() = numberOfParallelUpdates!!.toInt()
+
+    @Bean
+    @Qualifier("batchSize")
+    fun batchSize() = batchSize!!.toInt()
 
     @Autowired
     private lateinit var secretHelper: SecretHelperInterface
 
     companion object {
-        val logger = DataworksLogger.getLogger(MetadataStoreConfiguration::class.toString())
+        val logger = DataworksLogger.getLogger(MetadataStoreConfiguration::class.java.toString())
     }
-
-    private val isUsingAWS by lazy { this.useAwsSecrets!!.toLowerCase() == "true" }
 }

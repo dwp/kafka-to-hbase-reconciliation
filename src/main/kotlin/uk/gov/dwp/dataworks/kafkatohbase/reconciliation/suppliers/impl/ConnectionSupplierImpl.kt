@@ -1,6 +1,7 @@
 package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.suppliers.impl
 
 import org.slf4j.LoggerFactory
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.suppliers.ConnectionSupplier
 import java.sql.Connection
@@ -8,6 +9,7 @@ import java.sql.DriverManager
 import java.util.*
 
 @Component
+@Profile("SINGLE_CONNECTION")
 class ConnectionSupplierImpl(private val databaseUrl: String,
                              private val databaseProperties: Properties,
                              private val autoCommitStatements: Boolean): ConnectionSupplier {

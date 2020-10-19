@@ -20,7 +20,6 @@ repositories {
 dependencies {
 	annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 	implementation("org.springframework.boot:spring-boot-starter")
-//	implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 	implementation("org.jetbrains.kotlinx", "kotlinx-coroutines-core", "1.3.9")
@@ -30,6 +29,8 @@ dependencies {
 	implementation("commons-codec:commons-codec:1.14")
 	implementation("com.github.dwp:dataworks-common-logging:0.0.5")
 	implementation("org.apache.commons:commons-text:1.8")
+	implementation("org.apache.commons:commons-dbcp2:2.8.0")
+
 	testImplementation("io.kotest:kotest-runner-junit5-jvm:4.2.0")
 	testImplementation("io.kotest:kotest-assertions-core-jvm:4.2.0")
 	testImplementation("io.kotest:kotest-property-jvm:4.2.0")
