@@ -107,7 +107,7 @@ destroy: down ## Bring down the Kafka2HBase Docker container and services then d
 integration-test-rebuild: ## Build only integration-test
 	docker-compose build reconciliation-integration-test trim-reconciled-integration-test
 
-reconciliation-integration-test: ## Run the reconciliation integration tests in a Docker container
+reconciliation-integration-test:  ## Run the reconciliation integration tests in a Docker container
 	docker-compose -f docker-compose.yaml up --build -d reconciliation
 	@{ \
 		set +e ;\
@@ -135,7 +135,7 @@ trim-reconciled-integration-test: ## Run the trim reconciled integration tests i
 integration-test-with-rebuild: integration-test-rebuild reconciliation-integration-test ## Rebuild and re-run only he integration-tests
 
 .PHONY: integration-all ## Build and Run all the tests in containers from a clean start
-integration-all: destroy build reconciliation-integration-test trim-reconciled-integration-test
+integration-all: destroy build services reconciliation-integration-test trim-reconciled-integration-test
 
 build: local-all build-base ## build main images
 	docker-compose build
