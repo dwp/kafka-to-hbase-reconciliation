@@ -11,13 +11,17 @@ data class ReconcilerConfiguration(var minimumAgeScale: Int = 10,
                                    var minimumAgeUnit: String = "MINUTE",
                                    var trimRecordsFixedDelayMillis: String? = "NOT_SET",
                                    var trimReconciledScale: String? = "NOT_SET",
-                                   var trimReconciledUnit: String? = "NOT_SET") {
+                                   var trimReconciledUnit: String? = "NOT_SET",
+                                   var autoCommitStatements: String = "false") {
 
     @Bean
     fun minimumAgeScale() = minimumAgeScale
 
     @Bean
     fun minimumAgeUnit() = minimumAgeUnit
+
+    @Bean
+    fun autoCommitStatements() = autoCommitStatements.toBoolean()
 
     @Bean
     @Qualifier("trimReconciledScale")

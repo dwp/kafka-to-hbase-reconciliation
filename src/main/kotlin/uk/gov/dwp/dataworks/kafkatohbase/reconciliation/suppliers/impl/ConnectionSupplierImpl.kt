@@ -9,12 +9,15 @@ import java.util.*
 
 @Component
 class ConnectionSupplierImpl(private val databaseUrl: String,
-                             private val databaseProperties: Properties): ConnectionSupplier {
+                             private val databaseProperties: Properties,
+                             private val autoCommitStatements: Boolean): ConnectionSupplier {
 
     override fun connection(): Connection {
         if (_connection == null || _connection!!.isClosed || !_connection!!.isValid(0)) {
             logger.info("Establishing database connection", "url", databaseUrl)
-            _connection = DriverManager.getConnection(databaseUrl, databaseProperties)
+            _connection = DriverManager.getConnection(databaseUrl, databaseProperties).apply {
+                autoCommit = autoCommitStatements
+            })
             logger.info("Established database connection", "url", databaseUrl)
         }
         return _connection!!

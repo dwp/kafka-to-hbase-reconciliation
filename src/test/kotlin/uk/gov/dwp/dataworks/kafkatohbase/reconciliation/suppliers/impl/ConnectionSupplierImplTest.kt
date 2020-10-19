@@ -13,6 +13,7 @@ internal class ConnectionSupplierImplTest {
         val connection = mock<Connection> {
             on { isClosed } doReturn false
             on { isValid(0) } doReturn true
+            on { getAutoCommit } doReturn false
         }
         val connectionSupplier = ConnectionSupplierImpl("", Properties())
         ReflectionTestUtils.setField(connectionSupplier, "_connection", connection)
