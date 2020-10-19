@@ -13,6 +13,7 @@ import java.sql.PreparedStatement
 import java.sql.SQLException
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTime
+import kotlin.time.measureTimedValue
 
 @Repository
 @ExperimentalTime
@@ -103,8 +104,48 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
 
         }
 
-    private fun unreconciledRecordsStatement(connection: Connection, minAgeSize: Int, minAgeUnit: String): PreparedStatement =
-        connection.prepareStatement(
+    override fun deleteAllReconciledRecords(): Int =
+        connection().use { connection ->
+            connection.createStatement().use {
+                val (deletedCount, duration) = measureTimedValue {
+                    it.executeUpdate("""
+                        DELETE FROM $table
+                        WHERE reconciled_result = TRUE
+                    """.trimIndent())
+                }
+
+                logger.info("Deleted records in Metadata Store", "table" to table,
+                    "deleted_count" to "$deletedCount", "time_taken" to "$duration")
+
+                deletedCount
+            }
+        }
+
+    override fun optimizeTable(): Boolean =
+        connection().use { connection ->
+            connection.createStatement().use { statement ->
+                val (result, duration) = measureTimedValue {
+                    statement.execute("OPTIMIZE TABLE $table")
+                }
+                logger.info("Optimized table", "table" to table,
+                    "result" to "$result", "time_taken" to "$duration")
+                result
+            }
+        }
+
+
+
+    private fun unreconciledRecordsStatement(connection: Connection, minAgeSize: Int, minAgeUnit: String): PreparedStatement {
+
+        println(            """
+                SELECT id, hbase_id, hbase_timestamp, topic_name 
+                FROM $table
+                WHERE write_timestamp < CURRENT_TIMESTAMP - INTERVAL $minAgeSize $minAgeUnit
+                AND write_timestamp > CURRENT_DATE - INTERVAL 14 DAY
+                AND reconciled_result = false
+                LIMIT $batchSize
+            """)
+        return connection.prepareStatement(
             """
                 SELECT id, hbase_id, hbase_timestamp, topic_name 
                 FROM $table
@@ -112,8 +153,9 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
                 AND write_timestamp > CURRENT_DATE - INTERVAL 14 DAY
                 AND reconciled_result = false
                 LIMIT $batchSize
-            """.trimIndent()
-        )
+            """.trimIndent())
+
+    }
 
 
     private fun reconcileRecordStatement(connection: Connection): PreparedStatement =
