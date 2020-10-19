@@ -14,6 +14,56 @@ import kotlin.time.ExperimentalTime
 class MetadataStoreRepositoryImplTest {
 
     @Test
+    fun testDeleteAll() {
+        val rowsUpdated = 1
+
+        val sql = """DELETE FROM ucfs
+        |WHERE reconciled_result = TRUE""".trimMargin()
+
+        val statement = mock<Statement> {
+            on { executeUpdate(sql) } doReturn rowsUpdated
+        }
+
+        val metadataStoreConnection = mock<Connection> {
+            on { createStatement() } doReturn statement
+        }
+
+        val connectionSupplier = connectionSupplier(listOf(metadataStoreConnection))
+        val metadataStoreRepository = MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100)
+
+        metadataStoreRepository.deleteAllReconciledRecords()
+
+        verifySupplierInteractions(connectionSupplier)
+        verifyConnectionInteractions(metadataStoreConnection)
+        verify(statement, times(1)).executeUpdate(sql)
+        verifyCommonStatementInteractions(statement)
+    }
+
+    @Test
+    fun testOptimize() {
+
+        val sql = "OPTIMIZE TABLE ucfs"
+
+        val statement = mock<Statement> {
+            on { execute(sql) } doReturn true
+        }
+
+        val metadataStoreConnection = mock<Connection> {
+            on { createStatement() } doReturn statement
+        }
+
+        val connectionSupplier = connectionSupplier(listOf(metadataStoreConnection))
+        val metadataStoreRepository = MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100)
+
+        metadataStoreRepository.optimizeTable()
+
+        verifySupplierInteractions(connectionSupplier)
+        verifyConnectionInteractions(metadataStoreConnection)
+        verify(statement, times(1)).execute(sql)
+        verifyCommonStatementInteractions(statement)
+    }
+
+    @Test
     fun testReconcileRecordsWithAutoCommit() = testAutoCommit(true)
 
     @Test
@@ -45,8 +95,7 @@ class MetadataStoreRepositoryImplTest {
 
         repository(connectionSupplier).reconcileRecords(listOf(
             UnreconciledRecord(1,"db.database.collection1","hbase_id_1",(10).toLong())))
-        verify(connectionSupplier, times(1)).connection()
-        verifyNoMoreInteractions(connectionSupplier)
+        verifySupplierInteractions(connectionSupplier)
         verify(connection, times(1)).prepareStatement(any())
         verify(connection, times(1)).autoCommit
         verify(connection, times(1)).commit()
@@ -58,6 +107,11 @@ class MetadataStoreRepositoryImplTest {
         verify(statement, times(1)).executeBatch()
         verify(statement, times(1)).close()
         verifyNoMoreInteractions(statement)
+    }
+
+    private fun verifySupplierInteractions(connectionSupplier: ConnectionSupplier) {
+        verify(connectionSupplier, times(1)).connection()
+        verifyNoMoreInteractions(connectionSupplier)
     }
 
     @Test
@@ -124,12 +178,20 @@ class MetadataStoreRepositoryImplTest {
 
         metadataStoreRepository.deleteRecordsOlderThanPeriod(trimReconciledScale, trimReconciledUnit)
         verify(connectionSupplier, times(1)).connection()
+        verifyConnectionInteractions(metadataStoreConnection)
+        verify(statement, times(1)).executeUpdate(any())
+        verifyCommonStatementInteractions(statement)
+    }
+
+    private fun verifyCommonStatementInteractions(statement: Statement) {
+        verify(statement, times(1)).close()
+        verifyNoMoreInteractions(statement)
+    }
+
+    private fun verifyConnectionInteractions(metadataStoreConnection: Connection) {
         verify(metadataStoreConnection, times(1)).createStatement()
         verify(metadataStoreConnection, times(1)).close()
         verifyNoMoreInteractions(metadataStoreConnection)
-        verify(statement, times(1)).executeUpdate(any())
-        verify(statement, times(1)).close()
-        verifyNoMoreInteractions(statement)
     }
 
     private fun testAutoCommit(autoOn: Boolean) {
