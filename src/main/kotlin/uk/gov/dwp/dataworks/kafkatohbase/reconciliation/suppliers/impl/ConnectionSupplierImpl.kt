@@ -19,7 +19,7 @@ class ConnectionSupplierImpl(private val databaseUrl: String,
             logger.info("Establishing database connection", "url", databaseUrl)
             _connection = DriverManager.getConnection(databaseUrl, databaseProperties).apply {
                 autoCommit = autoCommitStatements
-            })
+            }
             logger.info("Established database connection", "url", databaseUrl)
         }
         return _connection!!

@@ -24,7 +24,6 @@ data class ReconcilerConfiguration(var minimumAgeScale: Int = 10,
     fun autoCommitStatements() = autoCommitStatements
 
     @Bean
-    @Qualifier("trimReconciledScale")
     fun trimReconciledScale() = trimReconciledScale
 
     @Bean
