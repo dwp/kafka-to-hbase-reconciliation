@@ -16,8 +16,6 @@ class MetadataStoreRepositoryImplTest {
 
     @Test
     fun testDeleteAll() {
-        val rowsUpdated = 1
-
         val deleteLimit = 10
         val sql = """DELETE FROM ucfs
         |WHERE reconciled_result = TRUE 
