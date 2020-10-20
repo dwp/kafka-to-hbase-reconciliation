@@ -23,7 +23,8 @@ data class MetadataStoreConfiguration(
     var caCertPath: String? = "NOT_SET",
     var useAwsSecrets: Boolean = true,
     var numberOfParallelUpdates: String? = "NOT_SET",
-    var batchSize: String? = "NOT_SET") {
+    var batchSize: String? = "NOT_SET",
+    var deleteLimit: Int = 100_000) {
 
     @Bean
     fun databaseUrl() = "jdbc:mysql://$endpoint:$port/$databaseName"
@@ -58,6 +59,9 @@ data class MetadataStoreConfiguration(
     @Bean
     @Qualifier("batchSize")
     fun batchSize() = batchSize!!.toInt()
+
+    @Bean
+    fun deleteLimit() = deleteLimit
 
     @Autowired
     private lateinit var secretHelper: SecretHelperInterface

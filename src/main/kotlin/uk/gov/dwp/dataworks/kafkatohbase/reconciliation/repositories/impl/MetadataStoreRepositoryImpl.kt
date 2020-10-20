@@ -20,7 +20,8 @@ import kotlin.time.measureTimedValue
 class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupplier,
                                   private val table: String,
                                   private val numberOfParallelUpdates: Int,
-                                  private val batchSize: Int): MetadataStoreRepository {
+                                  private val batchSize: Int,
+                                  private val deleteLimit: Int): MetadataStoreRepository {
 
     override fun groupedUnreconciledRecords(minAgeSize: Int, minAgeUnit: String): Map<String, List<UnreconciledRecord>> =
             unreconciledRecords(minAgeSize, minAgeUnit).groupBy { it.topicName }
@@ -99,27 +100,45 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
                     "unit" to trimReconciledUnit,
                     "table" to table,
                     "deleted_count" to deletedCount.toString())
+
                 deletedCount
             }
 
         }
 
-    override fun deleteAllReconciledRecords(): Int =
-        connection().use { connection ->
+    override fun deleteAllReconciledRecords(deletedAccumulation: Int): Int {
+        val deletedCount = connection().use { connection ->
             connection.createStatement().use {
                 val (deletedCount, duration) = measureTimedValue {
-                    it.executeUpdate("""
+                    it.executeUpdate(
+                        """
                         DELETE FROM $table
-                        WHERE reconciled_result = TRUE
-                    """.trimIndent())
+                        WHERE reconciled_result = TRUE 
+                        LIMIT $deleteLimit
+                    """.trimIndent()
+                    )
                 }
 
-                logger.info("Deleted records in Metadata Store", "table" to table,
-                    "deleted_count" to "$deletedCount", "time_taken" to "$duration")
+                logger.info(
+                    "Deleted records in Metadata Store", "table" to table,
+                    "deleted_count" to "$deletedCount", "time_taken" to "$duration", "delete_limit" to "$deleteLimit",
+                    "deleted_accumulation" to "${deletedAccumulation + deletedCount}"
+                )
+
+                if (!connection.autoCommit) {
+                    connection.commit()
+                }
 
                 deletedCount
             }
         }
+
+        if (deletedCount == 0) {
+            return deletedAccumulation
+        }
+
+        return deleteAllReconciledRecords(deletedAccumulation + deletedCount)
+    }
 
     override fun optimizeTable(): Boolean =
         connection().use { connection ->
