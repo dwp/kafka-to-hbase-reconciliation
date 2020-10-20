@@ -26,8 +26,10 @@ class MetadataStoreRepositoryImplTest {
             on { executeUpdate(sql) } doReturnConsecutively deleteCounts
         }
 
+        val autoCommitEnabled = false
         val metadataStoreConnection = mock<Connection> {
             on { createStatement() } doReturn statement
+            on { autoCommit } doReturn autoCommitEnabled
         }
 
         val connectionSupplier = connectionSupplier(listOf(metadataStoreConnection))
@@ -38,6 +40,9 @@ class MetadataStoreRepositoryImplTest {
         val totalDeletes = metadataStoreRepository.deleteAllReconciledRecords()
         totalDeletes shouldBe deleteCounts.sum()
         verifySupplierInteractions(connectionSupplier, deleteCounts.size)
+
+        verify(metadataStoreConnection, times(deleteCounts.size)).autoCommit
+        verify(metadataStoreConnection, times(deleteCounts.size)).commit()
         verifyConnectionInteractions(metadataStoreConnection, deleteCounts.size)
         verify(statement, times(5)).executeUpdate(sql)
         verifyCommonStatementInteractions(statement, deleteCounts.size)
