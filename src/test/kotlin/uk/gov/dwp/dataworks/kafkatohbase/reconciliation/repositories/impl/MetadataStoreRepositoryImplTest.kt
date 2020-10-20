@@ -1,6 +1,7 @@
 package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.impl
 
 import com.nhaarman.mockitokotlin2.*
+import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -15,28 +16,36 @@ class MetadataStoreRepositoryImplTest {
 
     @Test
     fun testDeleteAll() {
-        val rowsUpdated = 1
-
+        val deleteLimit = 10
         val sql = """DELETE FROM ucfs
-        |WHERE reconciled_result = TRUE""".trimMargin()
+        |WHERE reconciled_result = TRUE 
+        |LIMIT $deleteLimit""".trimMargin()
 
+        val deleteCounts = listOf(10, 10, 10, 8)
         val statement = mock<Statement> {
-            on { executeUpdate(sql) } doReturn rowsUpdated
+            on { executeUpdate(sql) } doReturnConsecutively deleteCounts
         }
 
+        val autoCommitEnabled = false
         val metadataStoreConnection = mock<Connection> {
             on { createStatement() } doReturn statement
+            on { autoCommit } doReturn autoCommitEnabled
         }
 
         val connectionSupplier = connectionSupplier(listOf(metadataStoreConnection))
-        val metadataStoreRepository = MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100)
+        val metadataStoreRepository =
+            MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100,
+                deleteLimit)
 
-        metadataStoreRepository.deleteAllReconciledRecords()
+        val totalDeletes = metadataStoreRepository.deleteAllReconciledRecords()
+        totalDeletes shouldBe deleteCounts.sum()
+        verifySupplierInteractions(connectionSupplier, deleteCounts.size)
 
-        verifySupplierInteractions(connectionSupplier)
-        verifyConnectionInteractions(metadataStoreConnection)
-        verify(statement, times(1)).executeUpdate(sql)
-        verifyCommonStatementInteractions(statement)
+        verify(metadataStoreConnection, times(deleteCounts.size)).autoCommit
+        verify(metadataStoreConnection, times(deleteCounts.size)).commit()
+        verifyConnectionInteractions(metadataStoreConnection, deleteCounts.size)
+        verify(statement, times(deleteCounts.size)).executeUpdate(sql)
+        verifyCommonStatementInteractions(statement, deleteCounts.size)
     }
 
     @Test
@@ -53,7 +62,8 @@ class MetadataStoreRepositoryImplTest {
         }
 
         val connectionSupplier = connectionSupplier(listOf(metadataStoreConnection))
-        val metadataStoreRepository = MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100)
+        val metadataStoreRepository =
+            MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100, 10)
 
         metadataStoreRepository.optimizeTable()
 
@@ -109,8 +119,8 @@ class MetadataStoreRepositoryImplTest {
         verifyNoMoreInteractions(statement)
     }
 
-    private fun verifySupplierInteractions(connectionSupplier: ConnectionSupplier) {
-        verify(connectionSupplier, times(1)).connection()
+    private fun verifySupplierInteractions(connectionSupplier: ConnectionSupplier, numInvocations: Int = 1) {
+        verify(connectionSupplier, times(numInvocations)).connection()
         verifyNoMoreInteractions(connectionSupplier)
     }
 
@@ -174,7 +184,8 @@ class MetadataStoreRepositoryImplTest {
         }
 
         val connectionSupplier = connectionSupplier(listOf(metadataStoreConnection))
-        val metadataStoreRepository = MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100)
+        val metadataStoreRepository =
+            MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100, 10)
 
         metadataStoreRepository.deleteRecordsOlderThanPeriod(trimReconciledScale, trimReconciledUnit)
         verify(connectionSupplier, times(1)).connection()
@@ -183,14 +194,14 @@ class MetadataStoreRepositoryImplTest {
         verifyCommonStatementInteractions(statement)
     }
 
-    private fun verifyCommonStatementInteractions(statement: Statement) {
-        verify(statement, times(1)).close()
+    private fun verifyCommonStatementInteractions(statement: Statement, numInvocations: Int = 1) {
+        verify(statement, times(numInvocations)).close()
         verifyNoMoreInteractions(statement)
     }
 
-    private fun verifyConnectionInteractions(metadataStoreConnection: Connection) {
-        verify(metadataStoreConnection, times(1)).createStatement()
-        verify(metadataStoreConnection, times(1)).close()
+    private fun verifyConnectionInteractions(metadataStoreConnection: Connection, numInvocations: Int = 1) {
+        verify(metadataStoreConnection, times(numInvocations)).createStatement()
+        verify(metadataStoreConnection, times(numInvocations)).close()
         verifyNoMoreInteractions(metadataStoreConnection)
     }
 
@@ -265,5 +276,5 @@ class MetadataStoreRepositoryImplTest {
         }
 
     private fun repository(connectionSupplier: ConnectionSupplier): MetadataStoreRepositoryImpl =
-        MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100)
+        MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100, 10)
 }
