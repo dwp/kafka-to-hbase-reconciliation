@@ -133,7 +133,7 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
             }
         }
 
-        if (deletedCount == 0) {
+        if (deletedCount < deleteLimit) {
             return deletedAccumulation
         }
 
