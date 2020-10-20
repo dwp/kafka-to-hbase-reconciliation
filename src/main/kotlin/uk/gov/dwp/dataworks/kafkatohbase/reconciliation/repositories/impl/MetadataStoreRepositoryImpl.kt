@@ -134,7 +134,7 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
         }
 
         if (deletedCount < deleteLimit) {
-            return deletedAccumulation
+            return deletedAccumulation + deletedCount
         }
 
         return deleteAllReconciledRecords(deletedAccumulation + deletedCount)

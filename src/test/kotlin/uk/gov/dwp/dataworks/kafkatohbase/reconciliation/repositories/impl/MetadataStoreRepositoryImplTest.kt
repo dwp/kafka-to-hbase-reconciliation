@@ -21,7 +21,7 @@ class MetadataStoreRepositoryImplTest {
         |WHERE reconciled_result = TRUE 
         |LIMIT $deleteLimit""".trimMargin()
 
-        val deleteCounts = listOf(10, 10, 10, 8, 0)
+        val deleteCounts = listOf(10, 10, 10, 8)
         val statement = mock<Statement> {
             on { executeUpdate(sql) } doReturnConsecutively deleteCounts
         }
@@ -44,7 +44,7 @@ class MetadataStoreRepositoryImplTest {
         verify(metadataStoreConnection, times(deleteCounts.size)).autoCommit
         verify(metadataStoreConnection, times(deleteCounts.size)).commit()
         verifyConnectionInteractions(metadataStoreConnection, deleteCounts.size)
-        verify(statement, times(5)).executeUpdate(sql)
+        verify(statement, times(deleteCounts.size)).executeUpdate(sql)
         verifyCommonStatementInteractions(statement, deleteCounts.size)
     }
 
