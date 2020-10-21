@@ -20,6 +20,7 @@ data class HBaseConfiguration(
     var clientScannerTimeoutPeriodMs: String? = "NOT_SET",
     var clientOperationTimeoutMs: String? = "NOT_SET",
     var rpcTimeoutMs: String? = "NOT_SET",
+    var rpcReadTimeoutMs: String? = "NOT_SET",
     var retries: String? = "NOT_SET",
     var replicationFactor: String? = "NOT_SET"
 ) {
@@ -37,6 +38,7 @@ data class HBaseConfiguration(
             setInt(HConstants.HBASE_CLIENT_SCANNER_TIMEOUT_PERIOD, clientScannerTimeoutPeriodMs?.toIntOrNull() ?: 666)
             setInt(HConstants.HBASE_CLIENT_OPERATION_TIMEOUT, clientOperationTimeoutMs?.toIntOrNull() ?: 666)
             setInt(HConstants.HBASE_RPC_TIMEOUT_KEY, rpcTimeoutMs?.toIntOrNull() ?: 666)
+            setInt(HConstants.HBASE_RPC_READ_TIMEOUT_KEY, rpcReadTimeoutMs?.toIntOrNull() ?: 666)
             setInt(HConstants.HBASE_CLIENT_RETRIES_NUMBER, retries?.toIntOrNull() ?: 666)
         }
 
@@ -45,6 +47,7 @@ data class HBaseConfiguration(
         logger.info("Timeout configuration",
             "scanner" to configuration.get(HConstants.HBASE_CLIENT_SCANNER_TIMEOUT_PERIOD),
             "rpc" to configuration.get(HConstants.HBASE_RPC_TIMEOUT_KEY),
+            "rpc_read" to configuration.get(HConstants.HBASE_RPC_READ_TIMEOUT_KEY),
             "client" to configuration.get(HConstants.HBASE_CLIENT_OPERATION_TIMEOUT))
 
         logger.info("HBase Configuration loaded", "hbase_configuration" to configuration.toString())
