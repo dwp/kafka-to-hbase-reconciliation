@@ -89,9 +89,9 @@ class HBaseRepositoryImplTest {
             replicaId = get.replicaId
         }
 
-        assertEquals(50, unreconciled.size)
+        assertEquals(50, unreconciled.first.size)
 
-        unreconciled.forEachIndexed { index, record ->
+        unreconciled.first.forEachIndexed { index, record ->
             assertEquals((index + 1) * 2, record.id)
         }
 

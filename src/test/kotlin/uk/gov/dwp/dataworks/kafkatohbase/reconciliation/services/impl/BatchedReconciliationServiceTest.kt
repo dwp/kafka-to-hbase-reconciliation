@@ -15,7 +15,7 @@ internal class BatchedReconciliationServiceTest {
     @Test
     fun startReconciliation() {
 
-        val groupedRecords = (1..10).map { topicNumber ->
+        val recordsInHBase = (1..10).map { topicNumber ->
             (1..100).map {recordNumber ->
                 UnreconciledRecord(topicNumber * 1000 + recordNumber,
                     "db.database.collection$topicNumber",
@@ -23,19 +23,21 @@ internal class BatchedReconciliationServiceTest {
             }
         }.associateBy {it[0].topicName}
 
+
         val metadataStoreRepository = mock<MetadataStoreRepository> {
-            on { groupedUnreconciledRecords(10, "MINUTE") } doReturn groupedRecords
+            on { groupedUnreconciledRecords(10, "MINUTE", 5, "HOUR") } doReturn recordsInHBase
         }
 
         val hbaseRepository = mock<HBaseRepository> {
-            groupedRecords.forEach { groupedEntry ->
-                on { recordsInHbase(groupedEntry.key, groupedEntry.value)} doReturn groupedEntry.value.filter { it.id % 2 == 0 }
+            recordsInHBase.forEach { groupedEntry ->
+                on { recordsInHbase(groupedEntry.key, groupedEntry.value)} doReturn groupedEntry.value.partition { it.id % 2 == 0 }
             }
         }
 
-        val reconciliationService = BatchedReconciliationService(hbaseRepository, metadataStoreRepository, 10, "MINUTE")
+        val reconciliationService = BatchedReconciliationService(hbaseRepository, metadataStoreRepository,
+            10, "MINUTE", 5, "HOUR")
         reconciliationService.startReconciliation()
-        verify(metadataStoreRepository, times(1)).groupedUnreconciledRecords(10, "MINUTE")
+        verify(metadataStoreRepository, times(1)).groupedUnreconciledRecords(10, "MINUTE", 5, "HOUR")
         val topicCaptor = argumentCaptor<String>()
         val recordsCaptor = argumentCaptor<List<UnreconciledRecord>>()
         verify(hbaseRepository, times(10)).recordsInHbase(topicCaptor.capture(), recordsCaptor.capture())
@@ -58,11 +60,19 @@ internal class BatchedReconciliationServiceTest {
 
         val reconcileCaptor = argumentCaptor<List<UnreconciledRecord>>()
         verify(metadataStoreRepository, times(1)).reconcileRecords(reconcileCaptor.capture())
-        val unreconciled = reconcileCaptor.firstValue
-        val ids = unreconciled.map{ it.id }.toSortedSet()
-        assertEquals(500, unreconciled.size)
-        assertEquals(500, ids.size)
-        unreconciled.forEach { unreconciledRecord -> assertTrue(unreconciledRecord.id % 2 == 0)}
+        val inHBase = reconcileCaptor.firstValue
+        val presentIds = inHBase.map{ it.id }.toSortedSet()
+        assertEquals(500, inHBase.size)
+        assertEquals(500, presentIds.size)
+        inHBase.forEach { unreconciledRecord -> assertTrue(unreconciledRecord.id % 2 == 0)}
+
+        val lastCheckedCaptor = argumentCaptor<List<UnreconciledRecord>>()
+        verify(metadataStoreRepository, times(1)).recordLastChecked(lastCheckedCaptor.capture())
+        val notInHbase = lastCheckedCaptor.firstValue
+        val notPresentIds = notInHbase.map(UnreconciledRecord::id).toSortedSet()
+        assertEquals(500, notInHbase.size)
+        assertEquals(500, notPresentIds.size)
+        notInHbase.forEach { record ->  assertTrue(record.id % 2 != 0)}
         verifyNoMoreInteractions(metadataStoreRepository)
     }
 }

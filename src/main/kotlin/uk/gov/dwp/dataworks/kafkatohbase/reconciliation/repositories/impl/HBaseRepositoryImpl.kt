@@ -17,20 +17,14 @@ import kotlin.random.Random
 class HBaseRepositoryImpl(
     private val connection: Connection,
     private val tableNameUtil: TableNameUtil,
-    private val replicationFactor: Int
-) : HBaseRepository {
+    private val replicationFactor: Int): HBaseRepository {
 
-    override fun recordsInHbase(topicName: String, records: List<UnreconciledRecord>) =
-        recordsExistInHBase(topicName, records)
-            .asSequence()
-            .filter { it.second }
-            .map { it.first }
-            .toList()
+    override fun recordsInHbase(topicName: String, records: List<UnreconciledRecord>): Pair<List<UnreconciledRecord>, List<UnreconciledRecord>> =
+        recordsExistInHBase(topicName, records).partition { it.second }.run {
+            Pair(first.map { it.first }, second.map { it.first })
+        }
 
-    private fun recordsExistInHBase(
-        topicName: String,
-        records: List<UnreconciledRecord>
-    ): List<Pair<UnreconciledRecord, Boolean>> {
+    private fun recordsExistInHBase(topicName: String, records: List<UnreconciledRecord>): List<Pair<UnreconciledRecord, Boolean>> {
 
         val replicaId = randomiseReplicaId(replicationFactor)
 
