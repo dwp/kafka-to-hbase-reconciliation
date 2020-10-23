@@ -23,8 +23,9 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
                                   private val batchSize: Int,
                                   private val deleteLimit: Int): MetadataStoreRepository {
 
-    override fun groupedUnreconciledRecords(minAgeSize: Int, minAgeUnit: String): Map<String, List<UnreconciledRecord>> =
-            unreconciledRecords(minAgeSize, minAgeUnit).groupBy { it.topicName }
+    override fun groupedUnreconciledRecords(minAgeSize: Int, minAgeUnit: String,
+                                            lastCheckedScale: Int, lastCheckedUnit: String): Map<String, List<UnreconciledRecord>> =
+            unreconciledRecords(minAgeSize, minAgeUnit, lastCheckedScale, lastCheckedUnit).groupBy { it.topicName }
 
     override fun reconcileRecords(unreconciled: List<UnreconciledRecord>) {
         if (unreconciled.isNotEmpty()) {
@@ -42,27 +43,39 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
     }
 
     private fun reconcileBatch(batch: List<UnreconciledRecord>) =
-            connection().use { connection ->
-                reconcileRecordStatement(connection).use { statement ->
-                    try {
-                        batch.forEach {
-                            statement.setInt(1, it.id)
-                            statement.addBatch()
-                        }
-                        statement.executeBatch()
-                        commit(connection)
-                        logger.info("Updated sub-batch", "size" to "${batch.size}")
-                    } catch (e: SQLException) {
-                        logger.error("Failed to update batch", e, "error" to "${e.message}", "error_code" to "${e.errorCode}")
-                        e.printStackTrace(System.err)
-                        rollback(connection)
-                    }
-                }
-            }
+        connection().updateBatch(batch) {
+            reconcileRecordStatement(it)
+        }
 
-    private fun unreconciledRecords(minAgeSize: Int, minAgeUnit: String): MutableList<UnreconciledRecord> =
+    override fun recordLastChecked(batch: List<UnreconciledRecord>) =
+        connection().updateBatch(batch) { recordLastCheckedStatement(it) }
+
+    fun Connection.updateBatch(batch: List<UnreconciledRecord>, prepare: (Connection) -> PreparedStatement) =
+        use { prepare(it).updateBatchById(batch) }
+
+    private fun PreparedStatement.updateBatchById(batch: List<UnreconciledRecord>) {
+        use {
+            try {
+                batch.forEach {
+                    setInt(1, it.id)
+                    addBatch()
+                }
+                executeBatch()
+                commit(connection)
+                logger.info("Updated batch", "size" to "${batch.size}")
+            } catch (e: SQLException) {
+                logger.error("Failed to update batch", e, "error" to "${e.message}", "error_code" to "${e.errorCode}")
+                e.printStackTrace(System.err)
+                rollback(connection)
+            }
+        }
+    }
+
+
+    private fun unreconciledRecords(minAgeSize: Int, minAgeUnit: String,
+                                    lastCheckedScale: Int, lastCheckedUnit: String): MutableList<UnreconciledRecord> =
             connection().use { connection ->
-                unreconciledRecordsStatement(connection, minAgeSize, minAgeUnit).use { statement ->
+                unreconciledRecordsStatement(connection, minAgeSize, minAgeUnit, lastCheckedScale, lastCheckedUnit).use { statement ->
                     val list = mutableListOf<UnreconciledRecord>()
                     statement.executeQuery().use { results ->
                         while (results.next()) {
@@ -154,34 +167,32 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
 
 
 
-    private fun unreconciledRecordsStatement(connection: Connection, minAgeSize: Int, minAgeUnit: String): PreparedStatement {
-
-        println(            """
-                SELECT id, hbase_id, hbase_timestamp, topic_name 
-                FROM $table
-                WHERE write_timestamp < CURRENT_TIMESTAMP - INTERVAL $minAgeSize $minAgeUnit
-                AND write_timestamp > CURRENT_DATE - INTERVAL 14 DAY
-                AND reconciled_result = false
-                LIMIT $batchSize
-            """)
-        return connection.prepareStatement(
-            """
-                SELECT id, hbase_id, hbase_timestamp, topic_name 
-                FROM $table
-                WHERE write_timestamp < CURRENT_TIMESTAMP - INTERVAL $minAgeSize $minAgeUnit
-                AND write_timestamp > CURRENT_DATE - INTERVAL 14 DAY
-                AND reconciled_result = false
-                LIMIT $batchSize
-            """.trimIndent())
-
-    }
-
+    private fun unreconciledRecordsStatement(connection: Connection, minAgeSize: Int, minAgeUnit: String,
+                                             lastCheckedScale: Int, lastCheckedUnit: String): PreparedStatement =
+        connection.prepareStatement("""SELECT id, hbase_id, hbase_timestamp, topic_name
+                                        FROM $table
+                                        WHERE reconciled_result = false
+                                        AND write_timestamp < CURRENT_TIMESTAMP - INTERVAL $minAgeSize $minAgeUnit
+                                        AND write_timestamp > CURRENT_DATE - INTERVAL 14 DAY
+                                        AND (last_checked_timestamp IS NULL
+                                                OR last_checked_timestamp < CURRENT_TIMESTAMP - INTERVAL $lastCheckedScale $lastCheckedUnit)
+                                        LIMIT $batchSize
+                                        """.trimIndent())
 
     private fun reconcileRecordStatement(connection: Connection): PreparedStatement =
         connection.prepareStatement(
             """
                 UPDATE $table
-                SET reconciled_result=true, reconciled_timestamp=CURRENT_TIMESTAMP
+                SET reconciled_result=true, reconciled_timestamp=CURRENT_TIMESTAMP, last_checked_timestamp=CURRENT_TIMESTAMP
+                WHERE id = ?
+            """.trimIndent()
+        )
+
+    private fun recordLastCheckedStatement(connection: Connection): PreparedStatement =
+        connection.prepareStatement(
+            """
+                UPDATE $table
+                SET last_checked_timestamp=CURRENT_TIMESTAMP, last_checked_timestamp=CURRENT_TIMESTAMP
                 WHERE id = ?
             """.trimIndent()
         )

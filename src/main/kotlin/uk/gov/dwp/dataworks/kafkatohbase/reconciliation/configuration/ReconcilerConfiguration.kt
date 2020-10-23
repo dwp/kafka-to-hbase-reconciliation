@@ -12,7 +12,9 @@ data class ReconcilerConfiguration(var minimumAgeScale: Int = 10,
                                    var trimReconciledScale: String = "NOT_SET",
                                    var trimReconciledUnit: String = "NOT_SET",
                                    var optimizeAfterDelete: Boolean = true,
-                                   var autoCommitStatements: Boolean = false) {
+                                   var autoCommitStatements: Boolean = false,
+                                   var lastCheckedUnit: String = "MINUTE",
+                                   var lastCheckedScale: Int = 30) {
 
     @Bean
     fun minimumAgeScale() = minimumAgeScale
@@ -34,4 +36,10 @@ data class ReconcilerConfiguration(var minimumAgeScale: Int = 10,
 
     @Bean
     fun trimRecordsFixedDelayMillis() = trimRecordsFixedDelayMillis
+
+    @Bean
+    fun lastCheckedUnit() = lastCheckedUnit
+
+    @Bean
+    fun lastCheckedScale() = lastCheckedScale
 }

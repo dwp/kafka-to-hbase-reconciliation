@@ -1,3 +1,4 @@
+
 import com.beust.klaxon.JsonObject
 import com.beust.klaxon.Parser
 import io.kotest.core.spec.style.StringSpec
@@ -50,7 +51,7 @@ class ReconciliationIntegrationTest : StringSpec() {
             logger.info("Checking records in metastore are updated...")
             with(metadatastoreConnection) {
                 createStatement().use { statement ->
-                    statement.executeQuery("SELECT hbase_id, reconciled_result FROM ucfs").use {
+                    statement.executeQuery("SELECT hbase_id, reconciled_result, last_checked_timestamp FROM ucfs").use {
                         while (it.next()) {
                             val hbaseId = it.getString("hbase_id")
                             val reconciledResult = it.getBoolean("reconciled_result")
@@ -62,9 +63,29 @@ class ReconciliationIntegrationTest : StringSpec() {
                         }
                     }
                 }
+
+                withTimeout(5.minutes) {
+                    countLastModified()
+                }
             }
             logger.info("Done!")
         }
+    }
+
+    private fun countLastModified() {
+        with (metadatastoreConnection) {
+            createStatement().use {
+                it.executeQuery("SELECT count(*) FROM ucfs where  last_checked_timestamp IS NOT NULL").use { results ->
+                    if (results.next()) {
+                        val count = results.getInt(1)
+                        if (count >= topicCount * recordCount) {
+                            return
+                        }
+                    }
+                }
+            }
+        }
+        countLastModified()
     }
 
     private suspend fun populateMetadataStore() = withContext(Dispatchers.IO) {
@@ -189,4 +210,3 @@ class ReconciliationIntegrationTest : StringSpec() {
     private val topicCount = 10
     private val recordCount = 1000
 }
-
