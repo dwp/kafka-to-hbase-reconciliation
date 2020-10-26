@@ -10,6 +10,8 @@ ENV GROUP=$USER
 RUN mkdir $APP_HOME
 WORKDIR $APP_HOME
 
+COPY entrypoint.sh .
+RUN chmod a+x entrypoint.sh
 COPY build/libs/*.jar ./$APP_NAME.jar
 
 RUN mkdir -p /certs
