@@ -25,4 +25,4 @@ RUN chmod 600 /certs/AmazonRootCA1.pem
 
 USER $USER
 
-ENTRYPOINT ["sh", "-c", "java -jar ./reconciliation.jar \"$@\"", "--"]
+ENTRYPOINT ["sh", "-c", "./entrypoint.sh \"$@\"", "--"]
