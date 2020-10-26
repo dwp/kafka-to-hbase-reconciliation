@@ -1,6 +1,7 @@
 #!/bin/sh
 
-METADATASTORE_TABLE="${1:-NOT_SET_IN_ENTRYPOINT}"
+# Use the metadatastore argument supplied via cmd line or fall back to env var
+METADATASTORE_TABLE="${1:-$METADATASTORE_TABLE}"
 
 echo "Running jar using entrypoint METADATASTORE_TABLE=${METADATASTORE_TABLE}"
 
