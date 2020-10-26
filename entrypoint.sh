@@ -1,7 +1,7 @@
 #!/bin/sh
 
-METADATASTORE_TABLE="${1:-NOT_SET_IN_ENTRYPOINT}"
+METADATASTORE_TABLE_VALUE="${1:-NOT_SET_IN_ENTRYPOINT}"
 
-echo "Running jar using entrypoint METADATASTORE_TABLE=${METADATASTORE_TABLE}"
+echo "Running jar using entrypoint METADATASTORE_TABLE=${METADATASTORE_TABLE_VALUE}"
 
-java -Dmetadatastore.table="${METADATASTORE_TABLE}" -jar ./reconciliation.jar
+java -Dmetadatastore.table="${METADATASTORE_TABLE_VALUE}" -jar ./reconciliation.jar
