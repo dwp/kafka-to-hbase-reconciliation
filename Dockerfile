@@ -10,6 +10,8 @@ ENV GROUP=$USER
 RUN mkdir $APP_HOME
 WORKDIR $APP_HOME
 
+COPY entrypoint.sh .
+RUN chmod a+x entrypoint.sh
 COPY build/libs/*.jar ./$APP_NAME.jar
 
 RUN mkdir -p /certs
@@ -25,4 +27,4 @@ RUN chmod 600 /certs/AmazonRootCA1.pem
 
 USER $USER
 
-ENTRYPOINT ["sh", "-c", "java -jar ./reconciliation.jar \"$@\"", "--"]
+ENTRYPOINT ["sh", "-c", "./entrypoint.sh \"$@\"", "--"]
