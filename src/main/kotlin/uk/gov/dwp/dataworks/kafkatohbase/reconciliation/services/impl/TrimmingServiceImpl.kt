@@ -3,17 +3,16 @@ package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.impl
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.MetadataStoreRepository
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.ReconciliationService
 import uk.gov.dwp.dataworks.logging.DataworksLogger
 
 @Service
 @Profile("TRIM_RECONCILED_RECORDS")
-class AggressiveTrimReconciledRecordsService(
-    trimRecordsFixedDelayMillis: Long,
+class TrimmingServiceImpl(
     private val metadataStoreRepository: MetadataStoreRepository,
-    private val optimizeAfterDelete: Boolean):
-    AbstractTrimmingService(trimRecordsFixedDelayMillis) {
+    private val optimizeAfterDelete: Boolean): ReconciliationService {
 
-    override fun trimReconciledRecords() {
+    override fun start() {
         logger.info("Starting trim for reconciled records in the metadata store")
         val deletedCount = metadataStoreRepository.deleteAllReconciledRecords()
         logger.info("Finished trim for reconciled units","deleted_count" to "$deletedCount")
@@ -30,6 +29,6 @@ class AggressiveTrimReconciledRecordsService(
     }
 
     companion object {
-        val logger = DataworksLogger.getLogger(AggressiveTrimReconciledRecordsService::class.toString())
+        val logger = DataworksLogger.getLogger(TrimmingServiceImpl::class.toString())
     }
 }

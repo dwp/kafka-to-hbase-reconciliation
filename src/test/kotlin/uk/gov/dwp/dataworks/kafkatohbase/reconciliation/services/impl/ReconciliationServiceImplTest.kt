@@ -10,7 +10,7 @@ import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.MetadataSto
 import kotlin.time.ExperimentalTime
 
 @ExperimentalTime
-internal class BatchedReconciliationServiceTest {
+internal class ReconciliationServiceImplTest {
 
     @Test
     fun startReconciliation() {
@@ -34,9 +34,9 @@ internal class BatchedReconciliationServiceTest {
             }
         }
 
-        val reconciliationService = BatchedReconciliationService(hbaseRepository, metadataStoreRepository,
+        val reconciliationService = ReconciliationServiceImpl(hbaseRepository, metadataStoreRepository,
             10, "MINUTE", 5, "HOUR")
-        reconciliationService.startReconciliation()
+        reconciliationService.start()
         verify(metadataStoreRepository, times(1)).groupedUnreconciledRecords(10, "MINUTE", 5, "HOUR")
         val topicCaptor = argumentCaptor<String>()
         val recordsCaptor = argumentCaptor<List<UnreconciledRecord>>()
