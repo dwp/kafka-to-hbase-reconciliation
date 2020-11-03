@@ -19,26 +19,15 @@ class TrimReconciledIntegrationTest : StringSpec() {
 
     init {
         "Older reconciled records are deleted, unreconciled are left" {
-            logger.info("Emptying metastore...")
-            emptyMetadataStoreTable()
-            allRecordCount() shouldBe 0
-
-            logger.info("Setting up not-done records...")
-            insertMetadataStoreData(0, 1)
-            logger.info("Setting up already-done records...")
-            insertReconciledMetadataStoreData(2, 9)
-            logger.info("Checking for total records...")
-            allRecordCount() shouldBe 10
 
             withTimeout(2.minutes) {
-                while (allRecordCount() > 2) {
+                while (allRecordCount() > 500) {
                     logger.info("Waiting for already-done records to be removed")
                     delay(1.seconds)
                 }
             }
 
-            allRecordCount() shouldBe 2
-            logger.info("Done!")
+            allRecordCount() shouldBe 500
         }
     }
 
