@@ -36,3 +36,4 @@ lib/
 /gradle/
 gradlew
 gradlew.bat
+venv/

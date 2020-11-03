@@ -8,9 +8,6 @@ import org.springframework.context.annotation.Configuration
 @ConfigurationProperties(prefix = "reconciler")
 data class ReconcilerConfiguration(var minimumAgeScale: Int = 10,
                                    var minimumAgeUnit: String = "MINUTE",
-                                   var trimRecordsFixedDelayMillis: Long = 100L,
-                                   var trimReconciledScale: String = "NOT_SET",
-                                   var trimReconciledUnit: String = "NOT_SET",
                                    var optimizeAfterDelete: Boolean = true,
                                    var autoCommitStatements: Boolean = false,
                                    var lastCheckedUnit: String = "MINUTE",
@@ -26,16 +23,7 @@ data class ReconcilerConfiguration(var minimumAgeScale: Int = 10,
     fun autoCommitStatements() = autoCommitStatements
 
     @Bean
-    fun trimReconciledScale() = trimReconciledScale
-
-    @Bean
-    fun trimReconciledUnit() = trimReconciledUnit
-
-    @Bean
     fun optimizeAfterDelete() = optimizeAfterDelete
-
-    @Bean
-    fun trimRecordsFixedDelayMillis() = trimRecordsFixedDelayMillis
 
     @Bean
     fun lastCheckedUnit() = lastCheckedUnit
