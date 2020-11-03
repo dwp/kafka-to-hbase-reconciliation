@@ -39,7 +39,7 @@ data class HBaseConfiguration(
             setInt(HConstants.HBASE_CLIENT_SCANNER_TIMEOUT_PERIOD, clientScannerTimeoutPeriodMs?.toIntOrNull() ?: 666)
             setInt(HConstants.HBASE_CLIENT_OPERATION_TIMEOUT, clientOperationTimeoutMs?.toIntOrNull() ?: 666)
             setInt(HConstants.HBASE_CLIENT_META_OPERATION_TIMEOUT, clientMetaOperationTimeoutMs?.toIntOrNull() ?: 666)
-            setInt(HConstants.HBASE_RPC_TIMEOUT_KEY, rpcTimeoutMs?.toIntOrNull() ?: 666)
+            setInt(HConstants.HBASE_RPC_WRITE_TIMEOUT_KEY, rpcTimeoutMs?.toIntOrNull() ?: 666)
             setInt(HConstants.HBASE_RPC_READ_TIMEOUT_KEY, rpcReadTimeoutMs?.toIntOrNull() ?: 666)
             setInt(HConstants.HBASE_CLIENT_RETRIES_NUMBER, retries?.toIntOrNull() ?: 666)
         }

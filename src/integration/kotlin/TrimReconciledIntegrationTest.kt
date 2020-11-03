@@ -108,7 +108,7 @@ class TrimReconciledIntegrationTest : StringSpec() {
         }
 
     private val metadataStoreConnection: Connection by lazy {
-        DriverManager.getConnection("jdbc:mysql://metadatastore:3306/metadatastore", Properties().apply {
+        DriverManager.getConnection("jdbc:mysql://localhost:3306/metadatastore", Properties().apply {
             setProperty("user", "reconciliationwriter")
             setProperty("password", "my-password")
         })

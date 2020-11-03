@@ -11,6 +11,7 @@ import uk.gov.dwp.dataworks.logging.DataworksLogger
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.SQLException
+import java.sql.Statement
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTime
 import kotlin.time.measureTimedValue
@@ -21,7 +22,8 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
                                   private val table: String,
                                   private val numberOfParallelUpdates: Int,
                                   private val batchSize: Int,
-                                  private val deleteLimit: Int): MetadataStoreRepository {
+                                  private val deleteLimit: Int,
+                                  private val partitions: String) : MetadataStoreRepository {
 
     override fun groupedUnreconciledRecords(minAgeSize: Int, minAgeUnit: String,
                                             lastCheckedScale: Int, lastCheckedUnit: String): Map<String, List<UnreconciledRecord>> =
@@ -43,15 +45,15 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
     }
 
     private fun reconcileBatch(batch: List<UnreconciledRecord>) =
-        connection().updateBatch(batch) {
-            reconcileRecordStatement(it)
-        }
+            connection().updateBatch(batch) {
+                reconcileRecordStatement(it)
+            }
 
     override fun recordLastChecked(batch: List<UnreconciledRecord>) =
-        connection().updateBatch(batch) { recordLastCheckedStatement(it) }
+            connection().updateBatch(batch) { recordLastCheckedStatement(it) }
 
     fun Connection.updateBatch(batch: List<UnreconciledRecord>, prepare: (Connection) -> PreparedStatement) =
-        use { prepare(it).updateBatchById(batch) }
+            use { prepare(it).updateBatchById(batch) }
 
     private fun PreparedStatement.updateBatchById(batch: List<UnreconciledRecord>) {
         use {
@@ -71,21 +73,25 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
         }
     }
 
-
     private fun unreconciledRecords(minAgeSize: Int, minAgeUnit: String,
                                     lastCheckedScale: Int, lastCheckedUnit: String): MutableList<UnreconciledRecord> =
             connection().use { connection ->
-                unreconciledRecordsStatement(connection, minAgeSize, minAgeUnit, lastCheckedScale, lastCheckedUnit).use { statement ->
+                val unreconciledStatement = if (partitionsSet(partitions)) {
+                    logger.info("Getting unreconciled records from partitioned table", "table" to table, "partitions" to partitions)
+                    unreconciledRecordsStatementPartitioned(connection, minAgeSize, minAgeUnit, lastCheckedScale, lastCheckedUnit, partitions)
+                } else unreconciledRecordsStatement(connection, minAgeSize, minAgeUnit, lastCheckedScale, lastCheckedUnit)
+
+                unreconciledStatement.use { statement ->
                     val list = mutableListOf<UnreconciledRecord>()
                     statement.executeQuery().use { results ->
                         while (results.next()) {
                             list.add(
-                                UnreconciledRecord(
-                                    results.getInt("id"),
-                                    results.getString("topic_name"),
-                                    results.getString("hbase_id"),
-                                    results.getLong("hbase_timestamp")
-                                )
+                                    UnreconciledRecord(
+                                            results.getInt("id"),
+                                            results.getString("topic_name"),
+                                            results.getString("hbase_id"),
+                                            results.getLong("hbase_timestamp")
+                                    )
                             )
                         }
                     }
@@ -95,36 +101,36 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
             }
 
     override fun deleteRecordsOlderThanPeriod(trimReconciledScale: String, trimReconciledUnit: String): Int =
-        connection().use { connection ->
-            logger.info("Deleting records in Metadata Store by scale and unit",
-                "scale" to trimReconciledScale,
-                "unit" to trimReconciledUnit,
-                "table" to table)
+            connection().use { connection ->
+                logger.info("Deleting records in Metadata Store by scale and unit",
+                        "scale" to trimReconciledScale,
+                        "unit" to trimReconciledUnit,
+                        "table" to table)
 
-            connection.createStatement().use {
-                val deletedCount = it.executeUpdate("""
+                connection.createStatement().use {
+                    val deletedCount = it.executeUpdate("""
                     DELETE FROM $table
                     WHERE reconciled_result = TRUE
                     AND reconciled_timestamp < CURRENT_DATE - INTERVAL $trimReconciledScale $trimReconciledUnit
                 """.trimIndent())
 
-                logger.info("Deleted records in Metadata Store by scale and unit",
-                    "scale" to trimReconciledScale,
-                    "unit" to trimReconciledUnit,
-                    "table" to table,
-                    "deleted_count" to deletedCount.toString())
+                    logger.info("Deleted records in Metadata Store by scale and unit",
+                            "scale" to trimReconciledScale,
+                            "unit" to trimReconciledUnit,
+                            "table" to table,
+                            "deleted_count" to deletedCount.toString())
 
-                deletedCount
+                    deletedCount
+                }
+
             }
-
-        }
 
     override fun deleteAllReconciledRecords(deletedAccumulation: Int): Int {
         val deletedCount = connection().use { connection ->
             connection.createStatement().use {
                 val (deletedCount, duration) = measureTimedValue {
                     it.executeUpdate(
-                        """
+                            """
                         DELETE FROM $table
                         WHERE reconciled_result = TRUE 
                         LIMIT $deleteLimit
@@ -133,9 +139,9 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
                 }
 
                 logger.info(
-                    "Deleted records in Metadata Store", "table" to table,
-                    "deleted_count" to "$deletedCount", "time_taken" to "$duration", "delete_limit" to "$deleteLimit",
-                    "deleted_accumulation" to "${deletedAccumulation + deletedCount}"
+                        "Deleted records in Metadata Store", "table" to table,
+                        "deleted_count" to "$deletedCount", "time_taken" to "$duration", "delete_limit" to "$deleteLimit",
+                        "deleted_accumulation" to "${deletedAccumulation + deletedCount}"
                 )
 
                 if (!connection.autoCommit) {
@@ -154,22 +160,21 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
     }
 
     override fun optimizeTable(): Boolean =
-        connection().use { connection ->
-            connection.createStatement().use { statement ->
-                val (result, duration) = measureTimedValue {
-                    statement.execute("OPTIMIZE TABLE $table")
+            connection().use { connection ->
+                connection.createStatement().use { statement ->
+                    val (result, duration) = measureTimedValue {
+                        statement.execute("OPTIMIZE TABLE $table")
+                    }
+                    logger.info("Optimized table", "table" to table,
+                            "result" to "$result", "time_taken" to "$duration")
+                    result
                 }
-                logger.info("Optimized table", "table" to table,
-                    "result" to "$result", "time_taken" to "$duration")
-                result
             }
-        }
-
 
 
     private fun unreconciledRecordsStatement(connection: Connection, minAgeSize: Int, minAgeUnit: String,
                                              lastCheckedScale: Int, lastCheckedUnit: String): PreparedStatement =
-        connection.prepareStatement("""SELECT id, hbase_id, hbase_timestamp, topic_name
+            connection.prepareStatement("""SELECT id, hbase_id, hbase_timestamp, topic_name
                                         FROM $table
                                         WHERE reconciled_result = false
                                         AND write_timestamp < CURRENT_TIMESTAMP - INTERVAL $minAgeSize $minAgeUnit
@@ -179,23 +184,35 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
                                         LIMIT $batchSize
                                         """.trimIndent())
 
+    private fun unreconciledRecordsStatementPartitioned(connection: Connection, minAgeSize: Int, minAgeUnit: String,
+                                                        lastCheckedScale: Int, lastCheckedUnit: String, partitions: String): PreparedStatement =
+            connection.prepareStatement("""SELECT id, hbase_id, hbase_timestamp, topic_name
+                                        FROM $table PARTITION ($partitions)
+                                        WHERE reconciled_result = false
+                                        AND write_timestamp < CURRENT_TIMESTAMP - INTERVAL $minAgeSize $minAgeUnit
+                                        AND write_timestamp > CURRENT_DATE - INTERVAL 14 DAY
+                                        AND (last_checked_timestamp IS NULL
+                                                OR last_checked_timestamp < CURRENT_TIMESTAMP - INTERVAL $lastCheckedScale $lastCheckedUnit)
+                                        LIMIT $batchSize
+                                        """.trimIndent())
+
     private fun reconcileRecordStatement(connection: Connection): PreparedStatement =
-        connection.prepareStatement(
-            """
+            connection.prepareStatement(
+                    """
                 UPDATE $table
                 SET reconciled_result=true, reconciled_timestamp=CURRENT_TIMESTAMP, last_checked_timestamp=CURRENT_TIMESTAMP
                 WHERE id = ?
             """.trimIndent()
-        )
+            )
 
     private fun recordLastCheckedStatement(connection: Connection): PreparedStatement =
-        connection.prepareStatement(
-            """
+            connection.prepareStatement(
+                    """
                 UPDATE $table
                 SET last_checked_timestamp=CURRENT_TIMESTAMP, last_checked_timestamp=CURRENT_TIMESTAMP
                 WHERE id = ?
             """.trimIndent()
-        )
+            )
 
     private fun commit(connection: Connection) {
         if (!connection.autoCommit) {
@@ -208,6 +225,8 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
             connection.rollback()
         }
     }
+
+    fun partitionsSet(partitions: String) = partitions == "NOT_SET"
 
     private fun connection() = connectionSupplier.connection()
 

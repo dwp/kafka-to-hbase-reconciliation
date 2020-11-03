@@ -30,7 +30,7 @@ class MetadataStoreRepositoryImplTest {
         }
         val connectionSupplier = connectionSupplier(listOf(metadataStoreConnection))
         val metadataStoreRepository =
-            MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100, 10)
+            MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100, 10, "NOT_SET", "NOT_SET")
 
         metadataStoreRepository.recordLastChecked(unreconciledRecords())
 
@@ -81,7 +81,7 @@ class MetadataStoreRepositoryImplTest {
         val connectionSupplier = connectionSupplier(listOf(metadataStoreConnection))
         val metadataStoreRepository =
             MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100,
-                deleteLimit)
+                deleteLimit, "NOT_SET", "NOT_SET")
 
         val totalDeletes = metadataStoreRepository.deleteAllReconciledRecords()
         totalDeletes shouldBe deleteCounts.sum()
@@ -109,7 +109,7 @@ class MetadataStoreRepositoryImplTest {
 
         val connectionSupplier = connectionSupplier(listOf(metadataStoreConnection))
         val metadataStoreRepository =
-            MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100, 10)
+            MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100, 10, "NOT_SET", "NOT_SET")
 
         metadataStoreRepository.optimizeTable()
 
@@ -154,6 +154,40 @@ class MetadataStoreRepositoryImplTest {
 
         repository(connectionSupplier).reconcileRecords(listOf(
             UnreconciledRecord(1,"db.database.collection1","hbase_id_1",(10).toLong())))
+        verifySupplierInteractions(connectionSupplier)
+        verify(connection, times(1)).prepareStatement(any())
+        verify(connection, times(1)).close()
+        verifyNoMoreInteractions(connection)
+
+        verify(statement, times(1)).setInt(1, 1)
+        verify(statement, times(1)).addBatch()
+        verify(statement, times(1)).executeBatch()
+        verify(statement, times(1)).close()
+        verify(statement, times(1)).connection
+        verifyNoMoreInteractions(statement)
+
+        verify(statementConnection, times(1)).autoCommit
+        verify(statementConnection, times(1)).commit()
+        verifyNoMoreInteractions(statementConnection)
+    }
+
+    @Test
+    fun testReconcileOneRecordWithPartition() {
+        val statementConnection = mock<Connection>()
+        val statement = mock<PreparedStatement> {
+            on { connection } doReturn statementConnection
+        }
+
+        val connection = mock<Connection> {
+            on { prepareStatement(any()) } doReturn statement
+            on { autoCommit } doReturn false
+        }
+
+        val connectionSupplier = connectionSupplier(listOf(connection))
+
+        repositoryWithPartition(connectionSupplier).reconcileRecords(listOf(
+                UnreconciledRecord(1,"db.database.collection1","hbase_id_1",(10).toLong())))
+
         verifySupplierInteractions(connectionSupplier)
         verify(connection, times(1)).prepareStatement(any())
         verify(connection, times(1)).close()
@@ -240,7 +274,7 @@ class MetadataStoreRepositoryImplTest {
 
         val connectionSupplier = connectionSupplier(listOf(metadataStoreConnection))
         val metadataStoreRepository =
-            MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100, 10)
+            MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100, 10, "NOT_SET", "NOT_SET")
 
         metadataStoreRepository.deleteRecordsOlderThanPeriod(trimReconciledScale, trimReconciledUnit)
         verify(connectionSupplier, times(1)).connection()
@@ -352,6 +386,9 @@ class MetadataStoreRepositoryImplTest {
         }
 
     private fun repository(connectionSupplier: ConnectionSupplier): MetadataStoreRepositoryImpl =
-        MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100, 10)
+        MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100, 10, "NOT_SET", "NOT_SET")
+
+    private fun repositoryWithPartition(connectionSupplier: ConnectionSupplier): MetadataStoreRepositoryImpl =
+            MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100, 10, "0", "3")
 }
 

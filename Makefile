@@ -88,11 +88,10 @@ hbase-up: ## Bring up and provision mysql
 		echo ...hbase ready.; \
 	}
 
-
 services: hbase-up rdbms-up ## Bring up supporting services in docker
 
 up: services ## Bring up Reconciliation in Docker with supporting services
-	docker-compose -f docker-compose.yaml up --build -d reconciliation trim-reconciled-records
+	docker-compose -f docker-compose.yaml up --build -d reconciliation trim-reconciled-records reconciliation-partitioned
 
 restart: ## Restart Kafka2HBase and all supporting services
 	docker-compose restart
@@ -105,7 +104,7 @@ destroy: down ## Bring down the Kafka2HBase Docker container and services then d
 	docker volume prune -f
 
 integration-test-rebuild: ## Build only integration-test
-	docker-compose build reconciliation-integration-test trim-reconciled-integration-test
+	docker-compose build reconciliation-integration-test trim-reconciled-integration-test partitioned-integration-test
 
 reconciliation-integration-test:  ## Run the reconciliation integration tests in a Docker container
 	docker-compose -f docker-compose.yaml up --build -d reconciliation
@@ -132,10 +131,22 @@ trim-reconciled-integration-test: ## Run the trim reconciled integration tests i
 	docker-compose stop trim-reconciled-records
 	docker-compose rm trim-reconciled-records
 
-integration-test-with-rebuild: integration-test-rebuild reconciliation-integration-test ## Rebuild and re-run only he integration-tests
+partitioned-integration-test:  ## Run the partitioned integration tests in a Docker container
+	docker-compose -f docker-compose.yaml up --build -d  reconciliation-partitioned
+	@{ \
+		set +e ;\
+		docker stop partitioned-integration-test ;\
+		docker rm partitioned-integration-test ;\
+ 		set -e ;\
+ 	}
+	docker-compose -f docker-compose.yaml run --name partitioned-integration-test partitioned-integration-test gradle --no-daemon --rerun-tasks partitioned-integration-test -x test -x unit
+	docker-compose stop  reconciliation-partitioned
+	docker-compose rm  reconciliation-partitioned
+
+integration-test-with-rebuild: integration-test-rebuild reconciliation-integration-test trim-reconciled-integration-test partitioned-integration-test ## Rebuild and re-run only he integration-tests
 
 .PHONY: integration-all ## Build and Run all the tests in containers from a clean start
-integration-all: destroy build services reconciliation-integration-test trim-reconciled-integration-test
+integration-all: destroy build services reconciliation-integration-test trim-reconciled-integration-test partitioned-integration-test
 
 build: local-all build-base ## build main images
 	docker-compose build

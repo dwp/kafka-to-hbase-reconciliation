@@ -16,3 +16,24 @@ CREATE TABLE IF NOT EXISTS `ucfs` (
     INDEX (reconciled_result),
     INDEX (last_checked_timestamp)
 );
+
+CREATE TABLE IF NOT EXISTS `equalities` (
+    `id` INT NOT NULL AUTO_INCREMENT,
+    `hbase_id` VARCHAR(2048) NULL,
+    `hbase_timestamp` BIGINT NULL,
+    `write_timestamp` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `correlation_id` VARCHAR(160) NULL,
+    `topic_name` VARCHAR(160) NULL,
+    `kafka_partition` INT NULL,
+    `kafka_offset` INT NULL,
+    `reconciled_result` TINYINT(1) NOT NULL DEFAULT 0,
+    `reconciled_timestamp` DATETIME NULL,
+    `last_checked_timestamp` DATETIME NULL,
+    PRIMARY KEY (`id`),
+    INDEX (hbase_id,hbase_timestamp),
+    INDEX (write_timestamp),
+    INDEX (reconciled_result),
+    INDEX (last_checked_timestamp)
+)
+    PARTITION BY HASH(id)
+    PARTITIONS 4;
