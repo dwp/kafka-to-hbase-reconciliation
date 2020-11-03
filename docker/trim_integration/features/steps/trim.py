@@ -1,4 +1,4 @@
-from behave import *
+from behave import given, then, step
 import mysql.connector
 
 
