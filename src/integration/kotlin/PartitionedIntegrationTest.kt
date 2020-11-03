@@ -28,8 +28,6 @@ class PartitionedIntegrationTest : StringSpec() {
     init {
         "Matching records in partition are reconciled, mismatches are not" {
             val allRecords = topicCount * recordCount
-            val totalPartitions = 4
-            val partitionsSupplied = 2
             val partitionedRecordsCount = allPartitionRecordCount()
 
             val timeTaken = measureTime {
@@ -50,6 +48,9 @@ class PartitionedIntegrationTest : StringSpec() {
             timeTaken shouldBeGreaterThan 15.seconds
             reconciledRecordCount() shouldBeGreaterThanOrEqualTo partitionedRecordsCount
             allRecordCount() shouldBeGreaterThanOrEqualTo allRecords
+
+            logger.info("partitionedRecordsCount: $partitionedRecordsCount")
+            logger.info("reconciledRecordCount: ${reconciledRecordCount()}")
 
             logger.info("Checking records in metastore are updated...")
             with(metadataStoreConnection) {

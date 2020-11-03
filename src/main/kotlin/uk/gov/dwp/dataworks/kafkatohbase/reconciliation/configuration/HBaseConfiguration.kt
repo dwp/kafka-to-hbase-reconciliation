@@ -44,8 +44,6 @@ data class HBaseConfiguration(
             setInt(HConstants.HBASE_CLIENT_RETRIES_NUMBER, retries?.toIntOrNull() ?: 666)
         }
 
-
-
         logger.info("Timeout configuration",
             "scanner" to configuration.get(HConstants.HBASE_CLIENT_SCANNER_TIMEOUT_PERIOD),
             "rpc" to configuration.get(HConstants.HBASE_RPC_WRITE_TIMEOUT_KEY),

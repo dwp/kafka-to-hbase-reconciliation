@@ -1,5 +1,20 @@
 package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.utils
 
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.MetadataStoreConfiguration
+
+
+fun validatePartitions(startPartition: String?, endPartition: String?): Boolean {
+
+    MetadataStoreConfiguration.logger.info("Validating metadata store partitions",
+            "start_partition" to (startPartition ?: "NOT_SET"),
+            "end_partition" to (endPartition ?: "NOT_SET"))
+
+    val startPartitionSet = startPartition == null || startPartition == "NOT_SET"
+    val endPartitionSet = endPartition == null || endPartition == "NOT_SET"
+
+    return startPartitionSet == endPartitionSet
+}
+
 fun toPartitionIdCSV(startPartition: String, endPartition: String) =
         if (startPartition == "NOT_SET" || endPartition == "NOT_SET") {
             "NOT_SET"
@@ -9,7 +24,7 @@ fun toPartitionIdCSV(startPartition: String, endPartition: String) =
             var partitionCSV = ""
 
             for (i in startPartitionInt..endPartitionInt) {
-                partitionCSV += i.toString()
+                partitionCSV += "p$i"
                 if (i != endPartitionInt) {
                     partitionCSV += ","
                 }

@@ -9,6 +9,7 @@ import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.exceptions.MetadataStore
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.secrets.SecretHelperInterface
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.utils.readFile
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.utils.toPartitionIdCSV
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.utils.validatePartitions
 import uk.gov.dwp.dataworks.logging.DataworksLogger
 import java.util.*
 
@@ -70,18 +71,11 @@ data class MetadataStoreConfiguration(
     @Bean
     @Qualifier("partitions")
     fun partitions(): String {
-        if (validatePartitions()) {
+        if (validatePartitions(startPartition, endPartition)) {
             logger.info("Partitions validated for metadata store", "start_partition" to startPartition!!, "end_partition" to endPartition!!)
             return toPartitionIdCSV(startPartition!!, endPartition!!)
         }
         throw MetadataStorePartitionsNotSetException("Both partitions need to be set to make use of partitioning functionality")
-    }
-
-    private fun validatePartitions(): Boolean {
-        logger.info("Validating metadata store partitions", "start_partition" to startPartition!!, "end_partition" to endPartition!!)
-        val startPartitionSet = startPartition == null || startPartition == "NOT_SET"
-        val endPartitionSet = endPartition == null || endPartition == "NOT_SET"
-        return startPartitionSet xor endPartitionSet
     }
 
     @Autowired
