@@ -52,6 +52,10 @@ truncate-ucfs: ## truncate the ucfs table.
 	docker exec -i metadatastore \
 		mysql --user=reconciliationwriter --password=my-password metadatastore <<< "truncate ucfs;"
 
+truncate-equalities: ## truncate the ucfs table.
+	docker exec -i metadatastore \
+		mysql --user=reconciliationwriter --password=my-password metadatastore <<< "truncate equalities;"
+
 truncate-hbase: ## truncate all hbase tables.
 	docker exec -i hbase hbase shell <<< list \
 			| egrep '^[a-z]' \
@@ -59,7 +63,7 @@ truncate-hbase: ## truncate all hbase tables.
 			| while read; do echo truncate \'$$REPLY\'; done \
 			| docker exec -i hbase hbase shell
 
-truncate-all: truncate-ucfs truncate-hbase
+truncate-all: truncate-ucfs truncate-equalities truncate-hbase
 
 hbase-shell: ## Open an HBase shell onto the running HBase container
 	docker-compose run --rm hbase shell
