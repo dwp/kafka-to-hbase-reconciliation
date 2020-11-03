@@ -30,7 +30,7 @@ class MetadataStoreRepositoryImplTest {
         }
         val connectionSupplier = connectionSupplier(listOf(metadataStoreConnection))
         val metadataStoreRepository =
-            MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100, 10, "NOT_SET", "NOT_SET")
+            MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100, 10, "NOT_SET")
 
         metadataStoreRepository.recordLastChecked(unreconciledRecords())
 
@@ -81,7 +81,7 @@ class MetadataStoreRepositoryImplTest {
         val connectionSupplier = connectionSupplier(listOf(metadataStoreConnection))
         val metadataStoreRepository =
             MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100,
-                deleteLimit, "NOT_SET", "NOT_SET")
+                deleteLimit, "NOT_SET")
 
         val totalDeletes = metadataStoreRepository.deleteAllReconciledRecords()
         totalDeletes shouldBe deleteCounts.sum()
@@ -109,7 +109,7 @@ class MetadataStoreRepositoryImplTest {
 
         val connectionSupplier = connectionSupplier(listOf(metadataStoreConnection))
         val metadataStoreRepository =
-            MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100, 10, "NOT_SET", "NOT_SET")
+            MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100, 10, "NOT_SET")
 
         metadataStoreRepository.optimizeTable()
 
@@ -274,7 +274,7 @@ class MetadataStoreRepositoryImplTest {
 
         val connectionSupplier = connectionSupplier(listOf(metadataStoreConnection))
         val metadataStoreRepository =
-            MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100, 10, "NOT_SET", "NOT_SET")
+            MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100, 10, "NOT_SET")
 
         metadataStoreRepository.deleteRecordsOlderThanPeriod(trimReconciledScale, trimReconciledUnit)
         verify(connectionSupplier, times(1)).connection()
@@ -386,9 +386,9 @@ class MetadataStoreRepositoryImplTest {
         }
 
     private fun repository(connectionSupplier: ConnectionSupplier): MetadataStoreRepositoryImpl =
-        MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100, 10, "NOT_SET", "NOT_SET")
+        MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100, 10, "NOT_SET")
 
     private fun repositoryWithPartition(connectionSupplier: ConnectionSupplier): MetadataStoreRepositoryImpl =
-            MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100, 10, "0", "3")
+            MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100, 10, "0,1,2,3")
 }
 
