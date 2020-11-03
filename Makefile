@@ -74,8 +74,8 @@ rdbms-up: ## Bring up and provision mysql
 		done; \
 		echo ...metadatastore ready.; \
 	}
-	docker exec -i metadatastore mysql --host=127.0.0.1 --user=root --password=password metadatastore  < ./docker/metadatastore/create_table.sql
-	docker exec -i metadatastore mysql --host=127.0.0.1 --user=root --password=password metadatastore  < ./docker/metadatastore/grant_user.sql
+	docker exec -i metadatastore mysql --user=root --password=password metadatastore  < ./docker/metadatastore/create_table.sql
+	docker exec -i metadatastore mysql --user=root --password=password metadatastore  < ./docker/metadatastore/grant_user.sql
 
 hbase-up: ## Bring up and provision mysql
 	docker-compose -f docker-compose.yaml up -d hbase
@@ -131,7 +131,7 @@ trim-reconciled-integration-test: ## Run the trim reconciled integration tests i
 	docker-compose stop trim-reconciled-records
 	docker-compose rm trim-reconciled-records
 
-partitioned-integration-test:  ## Run the partitioned integration tests in a Docker container
+partitioned-integration-test:  services ## Run the partitioned integration tests in a Docker container
 	docker-compose -f docker-compose.yaml up --build -d  reconciliation-partitioned
 	@{ \
 		set +e ;\
