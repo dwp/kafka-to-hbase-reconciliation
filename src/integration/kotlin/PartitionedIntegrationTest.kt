@@ -28,7 +28,7 @@ class PartitionedIntegrationTest : StringSpec() {
     init {
         "Matching records in partition are reconciled, mismatches are not" {
             val allRecords = topicCount * recordCount
-            val partitionedRecordsCount = allPartitionRecordCount() // Expect only p1 to have reconciled records
+            val partitionedRecordsCount = allRecords / 4 // Expect only p1 to have reconciled records
 
             val timeTaken = measureTime {
                 withTimeout(15.minutes) {
