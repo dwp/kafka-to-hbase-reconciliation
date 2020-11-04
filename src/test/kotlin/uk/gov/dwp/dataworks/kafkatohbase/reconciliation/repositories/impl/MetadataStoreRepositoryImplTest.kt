@@ -170,19 +170,6 @@ class MetadataStoreRepositoryImplTest {
     }
 
     @Test
-    fun testReconcileMultipleRecordsWithMultiplePartitions() {
-//        val sql = """SELECT id, hbase_id, hbase_timestamp, topic_name
-//                                        FROM $table PARTITION ($partitions)
-//                                        WHERE reconciled_result = false
-//                                        AND write_timestamp < CURRENT_TIMESTAMP - INTERVAL $minAgeSize $minAgeUnit
-//                                        AND write_timestamp > CURRENT_DATE - INTERVAL 14 DAY
-//                                        AND (last_checked_timestamp IS NULL
-//                                                OR last_checked_timestamp < CURRENT_TIMESTAMP - INTERVAL $lastCheckedScale $lastCheckedUnit)
-//                                        LIMIT $batchSize
-//                                        """
-    }
-
-    @Test
     fun testReconcileOneRecordWithMultiplePartition() {
         val statementConnection = mock<Connection>()
         val statement = mock<PreparedStatement> {

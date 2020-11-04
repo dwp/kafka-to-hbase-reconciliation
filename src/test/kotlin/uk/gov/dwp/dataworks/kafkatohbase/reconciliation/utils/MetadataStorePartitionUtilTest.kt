@@ -50,7 +50,7 @@ class MetadataStorePartitionUtilTest {
     }
 
     @Test
-    fun validatePartitionsShouldReturnFalseWhenOnePartitionIsSetAsNOT_SET() {
+    fun validatePartitionsShouldReturnFalseWhenOnePartitionIsSetAsNotSet() {
 
         val startPartition = "0"
         val endPartition = "NOT_SET"
