@@ -78,7 +78,7 @@ class PartitionedIntegrationTest : StringSpec() {
         }
     }
 
-    private fun countLastModified() {
+    private tailrec fun countLastModified() {
         with (metadataStoreConnection) {
             createStatement().use {
                 it.executeQuery("SELECT count(*) FROM equalities where last_checked_timestamp IS NOT NULL").use { results ->
