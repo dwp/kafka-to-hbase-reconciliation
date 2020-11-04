@@ -158,7 +158,6 @@ class PartitionedIntegrationTest : StringSpec() {
     private val columnQualifier = "record".toByteArray()
 
     private fun reconciledRecordCount(): Int = recordCount("SELECT COUNT(*) FROM equalities WHERE reconciled_result=true")
-    private fun allPartitionRecordCount(): Int = recordCount("SELECT COUNT(*) FROM equalities partition (p1)")
     private fun allRecordCount(): Int = recordCount("SELECT COUNT(*) FROM equalities")
 
     private fun recordCount(sql: String): Int =
