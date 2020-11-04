@@ -84,7 +84,7 @@ class PartitionedIntegrationTest : StringSpec() {
                 it.executeQuery("SELECT count(*) FROM equalities where last_checked_timestamp IS NOT NULL").use { results ->
                     if (results.next()) {
                         val count = results.getInt(1)
-                        if (count >= topicCount * recordCount) {
+                        if (count >= (topicCount * recordCount) / 4) {
                             return
                         }
                     }
