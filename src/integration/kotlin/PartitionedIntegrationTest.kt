@@ -5,7 +5,6 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.comparables.shouldBeGreaterThanOrEqualTo
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.*
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hbase.*
@@ -39,7 +38,7 @@ class PartitionedIntegrationTest : StringSpec() {
                         var recordsDone = 0
                         while (recordsDone < partitionedRecordsCount) {
                             recordsDone = reconciledRecordCount()
-                            logger.info("Waiting for >= $partitionedRecordsCount records to be reconciled but is $recordsDone so far...")
+                            logger.info("Waiting for >= $partitionedRecordsCount records to be reconciled but is $recordsDone so far... ${Date()}")
                             delay(1.seconds)
                         }
                     }
@@ -54,30 +53,27 @@ class PartitionedIntegrationTest : StringSpec() {
             logger.info("reconciledRecordCount: ${reconciledRecordCount()}")
 
             logger.info("Checking records in metastore are updated...")
-            with(metadataStoreConnection) {
-                createStatement().use { statement ->
 
-                    // Expect p1 to be reconciled the records in this partition exist within hbase
-                    val result = statement.executeQuery("""SELECT count(*) FROM equalities PARTITION (p1) WHERE reconciled_result = true""")
-                    result.fetchSize shouldBe 2500
+            // Expect p1 to be reconciled the records in this partition exist within hbase
+            val resultOfPartition1Reconciled = recordCount("SELECT COUNT(*) FROM equalities PARTITION (p1) WHERE reconciled_result = true")
+            resultOfPartition1Reconciled shouldBe 2500
 
-                    // Except p0 to have none reconciled as records in this partition don't exist in hbase
-                    val partition0Result = statement.executeQuery("""SELECT count(*) FROM equalities PARTITION (p0) WHERE reconciled_result = true""")
-                    partition0Result shouldBe 0
+            // Except p0 to have none reconciled as records in this partition don't exist in hbase
+            val partition0Result = recordCount("SELECT COUNT(*) FROM equalities PARTITION (p0) WHERE reconciled_result = true")
+            partition0Result shouldBe 0
 
-                    // Expect p2 to have none reconciled as records in this partition don't exist in hbase and the partition wasn't supplied to the service
-                    val partition2Result = statement.executeQuery("""SELECT count(*) FROM equalities PARTITION (p2) WHERE reconciled_result = true""")
-                    partition2Result shouldBe 0
+            // Expect p2 to have none reconciled as records in this partition don't exist in hbase and the partition wasn't supplied to the service
+            val partition2Result = recordCount("SELECT COUNT(*) FROM equalities PARTITION (p2) WHERE reconciled_result = true")
+            partition2Result shouldBe 0
 
-                    // Expect p3 to have none reconciled as even though records in this partition do exist in hbase, the partition wasn't supplied to the service
-                    val partition3Result = statement.executeQuery("""SELECT count(*) FROM equalities PARTITION (p3) WHERE reconciled_result = true""")
-                    partition3Result shouldBe 0
-                }
+            // Expect p3 to have none reconciled as even though records in this partition do exist in hbase, the partition wasn't supplied to the service
+            val partition3Result = recordCount("SELECT COUNT(*) FROM equalities PARTITION (p3) WHERE reconciled_result = true")
+            partition3Result shouldBe 0
 
-                withTimeout(5.minutes) {
-                    countLastModified()
-                }
+            withTimeout(5.minutes) {
+                countLastModified()
             }
+
             logger.info("Done!")
         }
     }
@@ -85,7 +81,7 @@ class PartitionedIntegrationTest : StringSpec() {
     private fun countLastModified() {
         with (metadataStoreConnection) {
             createStatement().use {
-                it.executeQuery("SELECT count(*) FROM equalities where  last_checked_timestamp IS NOT NULL").use { results ->
+                it.executeQuery("SELECT count(*) FROM equalities where last_checked_timestamp IS NOT NULL").use { results ->
                     if (results.next()) {
                         val count = results.getInt(1)
                         if (count >= topicCount * recordCount) {
@@ -162,8 +158,8 @@ class PartitionedIntegrationTest : StringSpec() {
     private val columnQualifier = "record".toByteArray()
 
     private fun reconciledRecordCount(): Int = recordCount("SELECT COUNT(*) FROM equalities WHERE reconciled_result=true")
-    private fun allRecordCount(): Int = recordCount("SELECT COUNT(*) FROM equalities")
     private fun allPartitionRecordCount(): Int = recordCount("SELECT COUNT(*) FROM equalities partition (p1)")
+    private fun allRecordCount(): Int = recordCount("SELECT COUNT(*) FROM equalities")
 
     private fun recordCount(sql: String): Int =
         with(metadataStoreConnection) {
@@ -212,15 +208,10 @@ class PartitionedIntegrationTest : StringSpec() {
         """.trimIndent()
         )
 
-    private fun Int.isOdd() = this % 2 == 1
-    private fun Int.isEven() = this % 2 == 0
-
     private val topicCount = 10
     private val recordCount = 1000
 
     companion object {
         val logger = DataworksLogger.getLogger(PartitionedIntegrationTest::class.toString())
-        val recordNumberRegex = Regex("""\{"id":"\d+/(?<recordno>\d+)"}""")
-        val recordNumberPattern = """\{"id":"\d+/(?<recordno>\d+)"}"""
     }
 }

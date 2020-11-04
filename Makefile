@@ -128,8 +128,8 @@ trim-reconciled-integration-test: ## Run the trim reconciled integration tests i
 	docker-compose -f docker-compose.yaml up --build trim-reconciled-records
 	docker-compose -f docker-compose.yaml up --build trim-integration-test
 
-partitioned-integration-test:  services ## Run the partitioned integration tests in a Docker container
-	docker-compose -f docker-compose.yaml up --build -d  reconciliation-partitioned
+partitioned-integration-test: services ## Run the partitioned integration tests in a Docker container
+	docker-compose -f docker-compose.yaml up --build -d reconciliation-partitioned
 	@{ \
 		set +e ;\
 		docker stop partitioned-integration-test ;\
