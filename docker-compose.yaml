@@ -253,7 +253,7 @@ services:
       dockerfile: docker/integration/Dockerfile
       context: .
     depends_on:
-      - reconciliation
+      - reconciliation-partitioned
     command: "gradle --rerun-tasks integration"
     environment:
       CONTAINER_VERSION: "latest"

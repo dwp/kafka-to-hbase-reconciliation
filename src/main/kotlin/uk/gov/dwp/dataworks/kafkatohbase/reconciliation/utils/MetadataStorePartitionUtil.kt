@@ -1,6 +1,7 @@
 package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.utils
 
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.configuration.MetadataStoreConfiguration
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.exceptions.MetadataStorePartitionsNotSetException
 
 
 fun validatePartitions(startPartition: String?, endPartition: String?): Boolean {
@@ -12,7 +13,11 @@ fun validatePartitions(startPartition: String?, endPartition: String?): Boolean 
     val startPartitionSet = startPartition == null || startPartition == "NOT_SET"
     val endPartitionSet = endPartition == null || endPartition == "NOT_SET"
 
-    return startPartitionSet == endPartitionSet
+    val isValid = startPartitionSet == endPartitionSet
+    if (!isValid) {
+        throw MetadataStorePartitionsNotSetException("Both partitions need to be set to make use of partitioning functionality")
+    }
+    return isValid
 }
 
 fun toPartitionIdCSV(startPartition: String, endPartition: String) =

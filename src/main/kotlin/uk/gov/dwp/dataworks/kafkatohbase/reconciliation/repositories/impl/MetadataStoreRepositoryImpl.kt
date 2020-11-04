@@ -80,7 +80,7 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
                     logger.info("Getting unreconciled records from partitioned table", "table" to table, "partitions" to partitions)
                     unreconciledRecordsStatementPartitioned(connection, minAgeSize, minAgeUnit, lastCheckedScale, lastCheckedUnit, partitions)
                 } else {
-                    logger.info("Getting unreconciled records from non-partitioned table", "table" to table)
+                    logger.info("Getting unreconciled records from partitioned table", "table" to table)
                     unreconciledRecordsStatement(connection, minAgeSize, minAgeUnit, lastCheckedScale, lastCheckedUnit)
                 }
 

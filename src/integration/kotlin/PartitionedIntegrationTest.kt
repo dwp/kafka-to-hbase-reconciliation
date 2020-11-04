@@ -25,10 +25,11 @@ import org.apache.hadoop.hbase.client.Connection as HBaseConnection
 
 @ExperimentalTime
 class PartitionedIntegrationTest : StringSpec() {
+
     init {
         "Matching records in partition are reconciled, mismatches are not" {
             val allRecords = topicCount * recordCount
-            val partitionedRecordsCount = allPartitionRecordCount()
+            val partitionedRecordsCount = allPartitionRecordCount() // Expect only p1 to have reconciled records
 
             val timeTaken = measureTime {
                 withTimeout(15.minutes) {
@@ -46,7 +47,7 @@ class PartitionedIntegrationTest : StringSpec() {
             }
 
             timeTaken shouldBeGreaterThan 15.seconds
-            reconciledRecordCount() shouldBeGreaterThanOrEqualTo partitionedRecordsCount
+            reconciledRecordCount() shouldBeGreaterThanOrEqualTo partitionedRecordsCount / 2
             allRecordCount() shouldBeGreaterThanOrEqualTo allRecords
 
             logger.info("partitionedRecordsCount: $partitionedRecordsCount")
@@ -55,17 +56,22 @@ class PartitionedIntegrationTest : StringSpec() {
             logger.info("Checking records in metastore are updated...")
             with(metadataStoreConnection) {
                 createStatement().use { statement ->
-                    statement.executeQuery("""SELECT hbase_id, reconciled_result, last_checked_timestamp FROM equalities""").use {
-                        while (it.next()) {
-                            val hbaseId = it.getString("hbase_id")
-                            val reconciledResult = it.getBoolean("reconciled_result")
-                            val matchResult = Regex("""\{"id":"\d+/(?<recordno>\d+)"}""").find(hbaseId)
-                            matchResult shouldNotBe null
-                            if (matchResult != null) {
-                                reconciledResult shouldBe matchResult.groupValues[1].toInt().isOdd()
-                            }
-                        }
-                    }
+
+                    // Expect p1 to be reconciled the records in this partition exist within hbase
+                    val result = statement.executeQuery("""SELECT count(*) FROM equalities PARTITION (p1) WHERE reconciled_result = true""")
+                    result.fetchSize shouldBe 2500
+
+                    // Except p0 to have none reconciled as records in this partition don't exist in hbase
+                    val partition0Result = statement.executeQuery("""SELECT count(*) FROM equalities PARTITION (p0) WHERE reconciled_result = true""")
+                    partition0Result shouldBe 0
+
+                    // Expect p2 to have none reconciled as records in this partition don't exist in hbase and the partition wasn't supplied to the service
+                    val partition2Result = statement.executeQuery("""SELECT count(*) FROM equalities PARTITION (p2) WHERE reconciled_result = true""")
+                    partition2Result shouldBe 0
+
+                    // Expect p3 to have none reconciled as even though records in this partition do exist in hbase, the partition wasn't supplied to the service
+                    val partition3Result = statement.executeQuery("""SELECT count(*) FROM equalities PARTITION (p3) WHERE reconciled_result = true""")
+                    partition3Result shouldBe 0
                 }
 
                 withTimeout(5.minutes) {
@@ -157,7 +163,7 @@ class PartitionedIntegrationTest : StringSpec() {
 
     private fun reconciledRecordCount(): Int = recordCount("SELECT COUNT(*) FROM equalities WHERE reconciled_result=true")
     private fun allRecordCount(): Int = recordCount("SELECT COUNT(*) FROM equalities")
-    private fun allPartitionRecordCount(): Int = recordCount("SELECT COUNT(*) FROM equalities partition (p0,p1)")
+    private fun allPartitionRecordCount(): Int = recordCount("SELECT COUNT(*) FROM equalities partition (p1)")
 
     private fun recordCount(sql: String): Int =
         with(metadataStoreConnection) {
@@ -207,11 +213,14 @@ class PartitionedIntegrationTest : StringSpec() {
         )
 
     private fun Int.isOdd() = this % 2 == 1
+    private fun Int.isEven() = this % 2 == 0
 
     private val topicCount = 10
     private val recordCount = 1000
 
     companion object {
         val logger = DataworksLogger.getLogger(PartitionedIntegrationTest::class.toString())
+        val recordNumberRegex = Regex("""\{"id":"\d+/(?<recordno>\d+)"}""")
+        val recordNumberPattern = """\{"id":"\d+/(?<recordno>\d+)"}"""
     }
 }
