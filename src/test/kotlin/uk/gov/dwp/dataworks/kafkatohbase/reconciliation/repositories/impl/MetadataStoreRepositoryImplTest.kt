@@ -77,11 +77,8 @@ class MetadataStoreRepositoryImplTest {
         }
 
         val connectionSupplier = connectionSupplier(listOf(metadataStoreConnection))
-        val metadataStoreRepository =
-                MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100,
-                        deleteLimit, "NOT_SET")
 
-        val totalDeletes = metadataStoreRepository.deleteAllReconciledRecords()
+        val totalDeletes = repositoryWithNoPartitions(connectionSupplier).deleteAllReconciledRecords()
         totalDeletes shouldBe deleteCounts.sum()
         verifySupplierInteractions(connectionSupplier, deleteCounts.size)
 
@@ -95,7 +92,7 @@ class MetadataStoreRepositoryImplTest {
     @Test
     fun testOptimize() {
 
-        val sql = "OPTIMIZE TABLE ucfs"
+        val sql = """OPTIMIZE TABLE ucfs"""
 
         val statement = mock<Statement> {
             on { execute(sql) } doReturn true
@@ -106,10 +103,8 @@ class MetadataStoreRepositoryImplTest {
         }
 
         val connectionSupplier = connectionSupplier(listOf(metadataStoreConnection))
-        val metadataStoreRepository =
-                MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100, 10, "NOT_SET")
 
-        metadataStoreRepository.optimizeTable()
+        repositoryWithNoPartitions(connectionSupplier).optimizeTable()
 
         verifySupplierInteractions(connectionSupplier)
         verifyConnectionInteractions(metadataStoreConnection)
@@ -132,7 +127,7 @@ class MetadataStoreRepositoryImplTest {
     @Test
     fun testReconcileNoRecords() =
             mock<ConnectionSupplier>().run {
-                repository(this).reconcileRecords(listOf())
+                repositoryWithNoPartitions(this).reconcileRecords(listOf())
                 verifyZeroInteractions(this)
             }
 
@@ -150,7 +145,7 @@ class MetadataStoreRepositoryImplTest {
 
         val connectionSupplier = connectionSupplier(listOf(connection))
 
-        repository(connectionSupplier).reconcileRecords(listOf(
+        repositoryWithNoPartitions(connectionSupplier).reconcileRecords(listOf(
                 UnreconciledRecord(1, "db.database.collection1", "hbase_id_1", (10).toLong())))
         verifySupplierInteractions(connectionSupplier)
         verify(connection, times(1)).prepareStatement(any())
@@ -211,13 +206,7 @@ class MetadataStoreRepositoryImplTest {
     @Test
     fun testGroupedUnreconciledRecordsWithoutPartitions() {
 
-        val resultSet = mock<ResultSet> {
-            on { next() } doReturnConsecutively (1..101).map { it < 100 }
-            on { getInt("id") } doReturnConsecutively (1..100).toList()
-            on { getString("topic_name") } doReturnConsecutively (1..100).map { "db.database.collection${it % 3}" }
-            on { getString("hbase_id") } doReturnConsecutively (1..100).map { "hbase_id_$it" }
-            on { getTimestamp("hbase_timestamp") } doReturnConsecutively (1..100).map { Timestamp(it.toLong()) }
-        }
+        val resultSet = groupedResultSet
 
         val statement = mock<PreparedStatement> { on { executeQuery() } doReturn resultSet }
         val connection = mock<Connection> { on { prepareStatement(any()) } doReturn statement }
@@ -228,7 +217,7 @@ class MetadataStoreRepositoryImplTest {
         val lastCheckedSize = 5
         val lastCheckedUnit = "HOUR"
 
-        val grouped = repository(connectionSupplier).groupedUnreconciledRecords(minAgeSize, minAgeUnit, lastCheckedSize, lastCheckedUnit)
+        val grouped = repositoryWithNoPartitions(connectionSupplier).groupedUnreconciledRecords(minAgeSize, minAgeUnit, lastCheckedSize, lastCheckedUnit)
 
         assertEquals(3, grouped.size)
         grouped.keys.sorted().forEachIndexed { index, key -> assertEquals("db.database.collection$index", key) }
@@ -261,13 +250,7 @@ class MetadataStoreRepositoryImplTest {
     @Test
     fun testGroupedUnreconciledRecordsWithMultiplePartitions() {
 
-        val resultSet = mock<ResultSet> {
-            on { next() } doReturnConsecutively (1..101).map { it < 100 }
-            on { getInt("id") } doReturnConsecutively (1..100).toList()
-            on { getString("topic_name") } doReturnConsecutively (1..100).map { "db.database.collection${it % 3}" }
-            on { getString("hbase_id") } doReturnConsecutively (1..100).map { "hbase_id_$it" }
-            on { getTimestamp("hbase_timestamp") } doReturnConsecutively (1..100).map { Timestamp(it.toLong()) }
-        }
+        val resultSet = groupedResultSet
 
         val statement = mock<PreparedStatement> { on { executeQuery() } doReturn resultSet }
         val connection = mock<Connection> { on { prepareStatement(any()) } doReturn statement }
@@ -326,10 +309,9 @@ class MetadataStoreRepositoryImplTest {
         }
 
         val connectionSupplier = connectionSupplier(listOf(metadataStoreConnection))
-        val metadataStoreRepository =
-                MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100, 10, "NOT_SET")
-
-        metadataStoreRepository.deleteRecordsOlderThanPeriod(trimReconciledScale, trimReconciledUnit)
+        
+        repositoryWithNoPartitions(connectionSupplier).deleteRecordsOlderThanPeriod(trimReconciledScale, trimReconciledUnit)
+        
         verify(connectionSupplier, times(1)).connection()
         verifyConnectionInteractions(metadataStoreConnection)
         verify(statement, times(1)).executeUpdate(any())
@@ -357,7 +339,9 @@ class MetadataStoreRepositoryImplTest {
 
         val connections = (0 until 10).map { connection(statements[it], autoOn) }
         val connectionSupplier = connectionSupplier(connections)
-        repository(connectionSupplier).reconcileRecords(unreconciledRecords())
+
+        repositoryWithNoPartitions(connectionSupplier).reconcileRecords(unreconciledRecords())
+
         connections.forEach(::verifyBatchedConnectionInteractions)
         statements.forEach(::verifyBatchedStatementInteractions)
         statementConnections.forEach { verifyStatementConnectionInteractions(it, autoOn, true) }
@@ -373,7 +357,9 @@ class MetadataStoreRepositoryImplTest {
         }
         val connections = (0 until 10).map { connection(statements[it], autoOn) }
         val connectionSupplier = connectionSupplier(connections)
-        repository(connectionSupplier).reconcileRecords(unreconciledRecords())
+
+        repositoryWithNoPartitions(connectionSupplier).reconcileRecords(unreconciledRecords())
+
         connections.forEach(::verifyBatchedConnectionInteractions)
         statements.forEach(::verifyBatchedStatementInteractions)
         statementConnections.forEach { verifyStatementConnectionInteractions(it, autoOn, false) }
@@ -437,9 +423,17 @@ class MetadataStoreRepositoryImplTest {
                 UnreconciledRecord(it, "db.database.collection${it % 3}", "hbase_id_$it", (it * 10).toLong())
             }
 
-    private fun repository(connectionSupplier: ConnectionSupplier): MetadataStoreRepositoryImpl =
+    private fun repositoryWithNoPartitions(connectionSupplier: ConnectionSupplier): MetadataStoreRepositoryImpl =
             MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100, 10, "NOT_SET")
 
     private fun repositoryWithPartition(connectionSupplier: ConnectionSupplier): MetadataStoreRepositoryImpl =
             MetadataStoreRepositoryImpl(connectionSupplier, "ucfs", 10, 100, 10, "p0,p1,p2,p3")
+
+    private val groupedResultSet = mock<ResultSet> {
+        on { next() } doReturnConsecutively (1..101).map { it < 100 }
+        on { getInt("id") } doReturnConsecutively (1..100).toList()
+        on { getString("topic_name") } doReturnConsecutively (1..100).map { "db.database.collection${it % 3}" }
+        on { getString("hbase_id") } doReturnConsecutively (1..100).map { "hbase_id_$it" }
+        on { getTimestamp("hbase_timestamp") } doReturnConsecutively (1..100).map { Timestamp(it.toLong()) }
+    }
 }
