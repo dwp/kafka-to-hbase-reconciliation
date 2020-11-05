@@ -2,8 +2,10 @@ package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.impl
 
 import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.MetadataStoreRepository
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.exceptions.OptimiseTableFailedException
+import java.lang.Exception
 
 
 class TrimReconciledRecordsServiceImplTest {
@@ -19,14 +21,46 @@ class TrimReconciledRecordsServiceImplTest {
     }
 
     @Test
-    fun retryOptimizeTableIfOptimizeFailsFirstTimeWithException() {
-        val metadataStoreRepository = mock<MetadataStoreRepository> {
-            on { optimizeTable() } doThrow Exception().cause!!
-        }
+    fun retryOptimizeTableIfOptimizeFailsFirstTime() {
+        val metadataStoreRepository =
+            mock<MetadataStoreRepository> {
+                on { optimizeTable() } doReturn false
+            }
         val trimmer = trimmer(metadataStoreRepository, true)
+        trimmer.start()
 
-        trimmer.trimReconciledRecords()
+        verify(metadataStoreRepository, times(1)).deleteAllReconciledRecords()
         verify(metadataStoreRepository, times(2)).optimizeTable()
+        verifyNoMoreInteractions(metadataStoreRepository)
+    }
+
+    @Test
+    fun retryOptimizeTableIfOptimizeFailsFirstTimeThenPassesSecondTime() {
+        val metadataStoreRepository =
+            mock<MetadataStoreRepository> {
+                on { optimizeTable() } doReturnConsecutively(false, true)
+            }
+        val trimmer = trimmer(metadataStoreRepository, true)
+        trimmer.start()
+
+        verify(metadataStoreRepository, times(1)).deleteAllReconciledRecords()
+        verify(metadataStoreRepository, times(2)).optimizeTable()
+        verifyNoMoreInteractions(metadataStoreRepository)
+    }
+
+    @Test
+    fun retryOptimizeTableIfOptimizeFailsFirstTimeWithException() {
+        val metadataStoreRepository =
+            mock<MetadataStoreRepository> {
+                on { optimizeTable() } doThrow OptimiseTableFailedException("string")
+            }
+        val trimmer = trimmer(metadataStoreRepository, true)
+        trimmer.start()
+
+        verify(metadataStoreRepository, times(1)).deleteAllReconciledRecords()
+        verify(metadataStoreRepository, times(2)).optimizeTable()
+        verify(metadataStoreRepository, assertThrows<OptimiseTableFailedException>("string"))
+        verifyNoMoreInteractions(metadataStoreRepository)
     }
 
     @Test

@@ -21,7 +21,6 @@ class TrimmingServiceImpl(
         if (deletedCount > 0 && optimizeAfterDelete) {
             logger.info("Optimizing table")
             for (attempt in 0..1) {
-
                 try {
                     val succeeded = metadataStoreRepository.optimizeTable()
                     if (succeeded) {
