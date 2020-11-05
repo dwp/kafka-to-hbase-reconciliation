@@ -52,6 +52,10 @@ truncate-ucfs: ## truncate the ucfs table.
 	docker exec -i metadatastore \
 		mysql --user=reconciliationwriter --password=my-password metadatastore <<< "truncate ucfs;"
 
+truncate-equalities: ## truncate the ucfs table.
+	docker exec -i metadatastore \
+		mysql --user=reconciliationwriter --password=my-password metadatastore <<< "truncate equalities;"
+
 truncate-hbase: ## truncate all hbase tables.
 	docker exec -i hbase hbase shell <<< list \
 			| egrep '^[a-z]' \
@@ -59,7 +63,7 @@ truncate-hbase: ## truncate all hbase tables.
 			| while read; do echo truncate \'$$REPLY\'; done \
 			| docker exec -i hbase hbase shell
 
-truncate-all: truncate-ucfs truncate-hbase
+truncate-all: truncate-ucfs truncate-equalities truncate-hbase
 
 hbase-shell: ## Open an HBase shell onto the running HBase container
 	docker-compose run --rm hbase shell
@@ -74,8 +78,8 @@ rdbms-up: ## Bring up and provision mysql
 		done; \
 		echo ...metadatastore ready.; \
 	}
-	docker exec -i metadatastore mysql --host=127.0.0.1 --user=root --password=password metadatastore  < ./docker/metadatastore/create_table.sql
-	docker exec -i metadatastore mysql --host=127.0.0.1 --user=root --password=password metadatastore  < ./docker/metadatastore/grant_user.sql
+	docker exec -i metadatastore mysql --user=root --password=password metadatastore  < ./docker/metadatastore/create_table.sql
+	docker exec -i metadatastore mysql --user=root --password=password metadatastore  < ./docker/metadatastore/grant_user.sql
 
 hbase-up: ## Bring up and provision mysql
 	docker-compose -f docker-compose.yaml up -d hbase
@@ -88,11 +92,10 @@ hbase-up: ## Bring up and provision mysql
 		echo ...hbase ready.; \
 	}
 
-
 services: hbase-up rdbms-up ## Bring up supporting services in docker
 
 up: services ## Bring up Reconciliation in Docker with supporting services
-	docker-compose -f docker-compose.yaml up --build -d reconciliation trim-reconciled-records
+	docker-compose -f docker-compose.yaml up --build -d reconciliation trim-reconciled-records reconciliation-partitioned
 
 restart: ## Restart Kafka2HBase and all supporting services
 	docker-compose restart
@@ -105,7 +108,7 @@ destroy: down ## Bring down the Kafka2HBase Docker container and services then d
 	docker volume prune -f
 
 integration-test-rebuild: ## Build only integration-test
-	docker-compose build reconciliation-integration-test trim-reconciled-integration-test
+	docker-compose build reconciliation-integration-test trim-reconciled-integration-test partitioned-integration-test
 
 reconciliation-integration-test:  ## Run the reconciliation integration tests in a Docker container
 	docker-compose -f docker-compose.yaml up --build -d reconciliation
@@ -125,10 +128,22 @@ trim-reconciled-integration-test: ## Run the trim reconciled integration tests i
 	docker-compose -f docker-compose.yaml up --build trim-reconciled-records
 	docker-compose -f docker-compose.yaml up --build trim-integration-test
 
-integration-test-with-rebuild: integration-test-rebuild reconciliation-integration-test ## Rebuild and re-run only he integration-tests
+partitioned-integration-test: services ## Run the partitioned integration tests in a Docker container
+	docker-compose -f docker-compose.yaml up --build -d reconciliation-partitioned
+	@{ \
+		set +e ;\
+		docker stop partitioned-integration-test ;\
+		docker rm partitioned-integration-test ;\
+ 		set -e ;\
+ 	}
+	docker-compose -f docker-compose.yaml run --name partitioned-integration-test partitioned-integration-test gradle --no-daemon --rerun-tasks partitioned-integration-test -x test -x unit
+	docker-compose stop  reconciliation-partitioned
+	docker-compose rm  reconciliation-partitioned
+
+integration-test-with-rebuild: integration-test-rebuild reconciliation-integration-test trim-reconciled-integration-test partitioned-integration-test ## Rebuild and re-run only he integration-tests
 
 .PHONY: integration-all ## Build and Run all the tests in containers from a clean start
-integration-all: destroy build services reconciliation-integration-test trim-reconciled-integration-test
+integration-all: destroy build services reconciliation-integration-test trim-reconciled-integration-test partitioned-integration-test
 
 build: local-all build-base ## build main images
 	docker-compose build

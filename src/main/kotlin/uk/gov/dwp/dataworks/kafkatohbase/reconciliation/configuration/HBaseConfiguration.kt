@@ -39,16 +39,14 @@ data class HBaseConfiguration(
             setInt(HConstants.HBASE_CLIENT_SCANNER_TIMEOUT_PERIOD, clientScannerTimeoutPeriodMs?.toIntOrNull() ?: 666)
             setInt(HConstants.HBASE_CLIENT_OPERATION_TIMEOUT, clientOperationTimeoutMs?.toIntOrNull() ?: 666)
             setInt(HConstants.HBASE_CLIENT_META_OPERATION_TIMEOUT, clientMetaOperationTimeoutMs?.toIntOrNull() ?: 666)
-            setInt(HConstants.HBASE_RPC_TIMEOUT_KEY, rpcTimeoutMs?.toIntOrNull() ?: 666)
+            setInt(HConstants.HBASE_RPC_WRITE_TIMEOUT_KEY, rpcTimeoutMs?.toIntOrNull() ?: 666)
             setInt(HConstants.HBASE_RPC_READ_TIMEOUT_KEY, rpcReadTimeoutMs?.toIntOrNull() ?: 666)
             setInt(HConstants.HBASE_CLIENT_RETRIES_NUMBER, retries?.toIntOrNull() ?: 666)
         }
 
-
-
         logger.info("Timeout configuration",
             "scanner" to configuration.get(HConstants.HBASE_CLIENT_SCANNER_TIMEOUT_PERIOD),
-            "rpc" to configuration.get(HConstants.HBASE_RPC_TIMEOUT_KEY),
+            "rpc" to configuration.get(HConstants.HBASE_RPC_WRITE_TIMEOUT_KEY),
             "rpc_read" to configuration.get(HConstants.HBASE_RPC_READ_TIMEOUT_KEY),
             "client" to configuration.get(HConstants.HBASE_CLIENT_OPERATION_TIMEOUT),
             "client_meta" to configuration.get(HConstants.HBASE_CLIENT_META_OPERATION_TIMEOUT))
