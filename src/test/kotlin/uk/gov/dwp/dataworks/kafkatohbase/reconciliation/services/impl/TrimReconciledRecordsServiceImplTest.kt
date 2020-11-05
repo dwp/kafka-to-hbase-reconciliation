@@ -3,6 +3,8 @@ package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.impl
 import com.nhaarman.mockitokotlin2.*
 import org.junit.jupiter.api.Test
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.MetadataStoreRepository
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.exceptions.OptimiseTableFailedException
+
 
 class TrimReconciledRecordsServiceImplTest {
 
@@ -16,6 +18,16 @@ class TrimReconciledRecordsServiceImplTest {
         verifyNoMoreInteractions(metadataStoreRepository)
     }
 
+    @Test
+    fun retryOptimizeTableIfOptimizeFailsFirstTimeWithException() {
+        val metadataStoreRepository = mock<MetadataStoreRepository> {
+            on { optimizeTable() } doThrow Exception().cause!!
+        }
+        val trimmer = trimmer(metadataStoreRepository, true)
+
+        trimmer.trimReconciledRecords()
+        verify(metadataStoreRepository, times(2)).optimizeTable()
+    }
 
     @Test
     fun doesNotOptimizeAfterTrimIfConfiguredAndNoDeletesPerformed() {
