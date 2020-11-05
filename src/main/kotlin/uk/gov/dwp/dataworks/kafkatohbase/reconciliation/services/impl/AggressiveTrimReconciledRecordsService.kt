@@ -20,15 +20,7 @@ class AggressiveTrimReconciledRecordsService(
 
         if (deletedCount > 0 && optimizeAfterDelete) {
             logger.info("Optimizing table")
-
-            for (attempt in 0..2) {
-                try {
-                    val succeeded = metadataStoreRepository.optimizeTable()
-                } catch (e: Exception) {
-                    logger.error("Failed to optimise table", "exception": e)
-                }
-            }
-
+            val succeeded = metadataStoreRepository.optimizeTable()
             logger.info("Optimized table", "succeeded" to "$succeeded")
         }
         else {
