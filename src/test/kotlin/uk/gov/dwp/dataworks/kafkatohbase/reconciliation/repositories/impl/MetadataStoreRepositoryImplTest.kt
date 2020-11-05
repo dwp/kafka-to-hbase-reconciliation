@@ -309,9 +309,9 @@ class MetadataStoreRepositoryImplTest {
         }
 
         val connectionSupplier = connectionSupplier(listOf(metadataStoreConnection))
-        
+
         repositoryWithNoPartitions(connectionSupplier).deleteRecordsOlderThanPeriod(trimReconciledScale, trimReconciledUnit)
-        
+
         verify(connectionSupplier, times(1)).connection()
         verifyConnectionInteractions(metadataStoreConnection)
         verify(statement, times(1)).executeUpdate(any())
@@ -382,7 +382,8 @@ class MetadataStoreRepositoryImplTest {
         if (!autoOn) {
             if (updateSucceeds) {
                 verify(connection, times(1)).commit()
-            } else {
+            }
+            else {
                 verify(connection, times(1)).rollback()
             }
         }
