@@ -2,6 +2,7 @@ package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.impl
 
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.exceptions.OptimiseTableFailedException
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.MetadataStoreRepository
 import uk.gov.dwp.dataworks.logging.DataworksLogger
 
@@ -19,19 +20,26 @@ class AggressiveTrimReconciledRecordsService(
         logger.info("Finished trim for reconciled units","deleted_count" to "$deletedCount")
 
         if (deletedCount > 0 && optimizeAfterDelete) {
-            logger.info("Optimizing table")
-            var succeeded = ""
-            for (attempt in 0..2) {
+            logger.info("Optimising table")
+
+            for (attempt in 0..1) {
+
                 try {
-                    var succeeded = metadataStoreRepository.optimizeTable()
-                } catch (e: Exception) {
-                    logger.error("Failed to optimise table", "exception" to "$e")
+                    val succeeded = metadataStoreRepository.optimizeTable()
+                    if (succeeded) {
+                        logger.info("Optimisation successful", "attempt" to "$attempt")
+                        return
+                    } else {
+                        logger.info("Optimisation has failed without exception", "attempt" to "$attempt")
+                    }
+                } catch (e: OptimiseTableFailedException) {
+                    logger.error("Optimisation has failed due to exception", "attempt" to "$attempt", "exception" to "$e")
                 }
+
             }
-            logger.info("Optimized table", "succeeded" to "$succeeded")
         }
         else {
-            logger.info("Not optimizing table",
+            logger.info("Not optimising table",
                 "optimize_after_delete" to "$optimizeAfterDelete", "deleted_count" to "$deletedCount")
         }
     }
