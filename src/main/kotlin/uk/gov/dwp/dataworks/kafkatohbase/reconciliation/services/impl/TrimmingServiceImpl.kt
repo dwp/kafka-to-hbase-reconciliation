@@ -19,15 +19,15 @@ class TrimmingServiceImpl(
         logger.info("Finished trim for reconciled units","deleted_count" to "$deletedCount")
 
         if (deletedCount > 0 && optimizeAfterDelete) {
-            logger.info("Optimizing table")
-            for (attempt in 0..1) {
+            for (attempt in 0..maxRetries) {
                 try {
+                    logger.info("Optimizing table", "attempt" to "$attempt")
                     val succeeded = metadataStoreRepository.optimizeTable()
                     if (succeeded) {
                         logger.info("Optimisation successful", "attempt" to "$attempt")
                         return
                     } else {
-                        logger.info("Optimisation has failed without exception", "attempt" to "$attempt")
+                        logger.warn("Optimisation has failed without exception", "attempt" to "$attempt")
                     }
                 } catch (e: OptimiseTableFailedException) {
                     logger.error("Optimisation has failed due to exception", "attempt" to "$attempt", "exception" to "$e")
@@ -43,5 +43,6 @@ class TrimmingServiceImpl(
 
     companion object {
         val logger = DataworksLogger.getLogger(TrimmingServiceImpl::class.toString())
+        val maxRetries = 1
     }
 }

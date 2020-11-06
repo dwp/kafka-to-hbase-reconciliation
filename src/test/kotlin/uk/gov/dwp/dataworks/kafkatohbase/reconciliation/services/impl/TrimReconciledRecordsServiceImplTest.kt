@@ -1,6 +1,7 @@
 package uk.gov.dwp.dataworks.kafkatohbase.reconciliation.services.impl
 
 import com.nhaarman.mockitokotlin2.*
+import io.kotest.assertions.throwables.shouldThrow
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.MetadataStoreRepository
@@ -21,24 +22,25 @@ class TrimReconciledRecordsServiceImplTest {
     }
 
     @Test
-    fun retryOptimizeTableIfOptimizeFailsFirstTime() {
+    fun willRetryToMaxRetriesIfOptimizeTableFails() {
         val metadataStoreRepository =
             mock<MetadataStoreRepository> {
                 on { optimizeTable() } doReturn false
+                on { deleteAllReconciledRecords() } doReturn 1
             }
         val trimmer = trimmer(metadataStoreRepository, true)
         trimmer.start()
 
         verify(metadataStoreRepository, times(1)).deleteAllReconciledRecords()
-        verify(metadataStoreRepository, times(2)).optimizeTable()
+        verify(metadataStoreRepository, times(TrimmingServiceImpl.maxRetries + 1)).optimizeTable()
         verifyNoMoreInteractions(metadataStoreRepository)
     }
 
     @Test
-    fun retryOptimizeTableIfOptimizeFailsFirstTimeThenPassesSecondTime() {
+    fun willRetryOptimizeTableToFailFirstTimeThenPassesSecondTime() {
         val metadataStoreRepository =
             mock<MetadataStoreRepository> {
-                on { optimizeTable() }
+                on { deleteAllReconciledRecords() } doReturn 1
             }
         whenever(metadataStoreRepository.optimizeTable()).thenReturn(false).thenReturn(true)
 
@@ -46,21 +48,25 @@ class TrimReconciledRecordsServiceImplTest {
         trimmer.start()
 
         verify(metadataStoreRepository, times(1)).deleteAllReconciledRecords()
-        verify(metadataStoreRepository, times(2)).optimizeTable()
+        verify(metadataStoreRepository, times(TrimmingServiceImpl.maxRetries + 1)).optimizeTable()
         verifyNoMoreInteractions(metadataStoreRepository)
     }
 
     @Test
-    fun retryOptimizeTableIfOptimizeFailsFirstTimeWithException() {
+    fun willRetryOptimizeTableIfOptimizeFailsWithException() {
         val metadataStoreRepository =
             mock<MetadataStoreRepository> {
+                on { deleteAllReconciledRecords() } doReturn 1
                 on { optimizeTable() } doThrow OptimiseTableFailedException("string")
             }
+
         val trimmer = trimmer(metadataStoreRepository, true)
         trimmer.start()
 
+        val e = shouldThrow<OptimiseTableFailedException> { metadataStoreRepository.optimizeTable()  }
+
         verify(metadataStoreRepository, times(1)).deleteAllReconciledRecords()
-        verify(metadataStoreRepository, times(2)).optimizeTable()
+        verify(metadataStoreRepository, times(TrimmingServiceImpl.maxRetries + 1)).optimizeTable()
         verifyNoMoreInteractions(metadataStoreRepository)
     }
 
@@ -97,5 +103,6 @@ class TrimReconciledRecordsServiceImplTest {
     private fun metadataStoreRepository(numDeletes: Int) =
         mock<MetadataStoreRepository> {
             on { deleteAllReconciledRecords() } doReturn numDeletes
+            on { optimizeTable() } doReturn true
         }
 }

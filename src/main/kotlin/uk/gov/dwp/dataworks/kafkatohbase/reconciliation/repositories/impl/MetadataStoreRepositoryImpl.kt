@@ -164,15 +164,17 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
         return deleteAllReconciledRecords(deletedAccumulation + deletedCount)
     }
 
+    @Throws(OptimiseTableFailedException::class)
     override fun optimizeTable(): Boolean =
         connection().use { connection ->
             try {
+                logger.info("About to optimise table: $table")
                 connection.createStatement().use { statement ->
                     val (result, duration) = measureTimedValue {
                         statement.execute("OPTIMIZE TABLE $table")
                     }
                     logger.info(
-                        "Optimized table", "table" to table,
+                        "Optimised table", "table" to table,
                         "result" to "$result", "time_taken" to "$duration"
                     )
                     result
