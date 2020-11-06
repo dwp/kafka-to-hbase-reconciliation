@@ -130,6 +130,7 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
             }
 
     override fun deleteAllReconciledRecords(deletedAccumulation: Int): Int {
+        logger.info("Beginning to delete reconciled records")
         val deletedCount = connection().use { connection ->
             connection.createStatement().use {
                 val (deletedCount, duration) = measureTimedValue {
