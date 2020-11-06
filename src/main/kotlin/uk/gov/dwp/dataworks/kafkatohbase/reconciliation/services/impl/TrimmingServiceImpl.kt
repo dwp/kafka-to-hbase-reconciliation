@@ -21,7 +21,7 @@ class TrimmingServiceImpl(
         if (deletedCount > 0 && optimizeAfterDelete) {
             for (attempt in 0..maxRetries) {
                 try {
-                    logger.info("Optimizing table", "attempt" to "$attempt")
+                    logger.info("Optimizing table", "attempt" to "${attempt}")
                     val succeeded = metadataStoreRepository.optimizeTable()
                     if (succeeded) {
                         logger.info("Optimisation successful", "attempt" to "$attempt")
@@ -32,9 +32,7 @@ class TrimmingServiceImpl(
                 } catch (e: OptimiseTableFailedException) {
                     logger.error("Optimisation has failed due to exception", "attempt" to "$attempt", "exception" to "$e")
                 }
-
             }
-            logger.info("Optimized table")
         } else {
             logger.info("Not optimising table",
                 "optimize_after_delete" to "$optimizeAfterDelete", "deleted_count" to "$deletedCount")
@@ -43,6 +41,6 @@ class TrimmingServiceImpl(
 
     companion object {
         val logger = DataworksLogger.getLogger(TrimmingServiceImpl::class.toString())
-        val maxRetries = 1
+        const val maxRetries = 1
     }
 }
