@@ -63,8 +63,6 @@ class TrimReconciledRecordsServiceImplTest {
         val trimmer = trimmer(metadataStoreRepository, true)
         trimmer.start()
 
-        val e = shouldThrow<OptimiseTableFailedException> { metadataStoreRepository.optimizeTable()  }
-
         verify(metadataStoreRepository, times(1)).deleteAllReconciledRecords()
         verify(metadataStoreRepository, times(TrimmingServiceImpl.maxRetries + 1)).optimizeTable()
         verifyNoMoreInteractions(metadataStoreRepository)
