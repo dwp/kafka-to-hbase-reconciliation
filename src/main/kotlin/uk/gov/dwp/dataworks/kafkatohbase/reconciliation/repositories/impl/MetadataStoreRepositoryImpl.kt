@@ -8,6 +8,7 @@ import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.domain.UnreconciledRecor
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.repositories.MetadataStoreRepository
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.suppliers.ConnectionSupplier
 import uk.gov.dwp.dataworks.logging.DataworksLogger
+import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.exceptions.OptimiseTableFailedException
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.SQLException
@@ -129,6 +130,7 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
             }
 
     override fun deleteAllReconciledRecords(deletedAccumulation: Int): Int {
+        logger.info("Beginning to delete reconciled records")
         val deletedCount = connection().use { connection ->
             connection.createStatement().use {
                 val (deletedCount, duration) = measureTimedValue {
@@ -162,17 +164,26 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
         return deleteAllReconciledRecords(deletedAccumulation + deletedCount)
     }
 
+    @Throws(OptimiseTableFailedException::class)
     override fun optimizeTable(): Boolean =
-            connection().use { connection ->
+        connection().use { connection ->
+            try {
+                logger.info("About to optimise table: $table")
                 connection.createStatement().use { statement ->
                     val (result, duration) = measureTimedValue {
                         statement.execute("OPTIMIZE TABLE $table")
                     }
-                    logger.info("Optimized table", "table" to table,
-                            "result" to "$result", "time_taken" to "$duration")
+                    logger.info(
+                        "Optimised table", "table" to table,
+                        "result" to "$result", "time_taken" to "$duration"
+                    )
                     result
                 }
+            } catch (e: Exception) {
+                logger.error("Optimisation of table failed", "table" to table, "exception" to "$e")
+                throw OptimiseTableFailedException("Failed to optimise table: $table")
             }
+        }
 
 
     private fun unreconciledRecordsStatement(connection: Connection, minAgeSize: Int, minAgeUnit: String,
