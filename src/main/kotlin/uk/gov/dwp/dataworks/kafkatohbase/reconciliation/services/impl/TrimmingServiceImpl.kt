@@ -19,7 +19,7 @@ class TrimmingServiceImpl(
         logger.info("Finished trim for reconciled units","deleted_count" to "$deletedCount")
 
         if (optimizeAfterDelete) {
-            logger.info("Deleted reconciled records in the metadata store", "deleted_count" to "$deletedCount")
+            logger.info("Deleted reconciled records in the metadata store and now attempting to optimise table", "deleted_count" to "$deletedCount", "optimize_after_delete" to "$optimizeAfterDelete")
             for (attempt in 0..maxRetries) {
                 try {
                     logger.info("Optimising table", "attempt" to "$attempt")
