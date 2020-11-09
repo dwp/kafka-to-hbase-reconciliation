@@ -18,7 +18,8 @@ class TrimmingServiceImpl(
         val deletedCount = metadataStoreRepository.deleteAllReconciledRecords()
         logger.info("Finished trim for reconciled units","deleted_count" to "$deletedCount")
 
-        if (deletedCount > 0 && optimizeAfterDelete) {
+        if (optimizeAfterDelete) {
+            logger.info("Deleted reconciled records in the metadata store", "deleted_count" to "$deletedCount")
             for (attempt in 0..maxRetries) {
                 try {
                     logger.info("Optimising table", "attempt" to "$attempt")
