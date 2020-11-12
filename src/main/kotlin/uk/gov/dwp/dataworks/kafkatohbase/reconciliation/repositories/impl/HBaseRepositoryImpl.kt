@@ -52,6 +52,17 @@ class HBaseRepositoryImpl(
                         "replica_id" to "${replicaId}"
                     )
 
+                    found.asSequence().map { it.first }.forEach {
+                        logger.info(
+                            "Record found",
+                            "topic_name" to topicName,
+                            "hbase_id" to it.hbaseId,
+                            "timestamp" to "${it.version}",
+                            "replication_factor" to "${replicationFactor}",
+                            "replica_id" to "${replicaId}"
+                        )
+                    }
+
                     notFound.asSequence().map { it.first }.forEach {
                         logger.debug(
                             "Record not found",
