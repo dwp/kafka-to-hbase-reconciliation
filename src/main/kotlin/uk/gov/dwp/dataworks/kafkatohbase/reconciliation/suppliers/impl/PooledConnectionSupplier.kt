@@ -31,7 +31,6 @@ class PooledConnectionSupplier(private val databaseUrl: String,
         BasicDataSource().apply {
             url = databaseUrl
             maxTotal = numberOfParallelUpdates + 1 + 5
-            validationQuery = "SELECT count(*) from $table"
             maxConnLifetimeMillis = 24.hours.toLongMilliseconds()
             databaseProperties.forEach { (name, value) ->
                 addConnectionProperty(name.toString(), value.toString())
