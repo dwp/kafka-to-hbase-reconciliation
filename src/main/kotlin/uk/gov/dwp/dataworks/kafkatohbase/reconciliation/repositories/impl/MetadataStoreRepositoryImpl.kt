@@ -65,7 +65,7 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
                 }
                 executeBatch()
                 commit(connection)
-                logger.info("Updated batch", "size" to "${batch.size}")
+                logger.info("Updated batch", "size" to "${batch.size}", "reconciled_records" to "$batch")
             } catch (e: SQLException) {
                 logger.error("Failed to update batch", e, "error" to "${e.message}", "error_code" to "${e.errorCode}")
                 e.printStackTrace(System.err)
@@ -99,7 +99,7 @@ class MetadataStoreRepositoryImpl(private val connectionSupplier: ConnectionSupp
                             )
                         }
                     }
-                    logger.info("Retrieved unreconciled records", "unreconciled_record_count" to "${list.size}", "table" to table)
+                    logger.info("Retrieved unreconciled records from metadatastore", "unreconciled_record_count" to "${list.size}", "table" to table, "unreconciled_records" to "$list")
                     list
                 }
             }
