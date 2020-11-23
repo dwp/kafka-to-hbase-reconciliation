@@ -128,17 +128,10 @@ trim-reconciled-integration-test: ## Run the trim reconciled integration tests i
 	docker-compose -f docker-compose.yaml up --build trim-reconciled-records
 	docker-compose -f docker-compose.yaml up --build trim-integration-test
 
-partitioned-integration-test: services ## Run the partitioned integration tests in a Docker container
-	docker-compose -f docker-compose.yaml up --build -d reconciliation-partitioned
-	@{ \
-		set +e ;\
-		docker stop partitioned-integration-test ;\
-		docker rm partitioned-integration-test ;\
- 		set -e ;\
- 	}
-	docker-compose -f docker-compose.yaml run --name partitioned-integration-test partitioned-integration-test gradle --no-daemon --rerun-tasks partitioned-integration-test -x test -x unit
-	docker-compose stop  reconciliation-partitioned
-	docker-compose rm  reconciliation-partitioned
+partitioned-integration-test: ## Run the partitioned integration tests in a Docker container
+	docker-compose -f docker-compose.yaml up --build populate-for-partitioned
+#	docker-compose -f docker-compose.yaml up --build reconciliation-partitioned
+#	docker-compose -f docker-compose.yaml up --build partitioned-integration-test
 
 integration-test-with-rebuild: integration-test-rebuild reconciliation-integration-test trim-reconciled-integration-test partitioned-integration-test ## Rebuild and re-run only he integration-tests
 
