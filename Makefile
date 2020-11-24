@@ -42,6 +42,9 @@ local-scrub-build: local-scrub local-build ## Scrub local artefacts and make new
 
 local-all: local-scrub-build local-test ## local-dist ## Build and test with gradle
 
+certificates: ## generate the mutual authentication certificates for communications with dks.
+	./generate-certificates.sh
+
 mysql-root: ## Get a root client session on the metadatastore database.
 	docker exec -it metadatastore mysql --user=root --password=password metadatastore
 
@@ -91,6 +94,7 @@ hbase-up: ## Bring up and provision mysql
 		done; \
 		echo ...hbase ready.; \
 	}
+	docker exec -i hbase hbase shell <<< "create_namespace 'database'"; \
 
 services: hbase-up rdbms-up ## Bring up supporting services in docker
 

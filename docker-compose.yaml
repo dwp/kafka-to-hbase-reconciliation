@@ -155,69 +155,91 @@ services:
       MYSQL_USER: "reconciliationwriter"
       MYSQL_PASSWORD: "my-password"
 
+  dks-standalone-http:
+    image: dks-standalone-http
+    ports:
+      - 8090:8080
+    build:
+      context: docker/dks
+    container_name: dks-standalone-http
+    environment:
+      - SPRING_PROFILES_ACTIVE=STANDALONE,INSECURE,LocalAWS
+
   populate-for-trim:
-    build: ./docker/trim
+    build: docker/integration_tests/trim
     container_name: populate-for-trim
     depends_on:
       - metadatastore
 
   trim-integration-test:
-    build: ./docker/trim_integration
+    build: docker/integration_tests/trim_integration
     container_name: trim-integration-test
 
   populate-for-partitioned:
-    build: ./docker/partitioned
+    build: docker/integration_tests/partitioned
     container_name: populate-for-partitioned
     depends_on:
       - metadatastore
+      - dks-standalone-http
 
   partitioned-integration-test:
-    build: ./docker/partitioned_integration
+    build: docker/integration_tests/partitioned_integration
     container_name: partitioned-integration-test
 
-  reconciliation-integration-test:
-    image: reconciliation-integration:latest
-    container_name: reconciliation-integration-test
-    build:
-      dockerfile: docker/integration/Dockerfile
-      context: .
+  populate-for-reconciliation:
+    build: docker/integration_tests/reconciliation
+    container_name: populate-for-reconciliation
     depends_on:
-      - reconciliation
-    command: "gradle --rerun-tasks integration"
-    environment:
-      CONTAINER_VERSION: "latest"
-      ENVIRONMENT: "local-dev"
-      APPLICATION: "reconciliation"
-      APP_VERSION: "test"
-      COMPONENT: "jar-file"
-      CORRELATION_ID: "N/A"
-      LOG_LEVEL: INFO
-      RECONCILER_FIXED_DELAY_MILLIS: "1000"
-      SECRETS_REGION: "eu-west-2"
-      SECRETS_METADATA_STORE_PASSWORD_SECRET: "metastore_password"
-      HBASE_TABLE_PATTERN: ([-\w]+)\.([-\w]+)
-      HBASE_ZOOKEEPER_PARENT: "/hbase"
-      HBASE_ZOOKEEPER_PORT: "2181"
-      HBASE_ZOOKEEPER_QUORUM: "hbase"
-      HBASE_RPC_TIMEOUT_MILLISECONDS: "60000"
-      HBASE_CLIENT_OPERATION_TIMEOUT_MS: "90000"
-      HBASE_CLIENT_SCANNER_TIMEOUT_PERIOD_MS: "60000"
-      HBASE_PAUSE_MILLISECONDS: "50"
-      HBASE_RETRIES": "3"
-      METADATASTORE_USER: "reconciliationwriter"
-      METADATASTORE_PASSWORD_SECRET_NAME: "metastore_password"
-      METADATASTORE_DUMMY_PASSWORD: "my-password"
-      METADATASTORE_DATABASE_NAME: "metadatastore"
-      METADATASTORE_ENDPOINT: "metadatastore"
-      METADATASTORE_PORT: "3306"
-      METADATASTORE_TABLE: "ucfs"
-      METADATASTORE_CA_CERT_PATH: "/certs/AmazonRootCA1.pem"
-      METADATASTORE_NUMBER_OF_PARALLEL_UPDATES: "10"
-      METADATASTORE_BATCH_SIZE: "10000"
-      METADATASTORE_USE_AWS_SECRETS: "false"
-      METADATASTORE_START_PARTITION: "NOT_SET"
-      METADATASTORE_END_PARTITION: "NOT_SET"
-      SPRING_PROFILES_ACTIVE: DUMMY_SECRETS,RECONCILIATION,HBASE
+      - metadatastore
+      - dks-standalone-http
+
+  reconciliation-integration-test:
+    build: docker/integration_tests/reconciliation_integration
+    container_name: reconciliation-integration-test
+
+#  reconciliation-integration-test:
+#    image: reconciliation-integration:latest
+#    container_name: reconciliation-integration-test
+#    build:
+#      dockerfile: docker/integration/Dockerfile
+#      context: .
+#    depends_on:
+#      - reconciliation
+#    command: "gradle --rerun-tasks integration"
+#    environment:
+#      CONTAINER_VERSION: "latest"
+#      ENVIRONMENT: "local-dev"
+#      APPLICATION: "reconciliation"
+#      APP_VERSION: "test"
+#      COMPONENT: "jar-file"
+#      CORRELATION_ID: "N/A"
+#      LOG_LEVEL: INFO
+#      RECONCILER_FIXED_DELAY_MILLIS: "1000"
+#      SECRETS_REGION: "eu-west-2"
+#      SECRETS_METADATA_STORE_PASSWORD_SECRET: "metastore_password"
+#      HBASE_TABLE_PATTERN: ([-\w]+)\.([-\w]+)
+#      HBASE_ZOOKEEPER_PARENT: "/hbase"
+#      HBASE_ZOOKEEPER_PORT: "2181"
+#      HBASE_ZOOKEEPER_QUORUM: "hbase"
+#      HBASE_RPC_TIMEOUT_MILLISECONDS: "60000"
+#      HBASE_CLIENT_OPERATION_TIMEOUT_MS: "90000"
+#      HBASE_CLIENT_SCANNER_TIMEOUT_PERIOD_MS: "60000"
+#      HBASE_PAUSE_MILLISECONDS: "50"
+#      HBASE_RETRIES": "3"
+#      METADATASTORE_USER: "reconciliationwriter"
+#      METADATASTORE_PASSWORD_SECRET_NAME: "metastore_password"
+#      METADATASTORE_DUMMY_PASSWORD: "my-password"
+#      METADATASTORE_DATABASE_NAME: "metadatastore"
+#      METADATASTORE_ENDPOINT: "metadatastore"
+#      METADATASTORE_PORT: "3306"
+#      METADATASTORE_TABLE: "ucfs"
+#      METADATASTORE_CA_CERT_PATH: "/certs/AmazonRootCA1.pem"
+#      METADATASTORE_NUMBER_OF_PARALLEL_UPDATES: "10"
+#      METADATASTORE_BATCH_SIZE: "10000"
+#      METADATASTORE_USE_AWS_SECRETS: "false"
+#      METADATASTORE_START_PARTITION: "NOT_SET"
+#      METADATASTORE_END_PARTITION: "NOT_SET"
+#      SPRING_PROFILES_ACTIVE: DUMMY_SECRETS,RECONCILIATION,HBASE
 
 #  partitioned-integration-test:
 #    image: partitioned-integration:latest

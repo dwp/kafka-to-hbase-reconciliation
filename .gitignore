@@ -37,3 +37,20 @@ lib/
 gradlew
 gradlew.bat
 venv/
+
+### local ###
+src/main/python/environment/
+archive/environment/
+__pycache__
+classes/
+data/
+ephemera/
+rad/
+*.jks
+*.crt
+venv/
+.DS_Store
+*.csv
+env/
+tmp/
+*.jar
