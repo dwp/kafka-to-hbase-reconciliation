@@ -107,12 +107,12 @@ def decrypted_db_object(i: int):
         "_lastModifiedDateTime": "2018-12-14T15:01:02.000+0000"
     }
 
+
 def populate_mysql():
     connection = mysql_connection()
 
     cursor = connection.cursor()
-    cursor.execute("DROP TABLE IF EXISTS equalities")
-    cursor.execute("CREATE TABLE equalities LIKE ucfs")
+    cursor.execute("TRUNCATE ucfs")
 
     data = [(f"hbase_id_{index}", index * 100, "db.database.collection", index % 10, index, index % 2 == 0)
             for index in range(0, 1_000)]
