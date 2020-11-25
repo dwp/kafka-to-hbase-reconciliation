@@ -1,5 +1,5 @@
-FROM python:3.8
+FROM dwp-python-preinstall-reconciliation:latest
 
 COPY populate.py .
-RUN pip install mysql-connector-python
+
 ENTRYPOINT ["python", "./populate.py"]

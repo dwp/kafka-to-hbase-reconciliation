@@ -96,7 +96,10 @@ hbase-up: ## Bring up and provision mysql
 	}
 	docker exec -i hbase hbase shell <<< "create_namespace 'database'"; \
 
-services: hbase-up rdbms-up ## Bring up supporting services in docker
+dks-insecure-up: ## bring up dks on 8080
+	docker-compose up -d dks-standalone-http
+
+services: hbase-up rdbms-up dks-insecure-up ## Bring up supporting services in docker
 
 up: services ## Bring up Reconciliation in Docker with supporting services
 	docker-compose -f docker-compose.yaml up --build -d reconciliation trim-reconciled-records reconciliation-partitioned
@@ -115,37 +118,52 @@ integration-test-rebuild: ## Build only integration-test
 	docker-compose build reconciliation-integration-test trim-reconciled-integration-test partitioned-integration-test
 
 reconciliation-integration-test:  ## Run the reconciliation integration tests in a Docker container
-	docker-compose -f docker-compose.yaml up --build populate-for-reconciliation
-	docker-compose -f docker-compose.yaml up --build reconciliation
-	docker-compose -f docker-compose.yaml up --build reconciliation-integration-test
+	docker-compose -f docker-compose.yaml up populate-for-reconciliation
+	docker-compose -f docker-compose.yaml up reconciliation
+	docker-compose -f docker-compose.yaml up reconciliation-integration-test
 
 trim-reconciled-integration-test: ## Run the trim reconciled integration tests in a Docker container
-	docker-compose -f docker-compose.yaml up --build populate-for-trim
-	docker-compose -f docker-compose.yaml up --build trim-reconciled-records
-	docker-compose -f docker-compose.yaml up --build trim-integration-test
+	docker-compose -f docker-compose.yaml up populate-for-trim
+	docker-compose -f docker-compose.yaml up trim-reconciled-records
+	docker-compose -f docker-compose.yaml up trim-integration-test
 
 partitioned-integration-test: ## Run the partitioned integration tests in a Docker container
-	docker-compose -f docker-compose.yaml up --build populate-for-partitioned
-#	docker-compose -f docker-compose.yaml up --build reconciliation-partitioned
-#	docker-compose -f docker-compose.yaml up --build partitioned-integration-test
+	docker-compose -f docker-compose.yaml up populate-for-partitioned
+#	docker-compose -f docker-compose.yaml up reconciliation-partitioned
+#	docker-compose -f docker-compose.yaml up partitioned-integration-test
 
 integration-test-with-rebuild: integration-test-rebuild reconciliation-integration-test trim-reconciled-integration-test partitioned-integration-test ## Rebuild and re-run only he integration-tests
 
 .PHONY: integration-all ## Build and Run all the tests in containers from a clean start
 integration-all: destroy build services reconciliation-integration-test trim-reconciled-integration-test partitioned-integration-test
 
-build: local-all build-base ## build main images
+build: local-all build-integration-base ## build main images
 	docker-compose build
 
 build-base: ## build the base images which certain images extend.
 	@{ \
 		pushd docker; \
 		docker build --tag dwp-java:latest --file ./java/Dockerfile . ; \
-		docker build --tag dwp-python-preinstall:latest --file ./python/Dockerfile . ; \
+		cp ./integration_tests/shared_functions.py ./python ; \
+		docker build --tag dwp-python-preinstall-reconciliation:latest --file ./python/Dockerfile . ; \
+		rm python/shared_functions.py ; \
 		cp ../settings.gradle.kts ../gradle.properties . ; \
 		docker build --tag dwp-gradle-reconciliation:latest --file ./gradle/Dockerfile . ; \
 		rm -rf settings.gradle.kts gradle.properties ; \
 		popd; \
+	}
+
+build-integration-base: build-base
+	@{ \
+		docker-compose -f docker-compose.yaml build populate-for-trim ; \
+		docker-compose -f docker-compose.yaml build populate-for-partitioned ; \
+		docker-compose -f docker-compose.yaml build populate-for-reconciliation ; \
+		docker-compose -f docker-compose.yaml build reconciliation ; \
+		docker-compose -f docker-compose.yaml build reconciliation-integration-test ; \
+		docker-compose -f docker-compose.yaml build trim-reconciled-records ; \
+		docker-compose -f docker-compose.yaml build trim-integration-test ; \
+		docker-compose -f docker-compose.yaml build reconciliation-partitioned ; \
+		docker-compose -f docker-compose.yaml build partitioned-integration-test ; \
 	}
 
 push-local-to-ecr: ## Push a temp version of reconciliation to AWS DEV ECR

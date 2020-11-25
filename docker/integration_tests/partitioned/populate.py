@@ -1,6 +1,7 @@
 import argparse
 import binascii
 import json
+import sys
 
 import requests
 

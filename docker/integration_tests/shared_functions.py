@@ -4,6 +4,7 @@ import base64
 from Crypto import Random
 from Crypto.Cipher import AES
 from Crypto.Util import Counter
+import binascii
 
 
 def mysql_connection():
