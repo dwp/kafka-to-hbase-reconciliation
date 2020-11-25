@@ -30,10 +30,10 @@ local-scrub: ## Scrub local output folders
 	gradle clean
 
 local-build: ## Build Kafka2HBase with gradle
-	gradle :unit build -x test -x unit -x reconciliation-integration-test reconciliation-integration-test
+	gradle :unit build -x test -x unit
 
 local-dist: ## Assemble distribution files in build/dist with gradle
-	gradle assembleDist -x test -x unit -x reconciliation-integration-test reconciliation-integration-test
+	gradle assembleDist -x test -x unit
 
 local-test: ## Run the unit tests with gradle
 	gradle --rerun-tasks unit
@@ -115,17 +115,9 @@ integration-test-rebuild: ## Build only integration-test
 	docker-compose build reconciliation-integration-test trim-reconciled-integration-test partitioned-integration-test
 
 reconciliation-integration-test:  ## Run the reconciliation integration tests in a Docker container
-	docker-compose -f docker-compose.yaml up --build -d reconciliation
-	@{ \
-		set +e ;\
-		docker stop reconciliation-integration-test ;\
-		docker rm reconciliation-integration-test ;\
- 		set -e ;\
- 	}
-	docker-compose -f docker-compose.yaml run --name reconciliation-integration-test reconciliation-integration-test gradle --no-daemon --rerun-tasks reconciliation-integration-test -x test -x unit
-	docker-compose stop reconciliation
-	docker-compose rm reconciliation
-
+	docker-compose -f docker-compose.yaml up --build populate-for-reconciliation
+	docker-compose -f docker-compose.yaml up --build reconciliation
+	docker-compose -f docker-compose.yaml up --build reconciliation-integration-test
 
 trim-reconciled-integration-test: ## Run the trim reconciled integration tests in a Docker container
 	docker-compose -f docker-compose.yaml up --build populate-for-trim

@@ -4,8 +4,7 @@ import mysql.connector
 
 @given("the {table_name} table has been created and populated, and the reconciler service has been ran")
 def step_impl(context, table_name):
-    with (mysql.connector.connect(host="metadatastore", user="root", password="password",
-                                  database="metadatastore")) as connection:
+    with () as connection:
         cursor = connection.cursor()
         cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
         count = cursor.fetchone()[0]

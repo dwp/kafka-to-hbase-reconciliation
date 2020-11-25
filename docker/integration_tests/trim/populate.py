@@ -1,8 +1,9 @@
-import mysql.connector
+from docker.integration_tests.shared_functions import mysql_connection
 
 if __name__ == "__main__":
-    connection = mysql.connector.connect(host="metadatastore", user="root", password="password",
-                                         database="metadatastore")
+
+    connection = mysql_connection()
+
     cursor = connection.cursor()
     cursor.execute("DROP TABLE IF EXISTS trim")
     cursor.execute("CREATE TABLE trim LIKE ucfs")

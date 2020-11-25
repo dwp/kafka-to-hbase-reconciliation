@@ -1,6 +1,7 @@
 FROM python:3.8
 
 COPY ./* ./
+COPY  ../shared_functions.py ./
 
 RUN pip install awscli --trusted-host=pypi.org --trusted-host=pypi.python.org --trusted-host=files.pythonhosted.org
 RUN pip install --trusted-host=pypi.python.org --trusted-host=pypi.org --trusted-host=files.pythonhosted.org -r ./requirements.txt
