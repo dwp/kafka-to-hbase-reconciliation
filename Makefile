@@ -69,7 +69,7 @@ truncate-hbase: ## truncate all hbase tables.
 truncate-all: truncate-ucfs truncate-equalities truncate-hbase
 
 hbase-shell: ## Open an HBase shell onto the running HBase container
-	docker-compose run --rm hbase shell
+	docker exec -it hbase hbase shell
 
 rdbms-up: ## Bring up and provision mysql
 	docker-compose -f docker-compose.yaml up -d metadatastore

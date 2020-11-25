@@ -8,46 +8,7 @@ import requests
 import shared_functions
 
 topic_count = 10
-record_count = 1000
-
-
-def populate_hbase():
-    connection = shared_functions.hbase_connection()
-    connection.open()
-
-    args = command_line_args()
-    content = requests.get(args.data_key_service).json()
-    encryption_key = content['plaintextDataKey']
-    encrypted_key = content['ciphertextDataKey']
-    master_key_id = content['dataKeyEncryptionKeyId']
-
-    shared_functions.cleanup_hbase(connection)
-
-    for index in range(1, topic_count):
-
-        print(f'Creating for topic {index}')
-        table_name = f"database:collection{index}"
-        table = connection.table(table_name)
-        batch = table.batch(timestamp=1000)
-
-        for record_index in range(1, record_count, 2):
-            wrapper = shared_functions.kafka_message(record_index)
-            record = shared_functions.decrypted_db_object(record_index)
-            record_string = json.dumps(record)
-            [iv, encrypted_record] = shared_functions.encrypt(encryption_key, record_string)
-            wrapper['message']['encryption']['initialisationVector'] = iv.decode('ascii')
-            wrapper['message']['encryption']['keyEncryptionKeyId'] = master_key_id
-            wrapper['message']['encryption']['encryptedEncryptionKey'] = encrypted_key
-            wrapper['message']['dbObject'] = encrypted_record.decode('ascii')
-            message_id = json.dumps(wrapper['message']['_id'])
-            checksum = binascii.crc32(message_id.encode("ASCII"), 0).to_bytes(4, sys.byteorder)
-            hbase_id = checksum + message_id.encode("utf-8")
-            obj = {'cf:record': json.dumps(wrapper)}
-            batch.put(hbase_id, obj)
-        print("Sending batch.")
-        batch.send()
-
-    connection.close()
+record_count = 10000
 
 
 def populate_mysql():
@@ -67,6 +28,52 @@ def populate_mysql():
     cursor.executemany(statement, data)
     cursor.close()
     connection.commit()
+
+
+def populate_hbase():
+    connection = shared_functions.hbase_connection()
+    connection.open()
+
+    args = command_line_args()
+    content = requests.get(args.data_key_service).json()
+    encryption_key = content['plaintextDataKey']
+    encrypted_key = content['ciphertextDataKey']
+    master_key_id = content['dataKeyEncryptionKeyId']
+
+    shared_functions.cleanup_hbase(connection)
+
+    for index in range(1, record_count, 2):
+
+        print(f'Creating for topic {index}')
+        table_name = f"database:collection{index}"
+        table = connection.table(table_name)
+        batch = table.batch(timestamp=10000)
+        tables = [x.decode('ascii') for x in connection.tables()]
+
+        if table_name not in tables:
+            connection.create_table(table_name, {'cf': dict(max_versions=1000000)})
+            print(f"Created table '{table_name}'.")
+
+        # for record_index in :
+        wrapper = shared_functions.kafka_message(index)
+        record = shared_functions.decrypted_db_object(index)
+        record_string = json.dumps(record)
+        [iv, encrypted_record] = shared_functions.encrypt(encryption_key, record_string)
+        wrapper['message']['encryption']['initialisationVector'] = iv.decode('ascii')
+        wrapper['message']['encryption']['keyEncryptionKeyId'] = master_key_id
+        wrapper['message']['encryption']['encryptedEncryptionKey'] = encrypted_key
+        wrapper['message']['dbObject'] = encrypted_record.decode('ascii')
+        message_id = json.dumps(wrapper['message']['_id'])
+        checksum = binascii.crc32(message_id.encode("ASCII"), 0).to_bytes(4, sys.byteorder)
+        hbase_id = checksum + message_id.encode("utf-8")
+        obj = {'cf:record': json.dumps(wrapper)}
+        batch.put(hbase_id, obj)
+
+
+
+    print("Sending batch.")
+    batch.send()
+    connection.close()
 
 
 def command_line_args():
