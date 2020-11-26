@@ -128,7 +128,7 @@ trim-reconciled-integration-test: ## Run the trim reconciled integration tests i
 	docker-compose -f docker-compose.yaml up trim-integration-test
 
 partitioned-integration-test: ## Run the partitioned integration tests in a Docker container
-	docker-compose -f docker-compose.yaml up populate-for-partitioned
+	docker-compose -f docker-compose.yaml up --build populate-for-partitioned
 #	docker-compose -f docker-compose.yaml up reconciliation-partitioned
 #	docker-compose -f docker-compose.yaml up partitioned-integration-test
 
@@ -147,6 +147,7 @@ build-base: ## build the base images which certain images extend.
 		cp ./integration_tests/shared_functions.py ./python ; \
 		docker build --tag dwp-python-preinstall-reconciliation:latest --file ./python/Dockerfile . ; \
 		rm python/shared_functions.py ; \
+		docker build --tag dwp-python-reconciliation-integration:latest --file ./python/Dockerfile_int . ; \
 		cp ../settings.gradle.kts ../gradle.properties . ; \
 		docker build --tag dwp-gradle-reconciliation:latest --file ./gradle/Dockerfile . ; \
 		rm -rf settings.gradle.kts gradle.properties ; \

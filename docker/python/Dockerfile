@@ -16,9 +16,6 @@ COPY python/requirements.txt ./
 
 RUN pip install --trusted-host=pypi.python.org --trusted-host=pypi.org --trusted-host=files.pythonhosted.org -r ./requirements.txt
 
-RUN pip install mysql-connector-python
-RUN pip install happybase
-
 RUN chown -R $SERVICE_USER.$SERVICE_USER $SERVICE_USER_HOME
 RUN chown -R $SERVICE_USER.$SERVICE_USER $INSTALL_DIR
 
