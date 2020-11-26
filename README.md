@@ -10,6 +10,18 @@ After cloning this repo, please run:
 make bootstrap
 ```
 
+## Self signed certificates
+
+The integration tests standup various services as docker containers and the
+export and dks containers require keystores and truststores so that they can
+communicate over 2-way https. To generate these:
+
+```
+make certificates
+```
+
+
+
 ## Local runs of build
 
 Use this command to build and unit test and make a local distribution;

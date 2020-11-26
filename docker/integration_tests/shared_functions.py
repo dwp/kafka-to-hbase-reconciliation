@@ -38,7 +38,7 @@ def kafka_message(i: int):
         "@type": "V4",
         "message": {
             "db": "database",
-            "collection": "collection",
+            "collection": f"collection{i}",
             "_id": {
                 "record_id": f"{i:05d}"
             },
