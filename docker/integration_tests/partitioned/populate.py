@@ -1,15 +1,15 @@
 import argparse
 import binascii
 import json
-import sys
 import re
+import sys
 
 import requests
 
 import shared_functions
 
 topic_count = 10
-record_count = 1
+record_count = 1000
 
 
 def populate_mysql():
@@ -45,19 +45,14 @@ def populate_mysql():
 
         for record_index in range(int(record_count)):
             hbase_key = f"{topic_index}/{record_index}"
-            ob = {"id": hbase_key}
+            ob = {"_id": hbase_key}
             checksum = binascii.crc32(json.dumps(ob).encode("ASCII"), 0).to_bytes(4, 'big').hex().upper()
             escaped = re.sub("(..)", r"\\x\1", checksum)
             timestamp = 1544799662000
+            key = f"{escaped}{ob}"
             data.append(
-                [escaped, timestamp, table_name, 0])
-
-    data2 = [(f"hbase_id_{index}", index * 100, "db.database.collection", index % 10, index, index % 2 == 0)
-             for index in range(0, 1_0)]
-
-    print(data)
-    print("dadwdw  ")
-    print(data2)
+                [key, timestamp, table_name, 0])
+            print(f"escaped: {key}")
 
     statement = ("INSERT INTO equalities "
                  "(hbase_id, hbase_timestamp, topic_name, reconciled_result) "
@@ -89,26 +84,26 @@ def populate_hbase():
             print(f"Created table '{table_name}'.")
 
         table = connection.table(table_name)
-        batch = table.batch(timestamp=1000)
+        batch = table.batch(timestamp=10000)
 
-        for record_index in range(int(record_count), 2):
-            body = shared_functions.kafka_message(topic_index)
+        print("test")
+        for record_index in range(0, int(record_count), 2):
+            wrapper = shared_functions.kafka_message(topic_index)
+            record = shared_functions.decrypted_db_object(topic_index)
+            record_string = json.dumps(record)
+            [iv, encrypted_record] = shared_functions.encrypt(encryption_key, record_string)
+            wrapper['message']['encryption']['initialisationVector'] = iv.decode('ascii')
+            wrapper['message']['encryption']['keyEncryptionKeyId'] = master_key_id
+            wrapper['message']['encryption']['encryptedEncryptionKey'] = encrypted_key
+            wrapper['message']['dbObject'] = encrypted_record.decode('ascii')
+            message_id = json.dumps(wrapper['message']['_id'])
+            checksum = binascii.crc32(message_id.encode("ASCII"), 0).to_bytes(4, sys.byteorder)
             key = json.dumps({"message": {"_id": f"{topic_index}/{record_index}"}}).encode("utf-8")
+            hbase_id = checksum + key
+            obj = {'cf:record': json.dumps(wrapper)}
 
-            # wrapper = shared_functions.kafka_message(i)
-            # record = shared_functions.decrypted_db_object(i)
-            # record_string = json.dumps(record)
-            # [iv, encrypted_record] = shared_functions.encrypt(encryption_key, record_string)
-            # wrapper['message']['encryption']['initialisationVector'] = iv.decode('ascii')
-            # wrapper['message']['encryption']['keyEncryptionKeyId'] = master_key_id
-            # wrapper['message']['encryption']['encryptedEncryptionKey'] = encrypted_key
-            # wrapper['message']['dbObject'] = encrypted_record.decode('ascii')
-            # message_id = json.dumps(wrapper['message']['_id'])
-            # checksum = binascii.crc32(message_id.encode("ASCII"), 0).to_bytes(4, sys.byteorder)
-            # hbase_id = checksum + message_id.encode("utf-8")
-
-            obj = {'cf:record': json.dumps(body)}
-            batch.put(key, obj)
+            print(f"hbase_id: {hbase_id}")
+            batch.put(hbase_id, obj)
 
         print("Sending batch.")
         batch.send()
