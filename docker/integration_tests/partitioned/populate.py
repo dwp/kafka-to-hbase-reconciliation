@@ -2,6 +2,7 @@ import argparse
 import binascii
 import json
 import sys
+import re
 
 import requests
 
@@ -43,13 +44,16 @@ def populate_mysql():
         table_name = f"db.database.collection{topic_index}"
 
         for record_index in range(int(record_count)):
-            hbase_key = f"hbase_id_{topic_index}/{record_index}"
+            hbase_key = f"{topic_index}/{record_index}"
+            ob = {"id": hbase_key}
+            checksum = binascii.crc32(json.dumps(ob).encode("ASCII"), 0).to_bytes(4, 'big').hex().upper()
+            escaped = re.sub("(..)", r"\\x\1", checksum)
             timestamp = 1544799662000
             data.append(
-                [hbase_key, timestamp, table_name, 0])
+                [escaped, timestamp, table_name, 0])
 
     data2 = [(f"hbase_id_{index}", index * 100, "db.database.collection", index % 10, index, index % 2 == 0)
-            for index in range(0, 1_0)]
+             for index in range(0, 1_0)]
 
     print(data)
     print("dadwdw  ")
