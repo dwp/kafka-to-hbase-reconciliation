@@ -39,20 +39,22 @@ def populate_mysql():
                         PARTITIONS 4;""")
 
     data = []
-    for topic_index in range(int(topic_count)):
+    for topic_index in range(1, int(topic_count)+1):
 
         table_name = f"db.database.collection{topic_index}"
 
-        for record_index in range(int(record_count)):
+        for record_index in range(1, int(record_count)+1):
             hbase_key = f"{topic_index}/{record_index}"
-            ob = {"_id": hbase_key}
-            checksum = binascii.crc32(json.dumps(ob).encode("ASCII"), 0).to_bytes(4, 'big').hex().upper()
+            ob = {"id": hbase_key}
+            json_object = json.dumps(ob)
+            checksum = binascii.crc32(json_object.encode("ASCII"), 0).to_bytes(4, "big").hex().upper()
             escaped = re.sub("(..)", r"\\x\1", checksum)
+
             timestamp = 1544799662000
-            key = f"{escaped}{ob}"
+            key = f'{escaped}{json_object}'
             data.append(
                 [key, timestamp, table_name, 0])
-            print(f"escaped: {key}")
+            print(f'escaped: {key}')
 
     statement = ("INSERT INTO equalities "
                  "(hbase_id, hbase_timestamp, topic_name, reconciled_result) "
