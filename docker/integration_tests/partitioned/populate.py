@@ -86,7 +86,7 @@ def populate_hbase():
             print(f"Created table '{table_name}'.")
 
         table = connection.table(table_name)
-        batch = table.batch(timestamp=10000)
+        batch = table.batch(timestamp=1544799662000)
 
         for record_index in range(0, int(record_count), 2):
             wrapper = shared_functions.kafka_message(topic_index)
