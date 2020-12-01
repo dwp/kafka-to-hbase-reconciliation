@@ -46,7 +46,7 @@ def populate_mysql():
         for record_index in range(1, int(record_count)+1):
             hbase_key = f"{topic_index}/{record_index}"
             ob = {"id": hbase_key}
-            json_object = json.dumps(ob)
+            json_object = json.dumps(ob, separators=(',', ':'))
             checksum = binascii.crc32(json_object.encode("ASCII"), 0).to_bytes(4, "big").hex().upper()
             escaped = re.sub("(..)", r"\\x\1", checksum)
 
@@ -76,7 +76,7 @@ def populate_hbase():
     master_key_id = content['dataKeyEncryptionKeyId']
 
     print("Creating batch.")
-    for topic_index in range(int(topic_count)):
+    for topic_index in range(1, int(topic_count)+1):
 
         table_name = f"database:collection{topic_index}"
         tables = [x.decode('ascii') for x in connection.tables()]
@@ -88,7 +88,6 @@ def populate_hbase():
         table = connection.table(table_name)
         batch = table.batch(timestamp=10000)
 
-        print("test")
         for record_index in range(0, int(record_count), 2):
             wrapper = shared_functions.kafka_message(topic_index)
             record = shared_functions.decrypted_db_object(topic_index)
@@ -98,16 +97,24 @@ def populate_hbase():
             wrapper['message']['encryption']['keyEncryptionKeyId'] = master_key_id
             wrapper['message']['encryption']['encryptedEncryptionKey'] = encrypted_key
             wrapper['message']['dbObject'] = encrypted_record.decode('ascii')
-            message_id = json.dumps(wrapper['message']['_id'])
-            checksum = binascii.crc32(message_id.encode("ASCII"), 0).to_bytes(4, sys.byteorder)
-            key = json.dumps({"message": {"_id": f"{topic_index}/{record_index}"}}).encode("utf-8")
-            hbase_id = checksum + key
-            obj = {'cf:record': json.dumps(wrapper)}
+
+            hbase_key = f"{topic_index}/{record_index}"
+            record_id = {"id": hbase_key}
+
+            json_object = json.dumps(record_id, separators=(',', ':'))
+            checksum = binascii.crc32(json_object.encode("ASCII"), 0).to_bytes(4, "big").hex().upper()
+            escaped_checksum = re.sub("(..)", r"\\x\1", checksum)
+
+            utf_json_object = json_object.encode("utf-8")
+            utf_escaped_checksum = escaped_checksum.encode("utf-8")
+            hbase_id = utf_escaped_checksum + utf_json_object
+            record_object = {'cf:record': json.dumps(wrapper)}
 
             print(f"hbase_id: {hbase_id}")
-            batch.put(hbase_id, obj)
+            batch.put(hbase_id, record_object)
 
         print("Sending batch.")
+        print(batch.__dict__)
         batch.send()
 
     connection.close()
