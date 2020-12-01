@@ -100,21 +100,13 @@ def populate_hbase():
 
             hbase_key = f"{topic_index}/{record_index}"
             record_id = {"id": hbase_key}
-
             json_object = json.dumps(record_id, separators=(',', ':'))
-            checksum = binascii.crc32(json_object.encode("ASCII"), 0).to_bytes(4, "big").hex().upper()
-            escaped_checksum = re.sub("(..)", r"\\x\1", checksum)
-
-            utf_json_object = json_object.encode("utf-8")
-            utf_escaped_checksum = escaped_checksum.encode("utf-8")
-            hbase_id = utf_escaped_checksum + utf_json_object
+            checksum = binascii.crc32(json_object.encode("ASCII"), 0).to_bytes(4, "big")
+            hbase_id = checksum + json_object.encode()
             record_object = {'cf:record': json.dumps(wrapper)}
-
-            print(f"hbase_id: {hbase_id}")
             batch.put(hbase_id, record_object)
 
         print("Sending batch.")
-        print(batch.__dict__)
         batch.send()
 
     connection.close()
