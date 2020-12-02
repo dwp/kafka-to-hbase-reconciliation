@@ -9,7 +9,7 @@ import requests
 import shared_functions
 
 topic_count = 10
-record_count = 1000
+record_count = 100
 
 
 def populate_mysql():
