@@ -11,7 +11,6 @@ import shared_functions
 topic_count = 10
 record_count = 100
 
-
 def populate_mysql():
     connection = shared_functions.mysql_connection()
 
