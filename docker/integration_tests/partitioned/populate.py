@@ -87,7 +87,7 @@ def populate_hbase():
         table = connection.table(table_name)
         batch = table.batch(timestamp=1544799662000)
 
-        for record_index in range(0, int(record_count), 2):
+        for record_index in range(2, int(record_count) + 1, 2):
             wrapper = shared_functions.kafka_message(topic_index)
             record = shared_functions.decrypted_db_object(topic_index)
             record_string = json.dumps(record)
