@@ -187,17 +187,6 @@ services:
     build: docker/integration_tests/partitioned_integration
     container_name: partitioned-integration-test
 
-  populate-for-reconciliation:
-    build: docker/integration_tests/reconciliation
-    container_name: populate-for-reconciliation
-    depends_on:
-      - metadatastore
-      - dks-standalone-http
-
-  reconciliation-integration-test:
-    build: docker/integration_tests/reconciliation_integration
-    container_name: reconciliation-integration-test
-
 #  reconciliation-integration-test:
 #    image: reconciliation-integration:latest
 #    container_name: reconciliation-integration-test

@@ -117,11 +117,6 @@ destroy: down ## Bring down the Kafka2HBase Docker container and services then d
 integration-test-rebuild: ## Build only integration-test
 	docker-compose build reconciliation-integration-test trim-reconciled-integration-test partitioned-integration-test
 
-reconciliation-integration-test:  ## Run the reconciliation integration tests in a Docker container
-	docker-compose -f docker-compose.yaml up populate-for-reconciliation
-	docker-compose -f docker-compose.yaml up reconciliation
-	docker-compose -f docker-compose.yaml up reconciliation-integration-test
-
 trim-reconciled-integration-test: ## Run the trim reconciled integration tests in a Docker container
 	docker-compose -f docker-compose.yaml up populate-for-trim
 	docker-compose -f docker-compose.yaml up trim-reconciled-records
@@ -132,10 +127,10 @@ partitioned-integration-test: ## Run the partitioned integration tests in a Dock
 	docker-compose -f docker-compose.yaml up -d reconciliation-partitioned
 	docker-compose -f docker-compose.yaml up --build partitioned-integration-test
 
-integration-test-with-rebuild: integration-test-rebuild reconciliation-integration-test trim-reconciled-integration-test partitioned-integration-test ## Rebuild and re-run only he integration-tests
+integration-test-with-rebuild: integration-test-rebuild partitioned-integration-test trim-reconciled-integration-test ## Rebuild and re-run only he integration-tests
 
 .PHONY: integration-all ## Build and Run all the tests in containers from a clean start
-integration-all: destroy build services reconciliation-integration-test trim-reconciled-integration-test partitioned-integration-test
+integration-all: destroy build services partitioned-integration-test trim-reconciled-integration-test
 
 build: local-all build-integration-base ## build main images
 	docker-compose build
@@ -160,7 +155,6 @@ build-integration-base: build-base
 		docker-compose -f docker-compose.yaml build populate-for-partitioned ; \
 		docker-compose -f docker-compose.yaml build populate-for-reconciliation ; \
 		docker-compose -f docker-compose.yaml build reconciliation ; \
-		docker-compose -f docker-compose.yaml build reconciliation-integration-test ; \
 		docker-compose -f docker-compose.yaml build trim-reconciled-records ; \
 		docker-compose -f docker-compose.yaml build trim-integration-test ; \
 		docker-compose -f docker-compose.yaml build reconciliation-partitioned ; \

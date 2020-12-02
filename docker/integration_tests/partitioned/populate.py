@@ -11,12 +11,12 @@ import shared_functions
 topic_count = 10
 record_count = 100
 
-def populate_mysql():
+def populate_mysql(database_table_name):
     connection = shared_functions.mysql_connection()
 
     cursor = connection.cursor()
-    cursor.execute("DROP TABLE IF EXISTS equalities")
-    cursor.execute("""CREATE TABLE IF NOT EXISTS `equalities` (
+    cursor.execute(f"DROP TABLE IF EXISTS {database_table_name}")
+    cursor.execute(f"""CREATE TABLE IF NOT EXISTS `{database_table_name}` (
                         `id` INT NOT NULL AUTO_INCREMENT,
                         `hbase_id` VARCHAR(2048) NULL,
                         `hbase_timestamp` BIGINT NULL,
@@ -40,7 +40,7 @@ def populate_mysql():
     data = []
     for topic_index in range(1, int(topic_count)+1):
 
-        table_name = f"db.database.collection{topic_index}"
+        table_name = f"db.database.{database_table_name}{topic_index}"
 
         for record_index in range(1, int(record_count)+1):
             hbase_key = f"{topic_index}/{record_index}"
@@ -55,7 +55,7 @@ def populate_mysql():
                 [key, timestamp, table_name, 0])
             print(f'escaped: {key}')
 
-    statement = ("INSERT INTO equalities "
+    statement = (f"INSERT INTO {database_table_name} "
                  "(hbase_id, hbase_timestamp, topic_name, reconciled_result) "
                  "VALUES (%s, %s, %s, %s)")
 
@@ -64,7 +64,7 @@ def populate_mysql():
     connection.commit()
 
 
-def populate_hbase():
+def populate_hbase(database_table_name):
     connection = shared_functions.hbase_connection()
     connection.open()
 
@@ -77,7 +77,7 @@ def populate_hbase():
     print("Creating batch.")
     for topic_index in range(1, int(topic_count)+1):
 
-        table_name = f"database:collection{topic_index}"
+        table_name = f"database:{database_table_name}{topic_index}"
         tables = [x.decode('ascii') for x in connection.tables()]
 
         if table_name not in tables:
@@ -124,8 +124,10 @@ def command_line_args():
 
 
 def main():
-    populate_mysql()
-    populate_hbase()
+    populate_mysql("equalities")
+    populate_mysql("ucfs")
+    populate_hbase("equalities")
+    populate_hbase("ucfs")
 
 
 if __name__ == "__main__":
