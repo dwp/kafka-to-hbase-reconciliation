@@ -7,26 +7,27 @@ def step_impl(context, table_name):
     with (mysql.connector.connect(host="metadatastore", user="root", password="password",
                                   database="metadatastore")) as connection:
         cursor = connection.cursor()
-        cursor.execute(f"SELECT COUNT(*) FROM {table_name};")
+        cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
         count = cursor.fetchone()[0]
         assert count > 0
-
+        cursor.close()
 
 @then("the {table_name} table will have {row_count} records")
 def step_impl(context, table_name, row_count):
     with (mysql.connector.connect(host="metadatastore", user="root", password="password",
                                   database="metadatastore")) as connection:
         cursor = connection.cursor()
-        cursor.execute(f"SELECT COUNT(*) FROM {table_name};")
+        cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
         count = cursor.fetchone()[0]
         assert count == int(row_count)
+        cursor.close()
 
-
-@step("the partition {partition} in {table_name} table will have {row_count} reconciled records")
+@then("the partition {partition} in {table_name} table should have {row_count} reconciled records")
 def step_impl(context, partition, table_name, row_count):
     with (mysql.connector.connect(host="metadatastore", user="root", password="password",
                                   database="metadatastore")) as connection:
         cursor = connection.cursor()
-        cursor.execute(f"SELECT COUNT(*) FROM {table_name} PARTITION ({partition}) WHERE reconciled_result = true;")
+        cursor.execute(f"SELECT COUNT(*) FROM {table_name} PARTITION ({partition}) WHERE reconciled_result = true")
         count = cursor.fetchone()[0]
-        assert count == row_count
+        assert count == int(row_count)
+        cursor.close()
