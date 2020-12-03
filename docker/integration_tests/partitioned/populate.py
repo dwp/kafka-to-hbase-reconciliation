@@ -18,7 +18,8 @@ def populate_mysql(database_table_name):
 
     cursor = connection.cursor()
     cursor.execute(f"DROP TABLE IF EXISTS {database_table_name}")
-    cursor.execute(f"""CREATE TABLE IF NOT EXISTS `{database_table_name}` (
+    cursor.execute(
+        f"""CREATE TABLE IF NOT EXISTS `{database_table_name}` (
                         `id` INT NOT NULL AUTO_INCREMENT,
                         `hbase_id` VARCHAR(2048) NULL,
                         `hbase_timestamp` BIGINT NULL,
@@ -37,7 +38,8 @@ def populate_mysql(database_table_name):
                         INDEX (last_checked_timestamp)
                     )
                         PARTITION BY HASH(id)
-                        PARTITIONS 4;""")
+                        PARTITIONS 4;"""
+    )
 
     data = []
     for topic_index in range(1, int(topic_count) + 1):
@@ -47,19 +49,25 @@ def populate_mysql(database_table_name):
         for record_index in range(1, int(record_count) + 1):
             hbase_key = f"{topic_index}/{record_index}"
             ob = {"id": hbase_key}
-            json_object = json.dumps(ob, separators=(',', ':'))
-            checksum = binascii.crc32(json_object.encode("ASCII"), 0).to_bytes(4, "big").hex().upper()
+            json_object = json.dumps(ob, separators=(",", ":"))
+            checksum = (
+                binascii.crc32(json_object.encode("ASCII"), 0)
+                .to_bytes(4, "big")
+                .hex()
+                .upper()
+            )
             escaped = re.sub("(..)", r"\\x\1", checksum)
 
             timestamp = 1544799662000
-            key = f'{escaped}{json_object}'
-            data.append(
-                [key, timestamp, table_name, 0])
-            print(f'escaped: {key}')
+            key = f"{escaped}{json_object}"
+            data.append([key, timestamp, table_name, 0])
+            print(f"escaped: {key}")
 
-    statement = (f"INSERT INTO {database_table_name} "
-                 "(hbase_id, hbase_timestamp, topic_name, reconciled_result) "
-                 "VALUES (%s, %s, %s, %s)")
+    statement = (
+        f"INSERT INTO {database_table_name} "
+        "(hbase_id, hbase_timestamp, topic_name, reconciled_result) "
+        "VALUES (%s, %s, %s, %s)"
+    )
 
     cursor.executemany(statement, data)
     cursor.close()
@@ -76,9 +84,9 @@ def populate_hbase(database_table_name):
 
             args = command_line_args()
             content = requests.get(args.data_key_service).json()
-            encryption_key = content['plaintextDataKey']
-            encrypted_key = content['ciphertextDataKey']
-            master_key_id = content['dataKeyEncryptionKeyId']
+            encryption_key = content["plaintextDataKey"]
+            encrypted_key = content["ciphertextDataKey"]
+            master_key_id = content["dataKeyEncryptionKeyId"]
 
             connected = True
         except requests.exceptions.ConnectionError:
@@ -92,10 +100,10 @@ def populate_hbase(database_table_name):
     for topic_index in range(1, int(topic_count) + 1):
 
         table_name = f"database:{database_table_name}{topic_index}"
-        tables = [x.decode('ascii') for x in connection.tables()]
+        tables = [x.decode("ascii") for x in connection.tables()]
 
         if table_name not in tables:
-            connection.create_table(table_name, {'cf': dict(max_versions=1000000)})
+            connection.create_table(table_name, {"cf": dict(max_versions=1000000)})
             print(f"Created table '{table_name}'.")
 
         table = connection.table(table_name)
@@ -105,18 +113,22 @@ def populate_hbase(database_table_name):
             wrapper = shared_functions.kafka_message(topic_index)
             record = shared_functions.decrypted_db_object(topic_index)
             record_string = json.dumps(record)
-            [iv, encrypted_record] = shared_functions.encrypt(encryption_key, record_string)
-            wrapper['message']['encryption']['initialisationVector'] = iv.decode('ascii')
-            wrapper['message']['encryption']['keyEncryptionKeyId'] = master_key_id
-            wrapper['message']['encryption']['encryptedEncryptionKey'] = encrypted_key
-            wrapper['message']['dbObject'] = encrypted_record.decode('ascii')
+            [iv, encrypted_record] = shared_functions.encrypt(
+                encryption_key, record_string
+            )
+            wrapper["message"]["encryption"]["initialisationVector"] = iv.decode(
+                "ascii"
+            )
+            wrapper["message"]["encryption"]["keyEncryptionKeyId"] = master_key_id
+            wrapper["message"]["encryption"]["encryptedEncryptionKey"] = encrypted_key
+            wrapper["message"]["dbObject"] = encrypted_record.decode("ascii")
 
             hbase_key = f"{topic_index}/{record_index}"
             record_id = {"id": hbase_key}
-            json_object = json.dumps(record_id, separators=(',', ':'))
+            json_object = json.dumps(record_id, separators=(",", ":"))
             checksum = binascii.crc32(json_object.encode("ASCII"), 0).to_bytes(4, "big")
             hbase_id = checksum + json_object.encode()
-            record_object = {'cf:record': json.dumps(wrapper)}
+            record_object = {"cf:record": json.dumps(wrapper)}
             batch.put(hbase_id, record_object)
 
         print("Sending batch.")
@@ -127,13 +139,19 @@ def populate_hbase(database_table_name):
 
 
 def command_line_args():
-    parser = argparse.ArgumentParser(description='Pre-populate hbase for profiling.')
-    parser.add_argument('-k', '--data-key-service', default='http://dks-standalone-http:8080/datakey',
-                        help='Use the specified data key service.')
-    parser.add_argument('-z', '--zookeeper-quorum', default='hbase',
-                        help='The zookeeper quorum host.')
-    parser.add_argument('-r', '--records', default='1000',
-                        help='The number of records to create.')
+    parser = argparse.ArgumentParser(description="Pre-populate hbase for profiling.")
+    parser.add_argument(
+        "-k",
+        "--data-key-service",
+        default="http://dks-standalone-http:8080/datakey",
+        help="Use the specified data key service.",
+    )
+    parser.add_argument(
+        "-z", "--zookeeper-quorum", default="hbase", help="The zookeeper quorum host."
+    )
+    parser.add_argument(
+        "-r", "--records", default="1000", help="The number of records to create."
+    )
     return parser.parse_args()
 
 
