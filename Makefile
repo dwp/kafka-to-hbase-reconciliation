@@ -131,6 +131,8 @@ partitioned-integration-test: ## Run the partitioned integration tests in a Dock
 
 integration-test-with-rebuild: integration-test-rebuild partitioned-integration-test trim-reconciled-integration-test ## Rebuild and re-run only he integration-tests
 
+integration-all-github: certificates integration-all
+
 .PHONY: integration-all ## Build and Run all the tests in containers from a clean start
 integration-all: destroy build services partitioned-integration-test trim-reconciled-integration-test
 
