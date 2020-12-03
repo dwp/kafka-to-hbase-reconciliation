@@ -115,24 +115,24 @@ destroy: down ## Bring down the Kafka2HBase Docker container and services then d
 	docker volume prune -f
 
 integration-test-rebuild: ## Build only integration-test
-	docker-compose build reconciliation-integration-test trim-reconciled-integration-test partitioned-integration-test
+	docker-compose build trim-integration-test partitioned-integration-test
 
 trim-reconciled-integration-test: ## Run the trim reconciled integration tests in a Docker container
-	docker-compose -f docker-compose.yaml up --build populate-for-trim
+	docker-compose -f docker-compose.yaml up populate-for-trim
 	docker-compose -f docker-compose.yaml up -d trim-reconciled-records
-	docker-compose -f docker-compose.yaml up --build trim-integration-test
+	docker-compose -f docker-compose.yaml up trim-integration-test
 	docker-compose stop trim-reconciled-records
 
 partitioned-integration-test: ## Run the partitioned integration tests in a Docker container
-	docker-compose -f docker-compose.yaml up --build populate-for-partitioned
+	docker-compose -f docker-compose.yaml up populate-for-partitioned
 	docker-compose -f docker-compose.yaml up -d reconciliation-partitioned
-	docker-compose -f docker-compose.yaml up --build partitioned-integration-test
+	docker-compose -f docker-compose.yaml up partitioned-integration-test
 	docker stop reconciliation-partitioned
 
-integration-test-with-rebuild: integration-test-rebuild partitioned-integration-test trim-reconciled-integration-test ## Rebuild and re-run only he integration-tests
+integration-test-with-rebuild: integration-test-rebuild partitioned-integration-test trim-integration-test ## Rebuild and re-run only he integration-tests
 
 .PHONY: integration-all ## Build and Run all the tests in containers from a clean start
-integration-all: destroy build services partitioned-integration-test trim-reconciled-integration-test
+integration-all: destroy build services partitioned-integration-test trim-integration-test
 
 build: local-all build-integration-base ## build main images
 	docker-compose build
@@ -153,8 +153,8 @@ build-base: ## build the base images which certain images extend.
 
 build-integration-base: build-base
 	@{ \
-		docker-compose -f docker-compose.yaml build populate-for-trim ; \
 		docker-compose -f docker-compose.yaml build populate-for-partitioned ; \
+		docker-compose -f docker-compose.yaml build populate-for-trim ; \
 		docker-compose -f docker-compose.yaml build populate-for-reconciliation ; \
 		docker-compose -f docker-compose.yaml build reconciliation ; \
 		docker-compose -f docker-compose.yaml build trim-reconciled-records ; \
