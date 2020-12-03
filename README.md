@@ -31,12 +31,33 @@ make local-all
 
 ## Local runs of integration tests in docker compose stack
 
-**NOTE** depends on the local build above. This is build into the makefile commands above.
+**NOTE** depends on the local build above. This is built into the makefile commands above.
 
 Use this command to build and unit test and make a local distribution, then run all the integration tests;
 ```
 make integration-all
 ```
+
+### Local runs of specific integration tests in docker compose stack
+
+If you wish to isolate the integration test you'd like to run. First ensure you've done
+```
+make services
+```
+
+And then run either
+```
+make partitioned-integration-test
+```
+OR
+```
+make trim-reconciled-integration-test
+```
+
+Both of these will run a populate script to populate MySQL and Hbase (if required) to set the conditions for the test. 
+Then run a docker container for this respective test. 
+Then run behave tests to test the conditions.
+**NOTE** The test reconciliation container starts daemonised, the make file will stop the container once all tests are complete.
 
 ## Local running in an IDE
 
