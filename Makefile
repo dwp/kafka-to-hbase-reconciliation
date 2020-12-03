@@ -76,7 +76,7 @@ rdbms-up: ## Bring up and provision mysql
 	@{ \
 		echo Waiting for metadatastore.; \
 		while ! docker logs metadatastore 2>&1 | grep "^Version" | grep 3306; do \
-			sleep 2; \
+			sleep 10; \
 			echo Waiting for metadatastore.; \
 		done; \
 		echo ...metadatastore ready.; \
@@ -155,7 +155,6 @@ build-integration-base: build-base
 	@{ \
 		docker-compose -f docker-compose.yaml build populate-for-partitioned ; \
 		docker-compose -f docker-compose.yaml build populate-for-trim ; \
-		docker-compose -f docker-compose.yaml build populate-for-reconciliation ; \
 		docker-compose -f docker-compose.yaml build reconciliation ; \
 		docker-compose -f docker-compose.yaml build trim-reconciled-records ; \
 		docker-compose -f docker-compose.yaml build trim-integration-test ; \
