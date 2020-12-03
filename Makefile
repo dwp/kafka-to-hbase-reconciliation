@@ -129,10 +129,10 @@ partitioned-integration-test: ## Run the partitioned integration tests in a Dock
 	docker-compose -f docker-compose.yaml up partitioned-integration-test
 	docker stop reconciliation-partitioned
 
-integration-test-with-rebuild: integration-test-rebuild partitioned-integration-test trim-integration-test ## Rebuild and re-run only he integration-tests
+integration-test-with-rebuild: integration-test-rebuild partitioned-integration-test trim-reconciled-integration-test ## Rebuild and re-run only he integration-tests
 
 .PHONY: integration-all ## Build and Run all the tests in containers from a clean start
-integration-all: destroy build services partitioned-integration-test trim-integration-test
+integration-all: destroy build services partitioned-integration-test trim-reconciled-integration-test
 
 build: local-all build-integration-base ## build main images
 	docker-compose build

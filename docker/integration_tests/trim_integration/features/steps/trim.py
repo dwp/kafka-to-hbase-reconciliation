@@ -19,6 +19,10 @@ def step_impl(context, table_name, row_count):
         cursor = connection.cursor()
         cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
         count = cursor.fetchone()[0]
+
+        print(f"count: {count}")
+        print(f"table_name: {table_name}")
+
         assert count == int(row_count)
 
 

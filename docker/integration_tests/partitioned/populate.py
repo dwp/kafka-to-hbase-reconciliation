@@ -3,6 +3,7 @@ import binascii
 import json
 import re
 import sys
+from time import sleep
 
 import requests
 
@@ -10,6 +11,7 @@ import shared_functions
 
 topic_count = 10
 record_count = 100
+
 
 def populate_mysql(database_table_name):
     connection = shared_functions.mysql_connection()
@@ -38,11 +40,11 @@ def populate_mysql(database_table_name):
                         PARTITIONS 4;""")
 
     data = []
-    for topic_index in range(1, int(topic_count)+1):
+    for topic_index in range(1, int(topic_count) + 1):
 
         table_name = f"db.database.{database_table_name}{topic_index}"
 
-        for record_index in range(1, int(record_count)+1):
+        for record_index in range(1, int(record_count) + 1):
             hbase_key = f"{topic_index}/{record_index}"
             ob = {"id": hbase_key}
             json_object = json.dumps(ob, separators=(',', ':'))
@@ -65,17 +67,29 @@ def populate_mysql(database_table_name):
 
 
 def populate_hbase(database_table_name):
-    connection = shared_functions.hbase_connection()
-    connection.open()
+    connected = False
 
-    args = command_line_args()
-    content = requests.get(args.data_key_service).json()
-    encryption_key = content['plaintextDataKey']
-    encrypted_key = content['ciphertextDataKey']
-    master_key_id = content['dataKeyEncryptionKeyId']
+    while not connected:
+        try:
+            connection = shared_functions.hbase_connection()
+            connection.open()
+
+            args = command_line_args()
+            content = requests.get(args.data_key_service).json()
+            encryption_key = content['plaintextDataKey']
+            encrypted_key = content['ciphertextDataKey']
+            master_key_id = content['dataKeyEncryptionKeyId']
+
+            connected = True
+        except requests.exceptions.ConnectionError:
+            print("Waiting for HBase connection...")
+            sleep(2)
+            continue
+
+    print(f"dict: {connection.__dict__}")
 
     print("Creating batch.")
-    for topic_index in range(1, int(topic_count)+1):
+    for topic_index in range(1, int(topic_count) + 1):
 
         table_name = f"database:{database_table_name}{topic_index}"
         tables = [x.decode('ascii') for x in connection.tables()]
