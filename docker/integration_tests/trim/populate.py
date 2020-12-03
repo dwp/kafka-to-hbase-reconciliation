@@ -1,4 +1,4 @@
-from docker.integration_tests.shared_functions import mysql_connection
+from shared_functions import mysql_connection
 
 if __name__ == "__main__":
 
@@ -9,7 +9,7 @@ if __name__ == "__main__":
     cursor.execute("CREATE TABLE trim LIKE ucfs")
 
     data = [(f"hbase_id_{index}", index * 100, "db.database.collection", index % 10, index, index % 2 == 0)
-            for index in range(0, 1_000)]
+            for index in range(0, 1000)]
 
     statement = ("INSERT INTO trim "
                  "(hbase_id, hbase_timestamp, topic_name, kafka_partition, kafka_offset, reconciled_result) "

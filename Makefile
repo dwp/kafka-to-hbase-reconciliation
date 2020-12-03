@@ -118,9 +118,9 @@ integration-test-rebuild: ## Build only integration-test
 	docker-compose build reconciliation-integration-test trim-reconciled-integration-test partitioned-integration-test
 
 trim-reconciled-integration-test: ## Run the trim reconciled integration tests in a Docker container
-	docker-compose -f docker-compose.yaml up populate-for-trim
-	docker-compose -f docker-compose.yaml up trim-reconciled-records
-	docker-compose -f docker-compose.yaml up trim-integration-test
+	docker-compose -f docker-compose.yaml up --build populate-for-trim
+	docker-compose -f docker-compose.yaml up -d trim-reconciled-records
+	docker-compose -f docker-compose.yaml up --build trim-integration-test
 
 partitioned-integration-test: ## Run the partitioned integration tests in a Docker container
 	docker-compose -f docker-compose.yaml up --build populate-for-partitioned
