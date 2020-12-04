@@ -1,11 +1,22 @@
-FROM python:3.7.3-stretch
+FROM python:3.8
+
+RUN pip install awscli --trusted-host=pypi.org --trusted-host=pypi.python.org --trusted-host=files.pythonhosted.org
 
 ENV SERVICE_USER=dataworks
-ENV SERVICE_USER_HOME=/home/${SERVICE_USER}
-RUN mkdir -p ${SERVICE_USER_HOME} ${INSTALL_DIR}/data
-RUN useradd -d ${SERVICE_USER_HOME} ${SERVICE_USER}
-RUN id -a ${SERVICE_USER}
+ENV SERVICE_USER_HOME=/home/$SERVICE_USER
+ENV INSTALL_DIR=/opt/aws
 
-RUN pip install awscli
+RUN mkdir -p $SERVICE_USER_HOME $INSTALL_DIR
+RUN useradd -d $SERVICE_USER_HOME $SERVICE_USER
 
-RUN chown -R ${SERVICE_USER}.${SERVICE_USER} ${SERVICE_USER_HOME}
+WORKDIR $INSTALL_DIR
+
+COPY python/shared_functions.py ./
+COPY python/requirements.txt ./
+
+RUN pip install --trusted-host=pypi.python.org --trusted-host=pypi.org --trusted-host=files.pythonhosted.org -r ./requirements.txt
+
+RUN chown -R $SERVICE_USER.$SERVICE_USER $SERVICE_USER_HOME
+RUN chown -R $SERVICE_USER.$SERVICE_USER $INSTALL_DIR
+
+USER $SERVICE_USER

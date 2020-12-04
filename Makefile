@@ -30,10 +30,10 @@ local-scrub: ## Scrub local output folders
 	gradle clean
 
 local-build: ## Build Kafka2HBase with gradle
-	gradle :unit build -x test -x unit -x reconciliation-integration-test reconciliation-integration-test
+	gradle :unit build -x test -x unit
 
 local-dist: ## Assemble distribution files in build/dist with gradle
-	gradle assembleDist -x test -x unit -x reconciliation-integration-test reconciliation-integration-test
+	gradle assembleDist -x test -x unit
 
 local-test: ## Run the unit tests with gradle
 	gradle --rerun-tasks unit
@@ -41,6 +41,9 @@ local-test: ## Run the unit tests with gradle
 local-scrub-build: local-scrub local-build ## Scrub local artefacts and make new ones
 
 local-all: local-scrub-build local-test ## local-dist ## Build and test with gradle
+
+certificates: ## generate the mutual authentication certificates for communications with dks.
+	./generate-certificates.sh
 
 mysql-root: ## Get a root client session on the metadatastore database.
 	docker exec -it metadatastore mysql --user=root --password=password metadatastore
@@ -66,14 +69,14 @@ truncate-hbase: ## truncate all hbase tables.
 truncate-all: truncate-ucfs truncate-equalities truncate-hbase
 
 hbase-shell: ## Open an HBase shell onto the running HBase container
-	docker-compose run --rm hbase shell
+	docker exec -it hbase hbase shell
 
 rdbms-up: ## Bring up and provision mysql
 	docker-compose -f docker-compose.yaml up -d metadatastore
 	@{ \
 		echo Waiting for metadatastore.; \
 		while ! docker logs metadatastore 2>&1 | grep "^Version" | grep 3306; do \
-			sleep 2; \
+			sleep 10; \
 			echo Waiting for metadatastore.; \
 		done; \
 		echo ...metadatastore ready.; \
@@ -91,8 +94,12 @@ hbase-up: ## Bring up and provision mysql
 		done; \
 		echo ...hbase ready.; \
 	}
+	docker exec -i hbase hbase shell <<< "create_namespace 'database'"; \
 
-services: hbase-up rdbms-up ## Bring up supporting services in docker
+dks-insecure-up: ## bring up dks on 8080
+	docker-compose up -d dks-standalone-http
+
+services: hbase-up rdbms-up dks-insecure-up ## Bring up supporting services in docker
 
 up: services ## Bring up Reconciliation in Docker with supporting services
 	docker-compose -f docker-compose.yaml up --build -d reconciliation trim-reconciled-records reconciliation-partitioned
@@ -108,55 +115,53 @@ destroy: down ## Bring down the Kafka2HBase Docker container and services then d
 	docker volume prune -f
 
 integration-test-rebuild: ## Build only integration-test
-	docker-compose build reconciliation-integration-test trim-reconciled-integration-test partitioned-integration-test
-
-reconciliation-integration-test:  ## Run the reconciliation integration tests in a Docker container
-	docker-compose -f docker-compose.yaml up --build -d reconciliation
-	@{ \
-		set +e ;\
-		docker stop reconciliation-integration-test ;\
-		docker rm reconciliation-integration-test ;\
- 		set -e ;\
- 	}
-	docker-compose -f docker-compose.yaml run --name reconciliation-integration-test reconciliation-integration-test gradle --no-daemon --rerun-tasks reconciliation-integration-test -x test -x unit
-	docker-compose stop reconciliation
-	docker-compose rm reconciliation
-
+	docker-compose build trim-integration-test partitioned-integration-test
 
 trim-reconciled-integration-test: ## Run the trim reconciled integration tests in a Docker container
-	docker-compose -f docker-compose.yaml up --build populate-for-trim
-	docker-compose -f docker-compose.yaml up --build trim-reconciled-records
-	docker-compose -f docker-compose.yaml up --build trim-integration-test
+	docker-compose -f docker-compose.yaml up populate-for-trim
+	docker-compose -f docker-compose.yaml up -d trim-reconciled-records
+	docker-compose -f docker-compose.yaml up trim-integration-test
+	docker-compose stop trim-reconciled-records
 
-partitioned-integration-test: services ## Run the partitioned integration tests in a Docker container
-	docker-compose -f docker-compose.yaml up --build -d reconciliation-partitioned
-	@{ \
-		set +e ;\
-		docker stop partitioned-integration-test ;\
-		docker rm partitioned-integration-test ;\
- 		set -e ;\
- 	}
-	docker-compose -f docker-compose.yaml run --name partitioned-integration-test partitioned-integration-test gradle --no-daemon --rerun-tasks partitioned-integration-test -x test -x unit
-	docker-compose stop  reconciliation-partitioned
-	docker-compose rm  reconciliation-partitioned
+partitioned-integration-test: ## Run the partitioned integration tests in a Docker container
+	docker-compose -f docker-compose.yaml up populate-for-partitioned
+	docker-compose -f docker-compose.yaml up -d reconciliation-partitioned
+	docker-compose -f docker-compose.yaml up partitioned-integration-test
+	docker stop reconciliation-partitioned
 
-integration-test-with-rebuild: integration-test-rebuild reconciliation-integration-test trim-reconciled-integration-test partitioned-integration-test ## Rebuild and re-run only he integration-tests
+integration-test-with-rebuild: integration-test-rebuild partitioned-integration-test trim-reconciled-integration-test ## Rebuild and re-run only he integration-tests
+
+integration-all-github: certificates integration-all
 
 .PHONY: integration-all ## Build and Run all the tests in containers from a clean start
-integration-all: destroy build services reconciliation-integration-test trim-reconciled-integration-test partitioned-integration-test
+integration-all: destroy build services partitioned-integration-test trim-reconciled-integration-test
 
-build: local-all build-base ## build main images
+build: local-all build-integration-base ## build main images
 	docker-compose build
 
 build-base: ## build the base images which certain images extend.
 	@{ \
 		pushd docker; \
 		docker build --tag dwp-java:latest --file ./java/Dockerfile . ; \
-		docker build --tag dwp-python-preinstall:latest --file ./python/Dockerfile . ; \
+		cp ./integration_tests/shared_functions.py ./python ; \
+		docker build --tag dwp-python-preinstall-reconciliation:latest --file ./python/Dockerfile . ; \
+		rm python/shared_functions.py ; \
+		docker build --tag dwp-python-reconciliation-integration:latest --file ./python/Dockerfile_int . ; \
 		cp ../settings.gradle.kts ../gradle.properties . ; \
 		docker build --tag dwp-gradle-reconciliation:latest --file ./gradle/Dockerfile . ; \
 		rm -rf settings.gradle.kts gradle.properties ; \
 		popd; \
+	}
+
+build-integration-base: build-base
+	@{ \
+		docker-compose -f docker-compose.yaml build populate-for-partitioned ; \
+		docker-compose -f docker-compose.yaml build populate-for-trim ; \
+		docker-compose -f docker-compose.yaml build reconciliation ; \
+		docker-compose -f docker-compose.yaml build trim-reconciled-records ; \
+		docker-compose -f docker-compose.yaml build trim-integration-test ; \
+		docker-compose -f docker-compose.yaml build reconciliation-partitioned ; \
+		docker-compose -f docker-compose.yaml build partitioned-integration-test ; \
 	}
 
 push-local-to-ecr: ## Push a temp version of reconciliation to AWS DEV ECR
