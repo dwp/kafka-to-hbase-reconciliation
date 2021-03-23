@@ -165,6 +165,7 @@ services:
     container_name: dks-standalone-http
     environment:
       - SPRING_PROFILES_ACTIVE=STANDALONE,INSECURE,LocalAWS
+      - INSTANCE_NAME=dks-standalone-http
 
   populate-for-trim:
     build: docker/integration_tests/trim
