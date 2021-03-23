@@ -1,0 +1,6 @@
+FROM python:3.8
+
+RUN mkdir /tests
+WORKDIR tests
+COPY python/requirements_int.txt ./
+RUN pip install --trusted-host=pypi.python.org --trusted-host=pypi.org --trusted-host=files.pythonhosted.org -r ./requirements_int.txt

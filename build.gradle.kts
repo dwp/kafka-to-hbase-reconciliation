@@ -61,80 +61,10 @@ tasks.withType<KotlinCompile> {
 }
 
 sourceSets {
-	create("integration") {
-		java.srcDir(file("src/integration/kotlin"))
-		compileClasspath += sourceSets.getByName("main").output + configurations.testRuntimeClasspath
-		runtimeClasspath += output + compileClasspath
-	}
 	create("unit") {
 		java.srcDir(file("src/test/kotlin"))
 		compileClasspath += sourceSets.getByName("main").output + configurations.testRuntimeClasspath
 		runtimeClasspath += output + compileClasspath
-	}
-}
-
-tasks.register<Test>("reconciliation-integration-test") {
-	description = "Runs the reconciliation integration tests"
-	group = "verification"
-	testClassesDirs = sourceSets["integration"].output.classesDirs
-	classpath = sourceSets["integration"].runtimeClasspath
-	filter {
-		includeTestsMatching("ReconciliationIntegrationTest*")
-	}
-
-	//copy all env vars from unix/your integration container into the test
-	setEnvironment(System.getenv())
-    //to copy individual ones do this
-	//environment("ABC", System.getEnv("ABC"))
-
-	useJUnitPlatform { }
-	testLogging {
-		exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
-		events = setOf(org.gradle.api.tasks.testing.logging.TestLogEvent.SKIPPED, org.gradle.api.tasks.testing.logging.TestLogEvent.PASSED, org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED, org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_OUT)
-	}
-}
-
-tasks.register<Test>("trim-reconciled-integration-test") {
-	description = "Runs the trim reconciled records integration tests"
-	group = "verification"
-	testClassesDirs = sourceSets["integration"].output.classesDirs
-	classpath = sourceSets["integration"].runtimeClasspath
-	filter {
-		includeTestsMatching("TrimReconciledIntegrationTest*")
-	}
-
-	//copy all env vars from unix/your integration container into the test
-	setEnvironment(System.getenv())
-	//to copy individual ones do this
-	//environment("ABC", System.getEnv("ABC"))
-
-	useJUnitPlatform { }
-	testLogging {
-		exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
-		events = setOf(org.gradle.api.tasks.testing.logging.TestLogEvent.SKIPPED, org.gradle.api.tasks.testing.logging.TestLogEvent.PASSED, org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED, org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_OUT)
-	}
-}
-
-
-
-tasks.register<Test>("partitioned-integration-test") {
-	description = "Runs the partitioned integration tests for when mysql tables are partitioned"
-	group = "verification"
-	testClassesDirs = sourceSets["integration"].output.classesDirs
-	classpath = sourceSets["integration"].runtimeClasspath
-	filter {
-		includeTestsMatching("PartitionedIntegrationTest*")
-	}
-
-	//copy all env vars from unix/your integration container into the test
-	setEnvironment(System.getenv())
-	//to copy individual ones do this
-	//environment("ABC", System.getEnv("ABC"))
-
-	useJUnitPlatform { }
-	testLogging {
-		exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
-		events = setOf(org.gradle.api.tasks.testing.logging.TestLogEvent.SKIPPED, org.gradle.api.tasks.testing.logging.TestLogEvent.PASSED, org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED, org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_OUT)
 	}
 }
 
