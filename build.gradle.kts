@@ -1,10 +1,11 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-	id("org.springframework.boot") version "2.3.3.RELEASE"
-	id("io.spring.dependency-management") version "1.0.10.RELEASE"
-	kotlin("jvm") version "1.4.0"
-	kotlin("plugin.spring") version "1.3.72"
+	id("com.github.ben-manes.versions") version "0.38.0"
+	id("org.springframework.boot") version "2.4.4"
+	id("io.spring.dependency-management") version "1.0.11.RELEASE"
+	kotlin("jvm") version "1.4.31"
+	kotlin("plugin.spring") version "1.4.31"
 }
 
 group = "uk.gov.dwp.dataworks.reconciliation"
@@ -19,22 +20,24 @@ repositories {
 
 dependencies {
 	annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
-	implementation("org.springframework.boot:spring-boot-starter")
+
+	implementation("com.amazonaws:aws-java-sdk-secretsmanager:1.11.979")
+	implementation("com.github.dwp:dataworks-common-logging:0.0.6")
+	implementation("com.google.protobuf:protobuf-java:2.6.1")
+	implementation("commons-codec:commons-codec:1.15")
+	implementation("mysql:mysql-connector-java:8.0.23")
+	implementation("org.apache.commons:commons-dbcp2:2.8.0")
+	implementation("org.apache.commons:commons-text:1.9")
+	implementation("org.apache.hbase:hbase-client:1.4.13")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-	implementation("org.jetbrains.kotlinx", "kotlinx-coroutines-core", "1.3.9")
-	implementation("com.amazonaws:aws-java-sdk-secretsmanager:1.11.819")
-	implementation("mysql:mysql-connector-java:6.0.6")
-	implementation("org.apache.hbase:hbase-client:1.4.13")
-	implementation("commons-codec:commons-codec:1.14")
-	implementation("com.github.dwp:dataworks-common-logging:0.0.5")
-	implementation("org.apache.commons:commons-text:1.8")
-	implementation("org.apache.commons:commons-dbcp2:2.8.0")
+	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.3")
+	implementation("org.springframework.boot:spring-boot-starter")
 
-	testImplementation("io.kotest:kotest-runner-junit5-jvm:4.2.0")
-	testImplementation("io.kotest:kotest-assertions-core-jvm:4.2.0")
-	testImplementation("io.kotest:kotest-property-jvm:4.2.0")
-	testImplementation("com.beust:klaxon:4.0.2")
+	testImplementation("io.kotest:kotest-runner-junit5-jvm:4.4.3")
+	testImplementation("io.kotest:kotest-assertions-core-jvm:4.4.3")
+	testImplementation("io.kotest:kotest-property-jvm:4.4.3")
+	testImplementation("com.beust:klaxon:5.5")
 	testImplementation("com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0")
 	testImplementation("org.springframework.boot:spring-boot-starter-test") {
 		exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
