@@ -7,6 +7,7 @@ ENV APP_HOME=/opt/$APP_NAME
 ENV USER=reconciliation
 ENV GROUP=$USER
 
+RUN apt-get update && apt-get install uuid-runtime
 RUN mkdir $APP_HOME
 WORKDIR $APP_HOME
 
@@ -25,6 +26,7 @@ RUN chown -R $GROUP:$USER /certs
 RUN chmod -R a+rx /certs
 RUN chmod 600 /certs/AmazonRootCA1.pem
 
+ENV METADATA_TRUSTSTORE_CERTIFICATE=/certs/AmazonRootCA1.pem
 USER $USER
 
 ENTRYPOINT ["sh", "-c", "./entrypoint.sh \"$@\"", "--"]

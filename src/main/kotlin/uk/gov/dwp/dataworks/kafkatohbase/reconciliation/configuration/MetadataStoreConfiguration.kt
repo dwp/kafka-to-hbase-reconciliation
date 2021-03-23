@@ -5,9 +5,7 @@ import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.exceptions.MetadataStorePartitionsNotSetException
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.secrets.SecretHelperInterface
-import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.utils.readFile
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.utils.toPartitionIdCSV
 import uk.gov.dwp.dataworks.kafkatohbase.reconciliation.utils.validatePartitions
 import uk.gov.dwp.dataworks.logging.DataworksLogger
@@ -23,13 +21,14 @@ data class MetadataStoreConfiguration(
     var dummyPassword: String? = "NOT_SET",
     var table: String = "NOT_SET",
     var databaseName: String? = "NOT_SET",
-    var caCertPath: String? = "NOT_SET",
     var useAwsSecrets: Boolean = true,
     var numberOfParallelUpdates: String? = "NOT_SET",
     var batchSize: String? = "NOT_SET",
     var deleteLimit: Int = 100_000,
     var startPartition: String? = "NOT_SET",
-    var endPartition: String? = "NOT_SET") {
+    var endPartition: String? = "NOT_SET",
+    var truststore: String = "",
+    var truststorePassword: String = "") {
 
     @Bean
     fun databaseUrl() = "jdbc:mysql://$endpoint:$port/$databaseName"
@@ -38,12 +37,18 @@ data class MetadataStoreConfiguration(
     fun databaseProperties(): Properties =
         Properties().apply {
             put("user", user)
-            if (useAwsSecrets) {
-                put("ssl_ca_path", caCertPath)
-                put("ssl_ca", readFile(getProperty("ssl_ca_path")))
-                put("ssl_verify_cert", true)
-            }
             put("password", password(useAwsSecrets))
+            put("trustCertificateKeyStoreUrl", "file:$truststore")
+            put("trustCertificateKeyStorePassword", truststorePassword)
+
+            if (useAwsSecrets) {
+                put("useSSL", "true")
+                put("enabledTLSProtocols", "TLSv1.2")
+                put("sslMode", "REQUIRED")
+            }
+            else {
+                put("useSSL", "false")
+            }
         }
 
     private fun password(useAwsSecrets: Boolean) =
