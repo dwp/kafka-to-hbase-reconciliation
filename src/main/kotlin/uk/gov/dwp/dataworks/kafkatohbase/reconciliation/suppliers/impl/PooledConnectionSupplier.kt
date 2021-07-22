@@ -29,6 +29,9 @@ class PooledConnectionSupplier(private val databaseUrl: String,
             "numberOfParallelUpdates" to "$numberOfParallelUpdates")
 
         BasicDataSource().apply {
+            testOnReturn = true
+            testOnBorrow = true
+            testWhileIdle = true
             url = databaseUrl
             maxTotal = numberOfParallelUpdates + 1 + 5
             maxConnLifetimeMillis = 24.hours.toLongMilliseconds()
