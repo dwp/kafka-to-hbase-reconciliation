@@ -1,3 +1,5 @@
+# DO NOT USE THIS REPO - MIGRATED TO GITLAB
+
 # kafka-to-hbase-reconciliation
 
 ## Reconciliation tool to confirm that messages written from Kafka have been successfully written to HBase
